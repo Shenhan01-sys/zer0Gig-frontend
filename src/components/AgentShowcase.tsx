@@ -277,11 +277,15 @@ export default function AgentShowcase() {
               return (
                 <motion.div
                   key={agent.id}
+                  initial={{ opacity: 0, scale: 0 }}
                   animate={{
+                    opacity: isActive ? 1 : 0.5,
+                    scale: 1,
                     transform: `rotate(${rotation}deg) translateY(-${orbitRadius}px)`,
                   }}
                   transition={{
                     duration: 0.8,
+                    delay: i * 0.1,
                     ease: [0.34, 1.56, 0.64, 1],
                   }}
                   style={{
@@ -438,9 +442,13 @@ export default function AgentShowcase() {
                     {/* Hire button */}
                     <div className="relative flex-1 group">
                       <div className="absolute -top-[1px] left-1/2 -translate-x-1/2 w-[70%] h-[2px] bg-gradient-to-r from-transparent via-white/60 to-transparent rounded-full blur-[2px] opacity-80" />
-                      <button className="relative w-full py-2.5 bg-white text-black text-[13px] font-medium rounded-full border-[0.6px] border-white/80 hover:bg-white/90 transition-colors">
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="relative w-full py-2.5 bg-white text-black text-[13px] font-medium rounded-full border-[0.6px] border-white/80 hover:bg-white/90 transition-colors"
+                      >
                         Hire Agent
-                      </button>
+                      </motion.button>
                     </div>
 
                     {/* Prev / Next */}

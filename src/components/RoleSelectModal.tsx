@@ -53,8 +53,7 @@ export default function RoleSelectModal({ isOpen, onConfirmed }: RoleSelectModal
       setIsSwitching(false);
     }
 
-    const roleNum = selected === "Client" ? 1 : 2;
-    register(roleNum);
+    register(selected as UserRole);
   };
 
   const isLoading = isSwitching || isPending || isConfirming;

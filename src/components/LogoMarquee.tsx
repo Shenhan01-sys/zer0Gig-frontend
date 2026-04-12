@@ -20,7 +20,7 @@ export default function LogoMarquee() {
       whileInView={{ opacity: 1 }}
       viewport={{ once: true }}
       transition={{ duration: 0.8 }}
-      className="relative w-full border-y border-white/5 overflow-hidden py-6"
+      className="relative w-full border-y border-white/[0.1] overflow-hidden py-6 bg-[#0d1525]/80"
     >
       <div className="flex animate-marquee whitespace-nowrap">
         {[...logos, ...logos, ...logos, ...logos].map((name, i) => (

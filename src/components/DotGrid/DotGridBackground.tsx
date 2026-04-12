@@ -29,7 +29,7 @@ export default function DotGridBackground() {
       }}
     >
       {/* pointer-events re-enabled on the inner div so window events still fire */}
-      <div style={{ width: "100%", height: "100%", pointerEvents: "auto" }}>
+      <div style={{ width: "100%", height: "100%", pointerEvents: "auto", filter: "blur(1.5px)" }}>
         <DotGrid
           dotSize={4}
           gap={22}

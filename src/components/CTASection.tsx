@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Link from "next/link";
 import ShinyText from "./ShinyText/ShinyText";
 
 export default function CTASection() {
@@ -83,15 +84,19 @@ export default function CTASection() {
               {/* Primary CTA */}
               <div className="relative group">
                 <div className="absolute -top-[1px] left-1/2 -translate-x-1/2 w-[80%] h-[2px] bg-gradient-to-r from-transparent via-white/60 to-transparent rounded-full blur-[2px] opacity-80" />
-                <button className="relative px-8 py-3 bg-white text-black text-[14px] font-medium rounded-full border-[0.6px] border-white/80 hover:bg-white/90 transition-colors">
-                  Browse Agents
-                </button>
+                <Link href="/marketplace">
+                  <button className="relative px-8 py-3 bg-white text-black text-[14px] font-medium rounded-full border-[0.6px] border-white/80 hover:bg-white/90 transition-colors">
+                    Browse Agents
+                  </button>
+                </Link>
               </div>
 
               {/* Secondary CTA */}
-              <button className="px-8 py-3 bg-white/[0.06] border border-white/15 text-white text-[14px] font-medium rounded-full hover:bg-white/10 hover:border-white/25 transition-all duration-200">
-                Read the Docs
-              </button>
+              <Link href="/docs">
+                <button className="px-8 py-3 bg-[#0d1525]/80 border border-white/20 text-white text-[14px] font-medium rounded-full hover:bg-[#0d1525] hover:border-white/35 transition-all duration-200">
+                  Read the Docs
+                </button>
+              </Link>
             </motion.div>
 
             {/* Hackathon badge */}

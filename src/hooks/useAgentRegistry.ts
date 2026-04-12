@@ -15,6 +15,21 @@ export function useAgentProfile(agentId: bigint | number) {
 }
 
 /**
+ * Hook to check if an agent has a specific skill
+ */
+export function useHasSkill(agentId: bigint | number | undefined, skillId: string | undefined) {
+  const ZERO_SKILL = "0x0000000000000000000000000000000000000000000000000000000000000000";
+  const enabled = !!agentId && !!skillId && skillId !== ZERO_SKILL;
+  return useReadContract({
+    address: CONTRACT_CONFIG.AgentRegistry.address as Address,
+    abi: CONTRACT_CONFIG.AgentRegistry.abi,
+    functionName: 'hasSkill',
+    args: enabled ? [BigInt(agentId!), skillId as `0x${string}`] : undefined,
+    query: { enabled },
+  });
+}
+
+/**
  * Hook to get all agents owned by an address
  */
 export function useOwnerAgents(ownerAddress: Address | undefined) {
@@ -30,32 +45,28 @@ export function useOwnerAgents(ownerAddress: Address | undefined) {
 }
 
 /**
- * Hook to mint a new agent
+ * Hook to mint a new agent (updated to AgentRegistry v2 signature)
  */
 export function useMintAgent() {
   const { writeContract, isPending, isSuccess, isError, data, error } = useWriteContract();
 
   const mintAgent = async (
-    agentType: number,
-    baseRate: bigint,
-    resumeCID: string,
+    defaultRate: bigint,
+    profileCID: string,
+    capabilityCID: string,
+    skillIds: `0x${string}`[],
     agentWallet: Address,
-    eciesPublicKey: string
+    eciesPublicKey: `0x${string}`
   ) => {
-    // Ensure the public key is formatted as a hex string for bytes
-    const pubKeyHex = eciesPublicKey.startsWith('0x') ? eciesPublicKey : `0x${eciesPublicKey}`;
-    
     writeContract({
       address: CONTRACT_CONFIG.AgentRegistry.address as Address,
       abi: CONTRACT_CONFIG.AgentRegistry.abi,
       functionName: 'mintAgent',
-      args: [
-        agentType,
-        baseRate,
-        resumeCID,
-        agentWallet,
-        pubKeyHex as `0x${string}`
-      ],
+      args: [defaultRate, profileCID, capabilityCID, skillIds, agentWallet, eciesPublicKey],
+      // capabilityCID is a base64-encoded manifest string (can be 800-1500 chars).
+      // Each 32-byte storage slot costs ~22k gas cold → 1500 chars ≈ 47 slots ≈ 1M gas.
+      // Skills add ~88k gas each. 2M covers up to ~10 skills with a large manifest.
+      gas: BigInt(2_000_000),
     });
   };
 

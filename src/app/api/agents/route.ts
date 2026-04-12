@@ -1,0 +1,98 @@
+import { NextResponse } from "next/server";
+import { ethers } from "ethers";
+import { CONTRACT_ADDRESSES } from "@/lib/contracts";
+
+const AGENT_REGISTRY_ABI = [
+  "function totalAgents() view returns (uint256)",
+  "function getAgentProfile(uint256 agentId) view returns (tuple(address owner, address agentWallet, bytes eciesPublicKey, bytes32 capabilityHash, string capabilityCID, string profileCID, uint256 overallScore, uint256 totalJobsCompleted, uint256 totalJobsAttempted, uint256 totalEarningsWei, uint256 defaultRate, uint256 createdAt, bool isActive))",
+];
+
+const RPC_URL = "https://evmrpc-testnet.0g.ai";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+interface AgentProfile {
+  agentId: number;
+  owner: string;
+  agentWallet: string;
+  capabilityCID: string;
+  profileCID: string;
+  overallScore: number;
+  totalJobsCompleted: number;
+  totalJobsAttempted: number;
+  totalEarningsWei: string;
+  defaultRate: string;
+  createdAt: number;
+  isActive: boolean;
+}
+
+export async function GET() {
+  const errors: string[] = [];
+
+  try {
+    const provider = new ethers.JsonRpcProvider(RPC_URL);
+    const contract = new ethers.Contract(
+      CONTRACT_ADDRESSES.AgentRegistry,
+      AGENT_REGISTRY_ABI,
+      provider
+    );
+
+    const totalAgentsBig = await contract.totalAgents();
+    const totalAgents = Number(totalAgentsBig);
+
+    console.log(`[agents] totalAgents returned: ${totalAgents}`);
+
+    if (totalAgents === 0) {
+      return NextResponse.json({ agents: [], total: 0 });
+    }
+
+    const agents: AgentProfile[] = [];
+
+    const maxIdToCheck = Math.min(totalAgents + 2, 100);
+    let foundCount = 0;
+
+    for (let i = 0; i < maxIdToCheck && foundCount < totalAgents; i++) {
+      try {
+        const profile = await contract.getAgentProfile(i);
+
+        agents.push({
+          agentId: i,
+          owner: profile[0],
+          agentWallet: profile[1],
+          capabilityCID: profile[4],
+          profileCID: profile[5],
+          overallScore: Number(profile[6]),
+          totalJobsCompleted: Number(profile[7]),
+          totalJobsAttempted: Number(profile[8]),
+          totalEarningsWei: profile[9].toString(),
+          defaultRate: profile[10].toString(),
+          createdAt: Number(profile[11]),
+          isActive: profile[12],
+        });
+        foundCount++;
+        console.log(`[agents] Successfully fetched agent ${i}`);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        if (!msg.includes("does not exist")) {
+          errors.push(`Agent ${i}: ${msg}`);
+        }
+        console.log(`[agents] Skipping agent ${i} (does not exist or error)`);
+      }
+    }
+
+    console.log(`[agents] Total fetched: ${agents.length}, errors: ${errors.length}`);
+
+    return NextResponse.json({ 
+      agents, 
+      total: totalAgents,
+      errors: errors.length > 0 ? errors : undefined 
+    });
+  } catch (err) {
+    console.error("[agents] Fatal error:", err);
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : String(err) },
+      { status: 500 }
+    );
+  }
+}

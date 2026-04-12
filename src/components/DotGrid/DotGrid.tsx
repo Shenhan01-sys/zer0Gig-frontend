@@ -38,6 +38,8 @@ function throttle<T extends unknown[]>(fn: (...a: T) => void, ms: number) {
   };
 }
 
+const MAX_CONCURRENT_TWEENS = 12;
+
 export default function DotGrid({
   dotSize = 4,
   gap = 22,
@@ -50,6 +52,12 @@ export default function DotGrid({
   maxSpeed = 5000,
   returnDuration = 1.5,
 }: Props) {
+  // Respect prefers-reduced-motion — skip all animation if set
+  const [reducedMotion] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  });
+
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const dotsRef = useRef<Dot[]>([]);
@@ -89,20 +97,28 @@ export default function DotGrid({
     dotsRef.current = dots;
   }, [dotSize, gap]);
 
-  // Resize observer
+  // Debounced resize observer — rebuilds at most once per 200ms
   useEffect(() => {
+    if (reducedMotion) return;
     buildGrid();
-    const ro = new ResizeObserver(buildGrid);
+    let timer: ReturnType<typeof setTimeout>;
+    const ro = new ResizeObserver(() => {
+      clearTimeout(timer);
+      timer = setTimeout(buildGrid, 200);
+    });
     if (wrapRef.current) ro.observe(wrapRef.current);
-    return () => ro.disconnect();
-  }, [buildGrid]);
+    return () => { ro.disconnect(); clearTimeout(timer); };
+  }, [buildGrid, reducedMotion]);
 
-  // Draw loop
+  // Draw loop — pauses when tab is hidden
   useEffect(() => {
+    if (reducedMotion) return;
     const proxSq = proximity * proximity;
     let raf: number;
+    let running = true;
 
     const draw = () => {
+      if (!running) return;
       const canvas = canvasRef.current;
       if (!canvas) return;
       const ctx = canvas.getContext("2d");
@@ -136,12 +152,30 @@ export default function DotGrid({
       raf = requestAnimationFrame(draw);
     };
 
-    draw();
-    return () => cancelAnimationFrame(raf);
-  }, [proximity, baseColor, baseRgb.r, baseRgb.g, baseRgb.b, activeRgb.r, activeRgb.g, activeRgb.b, dotSize]);
+    const handleVisibility = () => {
+      if (document.hidden) {
+        running = false;
+        cancelAnimationFrame(raf);
+      } else {
+        running = true;
+        raf = requestAnimationFrame(draw);
+      }
+    };
 
-  // Mouse move + click
+    document.addEventListener("visibilitychange", handleVisibility);
+    draw();
+
+    return () => {
+      running = false;
+      cancelAnimationFrame(raf);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
+  }, [reducedMotion, proximity, baseColor, baseRgb.r, baseRgb.g, baseRgb.b, activeRgb.r, activeRgb.g, activeRgb.b, dotSize]);
+
+  // Mouse move + click — throttled at 150ms, capped at MAX_CONCURRENT_TWEENS
   useEffect(() => {
+    if (reducedMotion) return;
+
     const onMove = (e: MouseEvent) => {
       const now = performance.now();
       const pr = pointer.current;
@@ -162,7 +196,12 @@ export default function DotGrid({
       pr.y = e.clientY - rect.top;
 
       if (speed > speedTrigger) {
+        // Skip if already at tween cap
+        const activeTweens = dotsRef.current.filter(d => d._animating).length;
+        if (activeTweens >= MAX_CONCURRENT_TWEENS) return;
+
         for (const dot of dotsRef.current) {
+          if (dotsRef.current.filter(d => d._animating).length >= MAX_CONCURRENT_TWEENS) break;
           const dist = Math.hypot(dot.cx - pr.x, dot.cy - pr.y);
           if (dist < proximity && !dot._animating) {
             dot._animating = true;
@@ -212,14 +251,20 @@ export default function DotGrid({
       }
     };
 
-    const throttledMove = throttle(onMove, 40);
+    // 150ms throttle (was 40ms) — reduces CPU usage significantly
+    const throttledMove = throttle(onMove, 150);
     window.addEventListener("mousemove", throttledMove, { passive: true });
     window.addEventListener("click", onClick);
     return () => {
       window.removeEventListener("mousemove", throttledMove);
       window.removeEventListener("click", onClick);
     };
-  }, [maxSpeed, speedTrigger, proximity, returnDuration, shockRadius, shockStrength]);
+  }, [reducedMotion, maxSpeed, speedTrigger, proximity, returnDuration, shockRadius, shockStrength]);
+
+  // Reduced motion: render nothing (transparent placeholder)
+  if (reducedMotion) {
+    return <div style={{ width: "100%", height: "100%" }} />;
+  }
 
   return (
     <div style={{ width: "100%", height: "100%", position: "relative" }}>

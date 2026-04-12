@@ -1,109 +1,73 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
-import React, { useState, useCallback, useEffect } from "react";
+import { motion, AnimatePresence, useInView } from "framer-motion";
+import React, { useState, useCallback, useEffect, useMemo, useRef } from "react";
+import { BorderBeam } from "./ui/BorderBeam";
+import { useAllAgents, type AgentListing } from "@/hooks/useAllAgents";
+import { useAgentProfiles } from "@/hooks/useAgentProfile";
+import { SKILL_LABELS } from "@/hooks/useAgentManagement";
 
-const agents = [
-  {
-    id: 1,
-    name: "CodeBot-v3",
-    type: "CODER",
-    typeBg: "bg-blue-500/20 text-blue-400",
-    tier: "S-Tier",
-    tierColor: "text-yellow-400",
-    tierBg: "bg-yellow-500/20 border-yellow-400/30",
-    efficiency: 94,
-    rate: "0.01 OG",
-    jobs: 127,
-    barColor: "bg-yellow-400",
-    avatar: "CB",
-    avatarGradient: "from-blue-500 to-cyan-500",
-    glowColor: "rgba(59,130,246,0.4)",
-    orbitRingColor: "#3b82f6",
-    specialty: "Solidity auditing · React · TypeScript",
-    description:
-      "Elite coding agent with S-Tier on-chain rating and ECDSA-verified job history. Specializes in smart contract development and full-stack dApps on 0G Chain.",
-  },
-  {
-    id: 2,
-    name: "CodeBot-v3",
-    type: "CODER",
-    typeBg: "bg-blue-500/20 text-blue-400",
-    tier: "S-Tier",
-    tierColor: "text-yellow-400",
-    tierBg: "bg-yellow-500/20 border-yellow-400/30",
-    efficiency: 94,
-    rate: "0.01 OG",
-    jobs: 127,
-    barColor: "bg-yellow-400",
-    avatar: "CB",
-    avatarGradient: "from-blue-500 to-cyan-500",
-    glowColor: "rgba(59,130,246,0.4)",
-    orbitRingColor: "#3b82f6",
-    specialty: "Solidity auditing · React · TypeScript",
-    description:
-      "Elite coding agent with S-Tier on-chain rating and ECDSA-verified job history. Specializes in smart contract development and full-stack dApps on 0G Chain.",
-  },
-  {
-    id: 3,
-    name: "CodeBot-v3",
-    type: "CODER",
-    typeBg: "bg-blue-500/20 text-blue-400",
-    tier: "S-Tier",
-    tierColor: "text-yellow-400",
-    tierBg: "bg-yellow-500/20 border-yellow-400/30",
-    efficiency: 94,
-    rate: "0.01 OG",
-    jobs: 127,
-    barColor: "bg-yellow-400",
-    avatar: "CB",
-    avatarGradient: "from-blue-500 to-cyan-500",
-    glowColor: "rgba(59,130,246,0.4)",
-    orbitRingColor: "#3b82f6",
-    specialty: "Solidity auditing · React · TypeScript",
-    description:
-      "Elite coding agent with S-Tier on-chain rating and ECDSA-verified job history. Specializes in smart contract development and full-stack dApps on 0G Chain.",
-  },
-  {
-    id: 4,
-    name: "WriteGenius",
-    type: "WRITER",
-    typeBg: "bg-purple-500/20 text-purple-400",
-    tier: "A-Tier",
-    tierColor: "text-green-400",
-    tierBg: "bg-green-500/20 border-green-400/30",
-    efficiency: 87,
-    rate: "0.008 OG",
-    jobs: 89,
-    barColor: "bg-green-400",
-    avatar: "WG",
-    avatarGradient: "from-purple-500 to-pink-500",
-    glowColor: "rgba(168,85,247,0.4)",
-    orbitRingColor: "#a855f7",
-    specialty: "Technical docs · Whitepapers · Copy",
-    description:
-      "A-Tier writer agent with credentials stored on 0G Storage KV. Produces verifiable, high-quality technical and creative content backed by alignment node review.",
-  },
-  {
-    id: 5,
-    name: "DataMind",
-    type: "ANALYST",
-    typeBg: "bg-cyan-500/20 text-cyan-400",
-    tier: "B-Tier",
-    tierColor: "text-cyan-400",
-    tierBg: "bg-cyan-500/20 border-cyan-400/30",
-    efficiency: 76,
-    rate: "0.012 OG",
-    jobs: 45,
-    barColor: "bg-cyan-400",
-    avatar: "DM",
-    avatarGradient: "from-cyan-500 to-teal-500",
-    glowColor: "rgba(6,182,212,0.4)",
-    orbitRingColor: "#06b6d4",
-    specialty: "Data pipelines · ML inference · Analytics",
-    description:
-      "B-Tier data agent with a growing on-chain reputation. Excels at pipeline automation and real-time analytics, with each job milestone settled via progressive escrow.",
-  },
+// ── Visual palette pool (cycles by agentId) ──────────────────────────────────
+const PALETTES = [
+  { avatarGradient: "from-blue-500 to-cyan-500",    glowColor: "rgba(59,130,246,0.4)",  orbitRingColor: "#3b82f6", typeBg: "bg-blue-500/20 text-blue-400",    barColor: "bg-blue-400"    },
+  { avatarGradient: "from-purple-500 to-pink-500",  glowColor: "rgba(168,85,247,0.4)",  orbitRingColor: "#a855f7", typeBg: "bg-purple-500/20 text-purple-400", barColor: "bg-purple-400"  },
+  { avatarGradient: "from-cyan-500 to-teal-500",    glowColor: "rgba(6,182,212,0.4)",   orbitRingColor: "#06b6d4", typeBg: "bg-cyan-500/20 text-cyan-400",    barColor: "bg-cyan-400"    },
+  { avatarGradient: "from-emerald-500 to-green-500",glowColor: "rgba(16,185,129,0.4)",  orbitRingColor: "#10b981", typeBg: "bg-emerald-500/20 text-emerald-400",barColor: "bg-emerald-400" },
+  { avatarGradient: "from-amber-500 to-orange-500", glowColor: "rgba(245,158,11,0.4)",  orbitRingColor: "#f59e0b", typeBg: "bg-amber-500/20 text-amber-400",   barColor: "bg-amber-400"   },
+  { avatarGradient: "from-rose-500 to-pink-500",    glowColor: "rgba(244,63,94,0.4)",   orbitRingColor: "#f43f5e", typeBg: "bg-rose-500/20 text-rose-400",     barColor: "bg-rose-400"    },
+];
+
+function getTierInfo(score: number) {
+  if (score >= 9500) return { tier: "S-Tier", tierColor: "text-yellow-400", tierBg: "bg-yellow-500/20 border-yellow-400/30" };
+  if (score >= 9000) return { tier: "A-Tier", tierColor: "text-emerald-400", tierBg: "bg-emerald-500/20 border-emerald-400/30" };
+  if (score >= 8500) return { tier: "B-Tier", tierColor: "text-cyan-400",    tierBg: "bg-cyan-500/20 border-cyan-400/30" };
+  return               { tier: "C-Tier", tierColor: "text-white/60",     tierBg: "bg-white/10 border-white/20" };
+}
+
+function mapAgentToShowcase(agent: AgentListing, profile?: { display_name?: string | null; avatar_url?: string | null; bio?: string | null; tags?: string[] | null } | null) {
+  const p = PALETTES[agent.agentId % PALETTES.length];
+  const { tier, tierColor, tierBg } = getTierInfo(agent.overallScore);
+  const efficiency = Math.min(99, Math.round(agent.overallScore / 100));
+  const skills = agent.skills.length > 0 ? agent.skills : (profile?.tags || []).slice(0, 3);
+  const primarySkill = skills[0] || "General";
+  const type = primarySkill.toUpperCase().slice(0, 8);
+  const successRate = agent.totalJobsAttempted > 0
+    ? Math.round((agent.totalJobsCompleted / agent.totalJobsAttempted) * 100)
+    : efficiency;
+  const displayName = profile?.display_name || `Agent #${agent.agentId}`;
+  const avatarUrl = profile?.avatar_url || null;
+
+  return {
+    id: agent.agentId,
+    name: displayName,
+    type,
+    typeBg: p.typeBg,
+    tier,
+    tierColor,
+    tierBg,
+    efficiency: successRate,
+    rate: agent.rateDisplay,
+    jobs: agent.totalJobsCompleted,
+    barColor: p.barColor,
+    avatar: avatarUrl
+      ? null
+      : (profile?.display_name
+          ? profile.display_name.slice(0, 2).toUpperCase()
+          : `#${agent.agentId}`),
+    avatarGradient: p.avatarGradient,
+    avatarUrl,
+    glowColor: p.glowColor,
+    orbitRingColor: p.orbitRingColor,
+    specialty: skills.length > 0 ? skills.join(" · ") : primarySkill,
+    description: profile?.bio || `On-chain verified agent with a ${agent.scoreDisplay}/100 reputation score and ${agent.totalJobsCompleted} completed jobs. Verified by 0G Alignment Nodes with trustless milestone-based payouts.`,
+  };
+}
+
+// ── Fallback shown while chain data is loading ────────────────────────────────
+const FALLBACK_AGENTS = [
+  { id: 1, name: "CodeBot-v3", type: "CODER", typeBg: "bg-blue-500/20 text-blue-400", tier: "S-Tier", tierColor: "text-yellow-400", tierBg: "bg-yellow-500/20 border-yellow-400/30", efficiency: 94, rate: "0.01 OG", jobs: 127, barColor: "bg-yellow-400", avatar: "CB", avatarUrl: null as string | null, avatarGradient: "from-blue-500 to-cyan-500", glowColor: "rgba(59,130,246,0.4)", orbitRingColor: "#3b82f6", specialty: "Solidity auditing · React · TypeScript", description: "Elite coding agent with S-Tier on-chain rating and ECDSA-verified job history. Specializes in smart contract development and full-stack dApps on 0G Chain." },
+  { id: 2, name: "WriteGenius", type: "WRITER", typeBg: "bg-purple-500/20 text-purple-400", tier: "A-Tier", tierColor: "text-emerald-400", tierBg: "bg-emerald-500/20 border-emerald-400/30", efficiency: 87, rate: "0.008 OG", jobs: 89, barColor: "bg-emerald-400", avatar: "WG", avatarUrl: null as string | null, avatarGradient: "from-purple-500 to-pink-500", glowColor: "rgba(168,85,247,0.4)", orbitRingColor: "#a855f7", specialty: "Technical docs · Whitepapers · Copy", description: "A-Tier writer agent with credentials stored on 0G Storage KV. Produces verifiable, high-quality technical and creative content backed by alignment node review." },
+  { id: 3, name: "DataMind", type: "ANALYST", typeBg: "bg-cyan-500/20 text-cyan-400", tier: "B-Tier", tierColor: "text-cyan-400", tierBg: "bg-cyan-500/20 border-cyan-400/30", efficiency: 76, rate: "0.012 OG", jobs: 45, barColor: "bg-cyan-400", avatar: "DM", avatarUrl: null as string | null, avatarGradient: "from-cyan-500 to-teal-500", glowColor: "rgba(6,182,212,0.4)", orbitRingColor: "#06b6d4", specialty: "Data pipelines · ML inference · Analytics", description: "B-Tier data agent with a growing on-chain reputation. Excels at pipeline automation and real-time analytics, with each job milestone settled via progressive escrow." },
 ];
 
 const useIsMobile = (breakpoint = 1024): boolean => {
@@ -122,6 +86,29 @@ export default function AgentShowcase() {
   const [activeIndex, setActiveIndex] = useState(0);
   const isMobile = useIsMobile();
 
+  // Only fetch on-chain data once the section scrolls into view
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const hasBeenInView = useInView(sectionRef, { once: true, margin: "200px 0px" });
+  const { agents: onChainAgents, isLoading } = useAllAgents(hasBeenInView);
+  const { profiles } = useAgentProfiles(onChainAgents.map(a => a.agentId));
+
+  // Top 6 on-chain agents sorted by score, mapped to visual format
+  const agents = useMemo(() => {
+    const live = [...onChainAgents]
+      .filter(a => a.isActive)
+      .sort((a, b) => b.overallScore - a.overallScore)
+      .slice(0, 6)
+      .map(a => mapAgentToShowcase(a, profiles[a.agentId]));
+    return live.length > 0 ? live : FALLBACK_AGENTS;
+  }, [onChainAgents, profiles]);
+
+  // Reset activeIndex if it's out of bounds after agents change
+  useEffect(() => {
+    if (activeIndex >= agents.length) {
+      setActiveIndex(0);
+    }
+  }, [agents.length, activeIndex]);
+
   const orbitRadius = 150;
   const avatarSize = 64;
   const containerSize = orbitRadius * 2 + avatarSize + 16;
@@ -137,11 +124,12 @@ export default function AgentShowcase() {
 
   // Auto-advance
   useEffect(() => {
+    if (agents.length === 0) return;
     const id = setInterval(() => {
       setActiveIndex((i) => (i + 1) % agents.length);
     }, 3500);
     return () => clearInterval(id);
-  }, []);
+  }, [agents.length]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -153,10 +141,16 @@ export default function AgentShowcase() {
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
-  const active = agents[activeIndex];
+  const active = agents[activeIndex] || agents[0] || FALLBACK_AGENTS[0];
+
+  // Early return if no agents available at all
+  if (!active) {
+    return null;
+  }
 
   return (
     <section
+      ref={sectionRef}
       id="marketplace"
       className="relative py-24 md:py-32 overflow-hidden"
     >
@@ -173,21 +167,17 @@ export default function AgentShowcase() {
           transition={{ duration: 0.5 }}
           className="flex justify-center mb-4"
         >
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[13px] text-white/60">
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 14 14"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[13px] text-white/50">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="7" cy="5" r="3" />
               <path d="M2 13c0-2.5 2.2-4 5-4s5 1.5 5 4" />
             </svg>
-            Agent Marketplace
+            <span
+              style={{ "--shiny-width": "80px" } as React.CSSProperties}
+              className="animate-shiny-text bg-clip-text bg-no-repeat [background-position:0_0] [background-size:var(--shiny-width)_100%] [transition:background-position_1s_cubic-bezier(.6,.6,0,1)_infinite] bg-gradient-to-r from-transparent via-white/80 via-50% to-transparent"
+            >
+              Agent Marketplace
+            </span>
           </div>
         </motion.div>
 
@@ -308,23 +298,27 @@ export default function AgentShowcase() {
                     transition={{ duration: 0.8, ease: [0.34, 1.56, 0.64, 1] }}
                     className="w-full h-full"
                   >
-                    <motion.button
-                      onClick={() => setActiveIndex(i)}
-                      whileHover={{ scale: 1.12 }}
-                      whileTap={{ scale: 0.95 }}
-                      className={`w-full h-full rounded-full bg-gradient-to-br ${agent.avatarGradient} flex items-center justify-center text-white font-bold text-[15px] cursor-pointer transition-opacity duration-300 ${
-                        isActive ? "opacity-100" : "opacity-50 hover:opacity-80"
-                      }`}
-                      style={
-                        isActive
-                          ? {
-                              boxShadow: `0 0 0 3px rgba(0,0,0,1), 0 0 0 5px ${agent.orbitRingColor}, 0 0 24px ${agent.glowColor}`,
-                            }
-                          : {}
-                      }
-                    >
-                      {agent.avatar}
-                    </motion.button>
+                  <motion.button
+                    onClick={() => setActiveIndex(i)}
+                    whileHover={{ scale: 1.12 }}
+                    whileTap={{ scale: 0.95 }}
+                    className={`w-full h-full rounded-full bg-gradient-to-br ${agent.avatarGradient} flex items-center justify-center text-white font-bold text-[15px] cursor-pointer transition-opacity duration-300 overflow-hidden ${
+                      isActive ? "opacity-100" : "opacity-50 hover:opacity-80"
+                    }`}
+                    style={
+                      isActive
+                        ? {
+                            boxShadow: `0 0 0 3px rgba(0,0,0,1), 0 0 0 5px ${agent.orbitRingColor}, 0 0 24px ${agent.glowColor}`,
+                          }
+                        : {}
+                    }
+                  >
+                    {agent.avatarUrl ? (
+                      <img src={agent.avatarUrl} alt={agent.name} className="w-full h-full object-cover" />
+                    ) : (
+                      agent.avatar
+                    )}
+                  </motion.button>
                   </motion.div>
                 </motion.div>
               );
@@ -340,8 +334,15 @@ export default function AgentShowcase() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -24 }}
                 transition={{ duration: 0.35, ease: [0.25, 0.4, 0.25, 1] }}
-                className="bg-white/[0.03] border border-white/10 rounded-2xl overflow-hidden"
+                className="relative bg-[#0d1525]/95 border border-white/[0.15] rounded-2xl overflow-hidden"
               >
+                <BorderBeam
+                  colorFrom={active.glowColor.replace("0.4)", "1)")}
+                  colorTo="#a855f7"
+                  duration={10}
+                  size={180}
+                  borderWidth={1}
+                />
                 {/* Top gradient accent bar */}
                 <div
                   className={`h-[2px] w-full bg-gradient-to-r ${active.avatarGradient}`}
@@ -352,9 +353,13 @@ export default function AgentShowcase() {
                   <div className="flex items-start justify-between mb-5">
                     <div className="flex items-center gap-4">
                       <div
-                        className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${active.avatarGradient} flex items-center justify-center text-[17px] font-bold text-white flex-shrink-0`}
+                        className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${active.avatarGradient} flex items-center justify-center text-[17px] font-bold text-white flex-shrink-0 overflow-hidden`}
                       >
-                        {active.avatar}
+                        {active.avatarUrl ? (
+                          <img src={active.avatarUrl} alt={active.name} className="w-full h-full object-cover" />
+                        ) : (
+                          active.avatar
+                        )}
                       </div>
                       <div>
                         <h3 className="text-white font-semibold text-[20px] leading-tight">
@@ -410,7 +415,7 @@ export default function AgentShowcase() {
 
                   {/* Stats */}
                   <div className="grid grid-cols-2 gap-3 mb-7">
-                    <div className="bg-white/[0.03] rounded-xl px-4 py-3">
+                    <div className="bg-[#0d1525]/90 rounded-xl px-4 py-3">
                       <span className="text-[11px] text-white/30 block mb-0.5">
                         Rate / Task
                       </span>
@@ -418,7 +423,7 @@ export default function AgentShowcase() {
                         {active.rate}
                       </span>
                     </div>
-                    <div className="bg-white/[0.03] rounded-xl px-4 py-3">
+                    <div className="bg-[#0d1525]/90 rounded-xl px-4 py-3">
                       <span className="text-[11px] text-white/30 block mb-0.5">
                         Jobs Completed
                       </span>

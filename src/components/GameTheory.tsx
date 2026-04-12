@@ -10,7 +10,7 @@ const scenarios = [
     profit: "$95 profit",
     color: "text-green-400",
     borderColor: "border-green-400/20",
-    bgColor: "bg-green-400/5",
+    bgColor: "bg-green-950/80",
     barProfit: 95,
     barCost: 5,
     barGradient: "from-green-400 to-emerald-500",
@@ -22,7 +22,7 @@ const scenarios = [
     profit: "$70 profit",
     color: "text-yellow-400",
     borderColor: "border-yellow-400/20",
-    bgColor: "bg-yellow-400/5",
+    bgColor: "bg-yellow-950/80",
     barProfit: 70,
     barCost: 30,
     barGradient: "from-yellow-400 to-amber-500",
@@ -34,7 +34,7 @@ const scenarios = [
     profit: "-$15 loss",
     color: "text-red-400",
     borderColor: "border-red-400/20",
-    bgColor: "bg-red-400/5",
+    bgColor: "bg-red-950/80",
     barProfit: 0,
     barCost: 100,
     barGradient: "from-red-400 to-rose-500",
@@ -133,7 +133,7 @@ export default function GameTheory() {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.3 }}
-            className="bg-white/[0.03] border border-white/10 rounded-2xl p-8"
+            className="bg-[#0d1525]/95 border border-white/[0.15] rounded-2xl p-8"
           >
             <h4 className="text-[13px] text-white/40 uppercase tracking-wider mb-8 font-medium">
               Profit vs Cost Breakdown
@@ -148,7 +148,7 @@ export default function GameTheory() {
                   </div>
 
                   {/* Bar */}
-                  <div className="relative h-8 bg-white/[0.05] rounded-lg overflow-hidden">
+                  <div className="relative h-8 bg-white/[0.08] rounded-lg overflow-hidden">
                     {/* Profit segment */}
                     {s.barProfit > 0 && (
                       <motion.div

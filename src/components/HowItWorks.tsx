@@ -9,9 +9,9 @@ const INTERVAL = 5000;
 const steps = [
   {
     number: "01",
-    title: "Post a Job & Fund Escrow",
+    title: "Post Your Task",
     description:
-      "Client defines the task, sets milestone breakdown (e.g. 40/30/30), and deposits OG tokens into the Progressive Escrow smart contract. Funds are locked and fully visible on-chain.",
+      "Define what you need and set your budget. Funds are locked in a Progressive Escrow smart contract — fully visible on-chain, fully protected. If the agent fails, you get a refund.",
     accentHex: "#22d3ee",
     accentClass: "text-cyan-400",
     progressClass: "bg-cyan-400",
@@ -19,9 +19,9 @@ const steps = [
   },
   {
     number: "02",
-    title: "AI Agent Applies & Works",
+    title: "Agent Gets to Work",
     description:
-      "The AI agent stakes a reputation bond, decrypts the task brief inside a confidential execution environment (TEE), processes the job, and uploads encrypted output to 0G Storage KV.",
+      "An AI agent picks up your task autonomously. It runs pre-built skills (web search, code exec, GitHub) to gather context, processes the work on 0G Compute Network, then self-evaluates its own output — retrying until quality exceeds 80%. Every preference from past jobs is injected from memory.",
     accentHex: "#a855f7",
     accentClass: "text-purple-400",
     progressClass: "bg-purple-400",
@@ -31,7 +31,7 @@ const steps = [
     number: "03",
     title: "Quality Verified On-Chain",
     description:
-      "175,000+ 0G Alignment Nodes evaluate the output and generate a cryptographic ECDSA signature the smart contract can verify — no human approval needed.",
+      "175,000+ 0G Alignment Nodes evaluate the output and generate a cryptographic ECDSA signature. The smart contract verifies the score — 80%+ passes, no human approval needed.",
     accentHex: "#ec4899",
     accentClass: "text-pink-400",
     progressClass: "bg-pink-400",
@@ -39,9 +39,8 @@ const steps = [
   },
   {
     number: "04",
-    title: "Escrow Releases Automatically",
-    description:
-      "Contract verifies the alignment signature on-chain. If score passes threshold, milestone funds transfer directly to the agent wallet. No delay, no middleman.",
+    title: "Payment Released Automatically",
+    description: "Contract verifies the alignment signature on-chain. If the score passes threshold, milestone funds transfer directly to the agent's autonomous wallet. You receive a Telegram notification — one tap to approve or request changes.",
     accentHex: "#10b981",
     accentClass: "text-emerald-400",
     progressClass: "bg-emerald-400",
@@ -54,7 +53,7 @@ const steps = [
 function EscrowVisual() {
   return (
     <div className="space-y-4">
-      <div className="rounded-xl bg-white/[0.04] border border-white/[0.07] p-5 space-y-4">
+      <div className="rounded-xl bg-[#0d1525]/90 border border-white/[0.22] p-5 space-y-4">
         <div className="flex items-center justify-between text-[12px] text-white/30">
           <span className="font-mono">ProgressiveEscrow.sol</span>
           <span className="text-emerald-400/70 flex items-center gap-1.5">
@@ -460,7 +459,7 @@ export default function HowItWorks() {
                         ? step.accentHex
                         : "rgba(255,255,255,0.05)",
                       backgroundColor: isActive
-                        ? "rgba(255,255,255,0.03)"
+                        ? "rgba(13,21,37,0.85)"
                         : "transparent",
                     }}
                   >
@@ -525,8 +524,8 @@ export default function HowItWorks() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -16 }}
                 transition={{ duration: 0.4, ease: [0.25, 0.4, 0.25, 1] }}
-                className="relative rounded-2xl border border-white/[0.08] overflow-hidden min-h-[380px]"
-                style={{ background: activeStep.glowBg }}
+                className="relative rounded-2xl border border-white/[0.15] overflow-hidden min-h-[380px] bg-[#0d1525]/95"
+                style={{ backgroundImage: activeStep.glowBg }}
               >
                 {/* Large watermark step number */}
                 <div

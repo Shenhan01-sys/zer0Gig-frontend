@@ -12,14 +12,24 @@ interface JobCardProps {
   index: number;
 }
 
+function decodeJobTitle(cid: string | undefined): string | null {
+  if (!cid?.startsWith("txt:")) return null;
+  try {
+    const json = JSON.parse(decodeURIComponent(escape(atob(cid.slice(4)))));
+    return json.title || null;
+  } catch {
+    return null;
+  }
+}
+
 export default function JobCard({ jobId, index }: JobCardProps) {
   const { data: jobRaw, isLoading, isError } = useJobDetails(jobId);
   const agentIdNum = (jobRaw as any)?.agentId ? Number((jobRaw as any).agentId) : 0;
   const { profile } = useAgentProfile(agentIdNum > 0 ? agentIdNum : undefined);
   const displayName = profile?.display_name || "";
-  
+
   // DEMO MODE: Fall back to mock data when real job doesn't exist on-chain
-  const mockJob = MOCK_JOBS.find(j => j.jobId === jobId.toString());
+  const mockJob = MOCK_JOBS.find(j => j.jobId === jobId);
   const job = (jobRaw as unknown as JobData) || (mockJob ? {
     jobId: BigInt(mockJob.jobId),
     client: mockJob.client,
@@ -32,6 +42,10 @@ export default function JobCard({ jobId, index }: JobCardProps) {
     milestoneCount: BigInt(mockJob.milestoneCount),
     status: mockJob.status,
   } as unknown as JobData : undefined);
+
+  // Decode title from jobDataCID (format: "txt:<base64(JSON{title,description})>")
+  const decodedTitle = decodeJobTitle((jobRaw as any)?.jobDataCID);
+  const displayTitle = decodedTitle || mockJob?.title || `Job #${jobId}`;
 
   if (isLoading) {
     return (
@@ -71,7 +85,7 @@ export default function JobCard({ jobId, index }: JobCardProps) {
 
         {/* Job ID + agent */}
         <div className="flex-1 min-w-0">
-          <p className="text-white text-[14px] font-medium">Job #{job.jobId.toString()}</p>
+          <p className="text-white text-[14px] font-medium">{displayTitle}</p>
           <p className="text-white/40 text-[12px]">
             {displayName || (job.agentId > 0n ? `Agent #${job.agentId.toString()}` : "Unassigned")}
           </p>
@@ -79,7 +93,7 @@ export default function JobCard({ jobId, index }: JobCardProps) {
 
         {/* Budget */}
         <div className="text-right flex-shrink-0">
-          <p className="text-white text-[13px]">{formatOG(job.totalBudgetWei)} OG</p>
+          <p className="text-white text-[13px]">{formatOG(job.totalBudgetWei)}</p>
           <p className="text-white/40 text-[11px]">{formatOG(job.releasedWei)} released</p>
         </div>
 

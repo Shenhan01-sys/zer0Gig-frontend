@@ -53,6 +53,7 @@ export function useAgentProfiles(agentIds: number[]) {
 }
 
 // ── Upsert profile (called after agent registration) ─────────────────────────
+// Uses the /api/agent-profile route (service role key) to bypass RLS.
 
 export function useUpsertAgentProfile() {
   const [isPending, setIsPending] = useState(false);
@@ -66,23 +67,42 @@ export function useUpsertAgentProfile() {
       avatar_url?:   string;
       bio?:          string;
       tags?:         string[];
-    }
+    },
+    prebuiltSkills?:      string[],
+    skillConfigs?:        Record<string, Record<string, string>>,
+    customTools?:         Array<Record<string, unknown>>,
+    telegramChatId?:      string | null,
   ) => {
     setIsPending(true);
     setError(null);
 
-    const { error: err } = await supabase
-      .from("agent_profiles")
-      .upsert({
-        agent_id:      agentId,
-        owner_address: ownerAddress.toLowerCase(),
-        ...fields,
-        updated_at:    new Date().toISOString(),
-      }, { onConflict: "agent_id" });
-
-    if (err) setError(err.message);
-    setIsPending(false);
-    return !err;
+    try {
+      const res = await fetch("/api/agent-profile", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({
+          agent_id:       agentId,
+          owner_address:  ownerAddress,
+          ...fields,
+          prebuilt_skills: prebuiltSkills,
+          skill_configs:   skillConfigs,
+          custom_tools:    customTools,
+          telegram_chat_id: telegramChatId,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Profile upsert failed");
+        setIsPending(false);
+        return false;
+      }
+      setIsPending(false);
+      return true;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Profile upsert failed");
+      setIsPending(false);
+      return false;
+    }
   }, []);
 
   return { upsert, isPending, error };

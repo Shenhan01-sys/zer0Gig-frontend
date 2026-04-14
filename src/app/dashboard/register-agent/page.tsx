@@ -55,7 +55,7 @@ const LLM_PROVIDERS: { value: LLMProvider; label: string; color: string; default
   { value: "0g_compute",  label: "0G Compute",  color: "#38bdf8", defaultModel: "qwen-2.5-7b",               needsKey: false, image: "/providers/0G-removebg-preview.png"          },
   { value: "groq",        label: "Groq",        color: "#f59e0b", defaultModel: "llama-3.3-70b-versatile",   needsKey: true,  image: "/providers/groq-removebg-preview.png"        },
   { value: "openai",      label: "OpenAI",      color: "#10b981", defaultModel: "gpt-4o-mini",               needsKey: true,  image: "/providers/openAI-removebg-preview.png"      },
-  { value: "anthropic",   label: "Anthropic",   color: "#a855f7", defaultModel: "claude-haiku-4-5-20251001", needsKey: true,  image: "/providers/claudeImage-removebg-preview.png" },
+  { value: "anthropic",   label: "Anthropic",   color: "#a855f7", defaultModel: "claude-sonnet-4-6",         needsKey: true,  image: "/providers/claudeImage-removebg-preview.png" },
   { value: "openrouter",  label: "OpenRouter",  color: "#6366f1", defaultModel: "openai/gpt-4o",             needsKey: true,  image: "/providers/openrouter-removebg-preview.png"  },
   { value: "alibaba",     label: "Alibaba",     color: "#f97316", defaultModel: "qwen-max",                  needsKey: true,  image: "/providers/alibaba-removebg-preview.png"     },
   { value: "google",      label: "Google",      color: "#22c55e", defaultModel: "gemini-1.5-pro-latest",     needsKey: true,  image: "/providers/google-removebg-preview.png"      },
@@ -123,8 +123,11 @@ function buildCapabilityManifest(
 
   // Encode as base64 — platform dispatcher decodes this prefix format
   // "pm:<base64>" = platform managed, "sh:<base64>" = self-hosted
+  // Use encodeURIComponent to safely handle any Unicode characters (btoa only supports Latin1)
+  const jsonStr = JSON.stringify(manifest);
+  const base64 = btoa(unescape(encodeURIComponent(jsonStr)));
   const prefix = runtimeType === "platform_managed" ? "pm" : "sh";
-  return `${prefix}:${btoa(JSON.stringify(manifest))}`;
+  return `${prefix}:${base64}`;
 }
 
 // ── Main page ─────────────────────────────────────────────────────────────────
@@ -271,8 +274,9 @@ export default function RegisterAgentPage() {
       walletAddr,
       profileData,
       runtimeType,
-      prebuiltSkills:      platformConfig.prebuiltSkills,
+      prebuiltSkills:       platformConfig.prebuiltSkills,
       prebuiltSkillConfigs: platformConfig.prebuiltSkillConfigs,
+      customTools:          platformConfig.tools,
     };
   };
 
@@ -296,35 +300,27 @@ export default function RegisterAgentPage() {
     setTimeout(() => {
       refetchTotalAgents().then(async ({ data }) => {
         const agentId = data ? Number(data) : 0;
-        upsertProfile(agentId, owner, profileFields);
 
-        // Sync pre-built skills into agent_skills table
-        if (agentId > 0 && skillIds.length > 0) {
-          // Fetch latest Telegram chatId from telegram_links (in case bot was linked after submit)
-          const { data: tgLink } = await supabase
-            .from("telegram_links")
-            .select("chat_id")
-            .order("linked_at", { ascending: false })
-            .limit(1)
-            .maybeSingle();
+        // Fetch latest Telegram chatId (in case bot was linked after submit)
+        const { data: tgLink } = await supabase
+          .from("telegram_links")
+          .select("chat_id")
+          .order("linked_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        const telegramChatId = tgLink?.chat_id ?? skillConfigs["telegram_notify"]?.chatId ?? null;
 
-          const telegramChatId = tgLink?.chat_id ?? skillConfigs["telegram_notify"]?.chatId ?? null;
-
-          const rows = skillIds.map(skillId => {
-            const baseConfig = skillConfigs[skillId] || {};
-            // For telegram_notify skill, inject chatId from telegram_links
-            const config = skillId === "telegram_notify" && telegramChatId
-              ? { ...baseConfig, chatId: telegramChatId }
-              : baseConfig;
-            return {
-              agent_id:  agentId,
-              skill_id:  skillId,
-              config,
-              is_active: true,
-            };
-          });
-          await supabase.from("agent_skills").upsert(rows, { onConflict: "agent_id,skill_id" });
-        }
+        // Single API call — uses service role to bypass RLS.
+        // Handles: profile upsert + agent_skills + custom tools in metadata.
+        await upsertProfile(
+          agentId,
+          owner,
+          profileFields,
+          skillIds,
+          skillConfigs,
+          pending?.customTools || [],
+          telegramChatId,
+        );
 
         // Sync agent stats (populates agent_proposal_stats from capability manifest)
         try {
@@ -402,12 +398,12 @@ export default function RegisterAgentPage() {
 
   return (
     <RBACGuard>
-      <div className="max-w-7xl">
+      <motion.div className="max-w-7xl" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: "easeOut" }}>
         <Link href="/dashboard" className="flex items-center gap-2 text-white/40 hover:text-white/70 text-[13px] mb-6 transition-colors">
           ← Back to Dashboard
         </Link>
 
-        <div className="mb-8">
+        <motion.div className="mb-8" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }}>
           <h2
             className="text-2xl font-medium mb-2"
             style={{
@@ -421,9 +417,9 @@ export default function RegisterAgentPage() {
           <p className="text-white/40 text-[14px]">
             Mint an on-chain agent identity with skills, rate, and capability manifest.
           </p>
-        </div>
+        </motion.div>
 
-        <div className="flex flex-col lg:flex-row gap-12 items-start">
+        <motion.div className="flex flex-col lg:flex-row gap-12 items-start" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.2 }}>
         {/* ── Left: Form ───────────────────────────────────────────────────── */}
         <div className="flex-1 min-w-0 max-w-xl space-y-5">
 
@@ -901,8 +897,8 @@ export default function RegisterAgentPage() {
           />
         </div>
 
-        </div>{/* end flex row */}
-      </div>
+        </motion.div>
+      </motion.div>
 
       {/* Custom Tool Modal */}
       {showCustomToolModal && (

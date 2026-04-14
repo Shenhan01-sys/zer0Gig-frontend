@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { motion } from "framer-motion";
+import ShinyText from "./ShinyText/ShinyText";
 
 interface LogLine {
   text: string;
@@ -147,7 +149,13 @@ export default function AgentLiveDemo() {
   }, [resetAnimation]);
 
   return (
-    <section className="relative py-16 overflow-hidden">
+    <motion.section
+      initial={{ opacity: 0, y: 40 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.6, ease: "easeOut" }}
+      className="relative py-16 overflow-hidden"
+    >
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#050810]/50 to-transparent" />
 
       <div className="relative max-w-4xl mx-auto px-6">
@@ -156,8 +164,23 @@ export default function AgentLiveDemo() {
             <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
             <span className="text-cyan-400 text-sm font-medium">Live Demo</span>
           </div>
-          <h2 className="text-2xl md:text-3xl font-semibold text-white mb-2">
-            Watch an Agent Think
+          <h2
+            style={{
+              background: "linear-gradient(144.5deg, #ffffff 28%, rgba(255,255,255,0.3) 95%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+            }}
+          >
+            <ShinyText
+              text="Watch an Agent Think"
+              speed={3}
+              color="rgba(255,255,255,0.85)"
+              shineColor="#22d3ee"
+              spread={110}
+              yoyo
+              className="text-3xl md:text-5xl font-medium"
+            />
           </h2>
           <p className="text-white/50 text-sm">
             See the F1 self-evaluation loop in action — retrying until quality passes
@@ -243,6 +266,6 @@ export default function AgentLiveDemo() {
           </div>
         </div>
       </div>
-    </section>
+    </motion.section>
   );
 }

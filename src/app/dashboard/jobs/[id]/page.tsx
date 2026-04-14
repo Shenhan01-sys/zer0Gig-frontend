@@ -31,6 +31,9 @@ import SystemMessageLog from "@/components/jobs/SystemMessageLog";
 import MilestoneBuilder from "@/components/jobs/MilestoneBuilder";
 import FuturisticSelect, { SelectOption } from "@/components/ui/FuturisticSelect";
 import { AgentStatsCard } from "@/components/subscriptions/AgentStatsCard";
+import AgentActivityByWallet from "@/components/jobs/AgentActivityByWallet";
+import JobChat from "@/components/jobs/JobChat";
+import MilestoneSubmitPanel from "@/components/jobs/MilestoneSubmitPanel";
 
 // ─── Status helpers ───────────────────────────────────────────────────────────
 // Job status enum: 0=OPEN, 1=PENDING_MILESTONES, 2=IN_PROGRESS, 3=COMPLETED, 4=CANCELLED, 5=PARTIALLY_DONE
@@ -470,6 +473,15 @@ function DefineMilestonesPanel({ jobId, onDefined }: { jobId: number; onDefined:
       </p>
       <MilestoneBuilder
         onSubmit={(percentages, criteria) => {
+          const total = percentages.reduce((sum, p) => sum + p, 0);
+          if (total !== 100) {
+            alert(`Percentages must sum to 100. Current total: ${total}`);
+            return;
+          }
+          if (!percentages.every(p => Number.isInteger(p))) {
+            alert("Percentages must be whole numbers (integers)");
+            return;
+          }
           const hashes = criteria.map((c) => keccak256(toBytes(c)));
           defineMilestones({ jobId: BigInt(jobId), percentages, criteriaHashes: hashes });
         }}
@@ -484,11 +496,19 @@ function MilestoneTimeline({
   jobId,
   milestoneCount,
   totalBudgetWei,
+  agentWallet,
+  currentAddress,
+  onSubmitMilestone,
 }: {
   jobId: number;
   milestoneCount: number;
   totalBudgetWei: bigint;
+  agentWallet?: Address;
+  currentAddress?: Address;
+  onSubmitMilestone?: (milestoneIndex: number) => void;
 }) {
+  const isAgent = currentAddress?.toLowerCase() === agentWallet?.toLowerCase();
+
   const contracts = Array.from({ length: milestoneCount }, (_, i) => ({
     address: CONTRACT_CONFIG.ProgressiveEscrow.address,
     abi: CONTRACT_CONFIG.ProgressiveEscrow.abi,
@@ -541,8 +561,8 @@ function MilestoneTimeline({
     <div className="space-y-6">
       {milestones.map((milestone, index) => {
         if (!milestone || !milestone.result) return null;
-        const [percentage, amountWei, , outputCID, alignmentScore, status, retryCount] =
-          milestone.result as unknown as [bigint, bigint, string, string, bigint, number, bigint];
+        const result = milestone.result as { percentage: bigint; amountWei: bigint; status: number; outputCID: string; alignmentScore: bigint; retryCount: bigint; [key: string]: unknown };
+        const { percentage, amountWei, status, outputCID, alignmentScore, retryCount } = result;
         const statusDotStyle = getStatusDotStyles(status);
         const statusBadge = getMilestoneBadge(status);
 
@@ -591,6 +611,14 @@ function MilestoneTimeline({
               {retryCount > 0n && (
                 <p className="text-amber-400/70 text-[12px] mt-1">Retry {retryCount.toString()}/5</p>
               )}
+              {(status === 0 || status === 4) && isAgent && onSubmitMilestone && (
+                <button
+                  onClick={() => onSubmitMilestone(index)}
+                  className="mt-3 px-3 py-1.5 bg-white text-black text-[12px] font-medium rounded-full hover:bg-white/90 transition-colors"
+                >
+                  Submit Work
+                </button>
+              )}
             </div>
           </div>
         );
@@ -606,6 +634,8 @@ function JobDetailInner({ jobId }: { jobId: number }) {
   const router = useRouter();
   const { address } = useAccount();
   const { role } = useUserRole(address as Address | undefined);
+
+  const [submittingMilestoneIndex, setSubmittingMilestoneIndex] = useState<number | null>(null);
 
   const { data: jobRaw, isLoading, isError, refetch } = useJobDetails(jobId);
   const job = jobRaw as unknown as JobData | undefined;
@@ -846,12 +876,15 @@ function JobDetailInner({ jobId }: { jobId: number }) {
       {/* ── IN_PROGRESS / COMPLETED / PARTIALLY_DONE: milestone timeline ── */}
       {job.status >= JOB_STATUS.IN_PROGRESS && job.status !== JOB_STATUS.CANCELLED && (
         <>
-          {/* Combined agent activity + chat stream */}
-          {job.agentId && job.agentId > 0n && (
-            <>
-              {/* Combined agent activity + chat stream */}
-            </>
-          )}
+          {/* Agent Activity + Chat side by side */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Agent Activity (live from Supabase) */}
+            {job.agentWallet && (
+              <AgentActivityByWallet agentWallet={job.agentWallet} maxEntries={15} />
+            )}
+            {/* Live Chat with Agent */}
+            <JobChat jobId={jobId} />
+          </div>
 
           {/* Milestone Timeline */}
           <div className="rounded-2xl border border-white/10 bg-[#0d1525]/90 p-6 mb-6">
@@ -863,9 +896,26 @@ function JobDetailInner({ jobId }: { jobId: number }) {
               jobId={jobId}
               milestoneCount={Number(job.milestoneCount)}
               totalBudgetWei={job.totalBudgetWei}
+              agentWallet={job.agentWallet as Address | undefined}
+              currentAddress={address as Address | undefined}
+              onSubmitMilestone={(index) => setSubmittingMilestoneIndex(index)}
             />
           ) : (
             <p className="text-white/30 text-[13px] text-center py-6">No milestones defined yet.</p>
+          )}
+
+          {/* Milestone Submit Panel (for agents) */}
+          {submittingMilestoneIndex !== null && (
+            <MilestoneSubmitPanel
+              jobId={jobId}
+              agentWallet={job.agentWallet as Address | undefined}
+              milestoneIndex={submittingMilestoneIndex}
+              milestoneDescription={`Milestone ${submittingMilestoneIndex + 1}`}
+              onSubmitted={() => {
+                setSubmittingMilestoneIndex(null);
+                refetch();
+              }}
+            />
           )}
         </div>
         </>

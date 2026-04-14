@@ -34,7 +34,7 @@ export function AgentCard({ agent, profile, index, isMyAgent: isMyAgentProp }: A
 
   const gradient   = AVATAR_GRADIENTS[agent.agentId % AVATAR_GRADIENTS.length];
   const runtime    = getRuntimeBadge(agent.capabilityCID);
-  const displayName = profile?.display_name ?? `Agent #${agent.agentId}`;
+  const displayName = agent.name; // already resolved from Supabase display_name in useAllAgents
   const bio         = profile?.bio;
   const avatarUrl   = profile?.avatar_url;
   const featured    = profile?.featured ?? false;
@@ -56,7 +56,7 @@ export function AgentCard({ agent, profile, index, isMyAgent: isMyAgentProp }: A
       )}
 
       {/* Header: avatar + name + status */}
-      <div className="flex items-start gap-3">
+      <div className={`flex items-start gap-3 ${featured ? "pr-16" : ""}`}>
         {/* Avatar */}
         <div className="shrink-0">
           {avatarUrl ? (
@@ -91,10 +91,16 @@ export function AgentCard({ agent, profile, index, isMyAgent: isMyAgentProp }: A
           </p>
         </div>
 
-        {/* Active badge */}
-        <span className={`shrink-0 px-2.5 py-1 rounded-full text-[11px] ${agent.isActive ? "bg-emerald-500/10 text-emerald-400" : "bg-red-500/10 text-red-400"}`}>
-          {agent.isActive ? "Active" : "Inactive"}
-        </span>
+        {/* Active badge - moves below name when featured to avoid overlap */}
+        {featured ? (
+          <span className="shrink-0 px-2.5 py-1 rounded-full text-[11px] bg-emerald-500/10 text-emerald-400 mt-6">
+            Active
+          </span>
+        ) : (
+          <span className={`shrink-0 px-2.5 py-1 rounded-full text-[11px] ${agent.isActive ? "bg-emerald-500/10 text-emerald-400" : "bg-red-500/10 text-red-400"}`}>
+            {agent.isActive ? "Active" : "Inactive"}
+          </span>
+        )}
       </div>
 
       {/* Bio */}

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useSubscription } from "@/hooks/useSubscriptionEscrow";
+import { useAgentProfile } from "@/hooks/useAgentProfile";
 import { formatOG } from "@/lib/utils";
 import { MOCK_SUBSCRIPTIONS } from "@/lib/mockData";
 
@@ -39,22 +40,31 @@ function SubscriptionStatusBadge({ status }: { status: number }) {
 export default function SubscriptionCard({ subscriptionId, index }: SubscriptionCardProps) {
   const { data: sub, isLoading, isError } = useSubscription(subscriptionId);
 
-  // DEMO MODE: Fall back to mock data when real subscription doesn't exist on-chain
+  // Get agent name for display (call before any early returns to keep hook order stable)
+  const agentIdNum = sub && (sub as any)?.agentId ? Number((sub as any).agentId) : 0;
+  const { profile: agentProfile } = useAgentProfile(agentIdNum > 0 ? agentIdNum : undefined);
+
+  // DEMO MODE: Fall back to mock data when real subscription doesn't exist on-chain.
+  // Contract returns {} for non-existent IDs (truthy but empty), so also check for valid fields.
+  const hasRealSub = sub && (sub as any)?.subscriptionId !== undefined;
   const mockSub = MOCK_SUBSCRIPTIONS.find(s => s.subscriptionId === subscriptionId);
-  const displayData = sub || (mockSub ? [
+  
+  // Real contract returns an object with named fields; mock is an array
+  const isMockFormat = mockSub && !("taskDescription" in (mockSub as any));
+  const displayData = (!hasRealSub && mockSub) ? (isMockFormat ? [
     BigInt(mockSub.subscriptionId),   // 0: subscriptionId
     BigInt(0),                        // 1: (unused)
-    BigInt(mockSub.agentId),          // 2: agentId
+    BigInt(mockSub.agentId),           // 2: agentId
     mockSub.client,                   // 3: agentWallet
     mockSub.taskDescription,          // 4: taskDescription
     mockSub.intervalSeconds,          // 5: intervalSeconds
     mockSub.intervalMode,             // 6: intervalMode
     mockSub.checkInRate,              // 7: checkInRate
-    mockSub.alertRate,                // 8: alertRate
-    mockSub.balance,                  // 9: balance
+    mockSub.alertRate,                 // 8: alertRate
+    mockSub.balance,                   // 9: balance
     mockSub.totalDrained,             // 10: totalDrained
     mockSub.status,                   // 11: status
-    mockSub.lastCheckIn,              // 12: lastCheckIn
+    mockSub.lastCheckIn,             // 12: lastCheckIn
     BigInt(0),                        // 13: (unused)
     mockSub.gracePeriodEnds,          // 14: gracePeriodEnds
     mockSub.gracePeriodSeconds,       // 15: gracePeriodSeconds
@@ -63,7 +73,7 @@ export default function SubscriptionCard({ subscriptionId, index }: Subscription
     mockSub.x402VerificationMode,     // 18: x402VerificationMode
     BigInt(0),                        // 19: (unused)
     mockSub.webhookUrl,               // 20: webhookUrl
-  ] as unknown[] : undefined);
+  ] : mockSub) : (hasRealSub ? sub : undefined) as unknown;
 
   if (isLoading) {
     return (
@@ -82,13 +92,31 @@ export default function SubscriptionCard({ subscriptionId, index }: Subscription
     return null;
   }
 
-  // Destructure tuple by index (matching contract getSubscription return)
-  const subData = displayData as unknown[];
-  const taskDescription = (subData[4] as string) || "Unknown Task";
-  const intervalMode = Number(subData[6] || 0);
-  const balance = (subData[9] as bigint) || BigInt(0);
-  const status = Number(subData[11] || 0);
-  const agentId = (subData[2] as bigint) || BigInt(0);
+  const isMockArrayData = displayData && Array.isArray(displayData);
+  
+  let taskDescription: string;
+  let intervalMode: number;
+  let balance: bigint;
+  let status: number;
+  let agentId: bigint;
+
+  if (isMockArrayData) {
+    const subData = displayData as unknown[];
+    taskDescription = (subData[4] as string) || "Unknown Task";
+    intervalMode = Number(subData[6] || 0);
+    balance = (subData[9] as bigint) || BigInt(0);
+    status = Number(subData[11] || 0);
+    agentId = (subData[2] as bigint) || BigInt(0);
+  } else {
+    const subObj = displayData as any;
+    taskDescription = subObj?.taskDescription || "Unknown Task";
+    intervalMode = Number(subObj?.intervalMode ?? 0);
+    balance = subObj?.balance || BigInt(0);
+    status = Number(subObj?.status ?? 0);
+    agentId = subObj?.agentId || BigInt(0);
+  }
+
+  const agentDisplayName = agentProfile?.display_name || (agentIdNum > 0 ? `Agent #${agentIdNum}` : "Unassigned");
 
   return (
     <Link href={`/dashboard/subscriptions/${subscriptionId}`}>
@@ -109,7 +137,7 @@ export default function SubscriptionCard({ subscriptionId, index }: Subscription
               : taskDescription}
           </p>
           <p className="text-white/40 text-[12px]">
-            Agent #{agentId.toString()} · {intervalModeLabel(intervalMode)}
+            {agentDisplayName} · {intervalModeLabel(intervalMode)}
           </p>
         </div>
 

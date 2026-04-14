@@ -1,7 +1,7 @@
 "use client";
 
 import { useReadContract, useWriteContract, useWaitForTransactionReceipt, useAccount } from "wagmi";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { CONTRACT_CONFIG } from "@/lib/contracts";
 import { Address } from "viem";
 
@@ -222,6 +222,58 @@ export function useDefineMilestones() {
   };
 }
 
+export function useReleaseMilestone() {
+  const { writeContractAsync, isPending: isWritePending } = useWriteContract();
+  const [isPending, setIsPending] = useState(false);
+  const [isConfirming, setIsConfirming] = useState(false);
+  const [isConfirmed, setIsConfirmed] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  const releaseMilestone = async (params: {
+    jobId: bigint;
+    milestoneIndex: number;
+    outputCID: string;
+    alignmentScore: bigint;
+    signature: `0x${string}`;
+  }) => {
+    setIsPending(true);
+    setIsConfirming(false);
+    setIsConfirmed(false);
+    setError(null);
+
+    try {
+      const hash = await writeContractAsync({
+        address: CONTRACT_CONFIG.ProgressiveEscrow.address,
+        abi: CONTRACT_CONFIG.ProgressiveEscrow.abi,
+        functionName: "releaseMilestone",
+        args: [
+          params.jobId,
+          BigInt(params.milestoneIndex),
+          params.outputCID,
+          params.alignmentScore,
+          params.signature,
+        ],
+      });
+      setIsConfirming(true);
+      setIsPending(false);
+      return hash;
+    } catch (err) {
+      setError(err as Error);
+      setIsPending(false);
+      setIsConfirming(false);
+      throw err;
+    }
+  };
+
+  return {
+    releaseMilestone,
+    isPending: isPending || isWritePending,
+    isConfirming,
+    isConfirmed,
+    error,
+  };
+}
+
 export function useOpenJobs() {
   const { data: openJobIds, isLoading, refetch } = useReadContract({
     address: CONTRACT_CONFIG.ProgressiveEscrow.address,
@@ -264,27 +316,47 @@ export function useClientJobs(address?: Address | null) {
   };
 }
 
+export function useProgressiveEscrow() {
+  const { writeContractAsync } = useWriteContract();
+
+  const createJob = async (params: {
+    client: Address;
+    agentId: bigint;
+    budget: bigint;
+    milestones: Array<{ description: string; percentage: number; amount: bigint }>;
+  }) => {
+    console.log("Creating job:", params);
+  };
+
+  const submitMilestone = async (params: {
+    jobId: bigint;
+    milestoneIndex: number;
+    output: string;
+    alignmentSignature: string;
+  }) => {
+    console.log("Submitting milestone:", params);
+  };
+
+  const releaseMilestone = async (params: {
+    jobId: bigint;
+    milestoneIndex: number;
+  }) => {
+    console.log("Releasing milestone:", params);
+  };
+
+  return { createJob, submitMilestone, releaseMilestone };
+}
+
 export function usePostJob() {
-  const { writeContractAsync, isPending: isWritePending } = useWriteContract();
-  const [isPending, setIsPending] = useState(false);
+  const { writeContractAsync, isPending } = useWriteContract();
   const [isConfirming, setIsConfirming] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [txHash, setTxHash] = useState<string | null>(null);
   const [error, setError] = useState<Error | null>(null);
 
-  const { isSuccess } = useWaitForTransactionReceipt({ hash: txHash as `0x${string}` | undefined });
-
-  useEffect(() => {
-    if (isSuccess && txHash) {
-      setIsConfirmed(true);
-      setIsPending(false);
-    }
-  }, [isSuccess, txHash]);
-
   const postJob = async (cid: string, skillBytes32: `0x${string}`) => {
     setIsConfirming(false);
     setIsConfirmed(false);
-    setIsPending(true);
     setError(null);
 
     try {
@@ -299,10 +371,9 @@ export function usePostJob() {
       return hash;
     } catch (err) {
       setError(err as Error);
-      setIsPending(false);
       throw err;
     }
   };
 
-  return { postJob, isPending: isPending || isWritePending, isConfirming, isConfirmed, txHash, error };
+  return { postJob, isPending, isConfirming, isConfirmed, txHash, error };
 }

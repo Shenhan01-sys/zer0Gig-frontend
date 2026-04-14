@@ -33,89 +33,36 @@ export function debounce<T extends (...args: any[]) => any>(
 
 export function parseContractError(error: any): string {
   if (!error) return "Unknown error";
-  if (typeof error === "string") return error;
-  
-  if (error.shortMessage) return error.shortMessage;
-  if (error.reason) return error.reason;
-  
-  if (error.message) {
+
+  // User cancelled / rejected in wallet
+  if (
+    error?.code === 4001 ||
+    error?.code === "ACTION_REJECTED" ||
+    error?.code === "REJECTED" ||
+    error?.message?.includes("rejected") ||
+    error?.message?.includes("denied") ||
+    error?.message?.includes("cancelled") ||
+    error?.shortMessage?.includes("rejected") ||
+    error?.shortMessage?.includes("denied") ||
+    error?.shortMessage?.includes("cancelled") ||
+    (typeof error === "string" && error.toLowerCase().includes("reject"))
+  ) {
+    return "Transaction was cancelled. Please try again.";
+  }
+
+  // Contract revert errors
+  if (error?.reason) return error.reason;
+  if (error?.message) {
+    // Strip leading "execution reverted: " prefix if present
     const msg = error.message;
-    if (msg.includes("execution reverted")) {
-      if (error.data && typeof error.data === "string" && error.data.startsWith("0x")) {
-        return decodeContractError(error.data) || "Execution reverted";
-      }
-      if (error.error?.data && typeof error.error.data === "string") {
-        return decodeContractError(error.error.data) || "Execution reverted";
-      }
-      return "Execution reverted";
-    }
-    if (msg.startsWith("0x")) {
-      return decodeContractError(msg) || "Transaction failed";
+    if (msg.includes("execution reverted:")) {
+      return msg.replace(/^execution reverted:\s*/i, "").trim();
     }
     return msg;
   }
-  
-  if (error.error) {
-    return parseContractError(error.error);
-  }
-  
-  if (error.data && typeof error.data === "string" && error.data.startsWith("0x")) {
-    return decodeContractError(error.data) || "Transaction failed";
-  }
-  
-  return "Transaction failed";
-}
+  if (typeof error === "string") return error;
 
-function decodeContractError(hexData: string): string | null {
-  try {
-    if (hexData.length < 10) return null;
-    const selector = hexData.slice(0, 10);
-    const KNOWN_ERRORS: Record<string, string> = {
-      "0x08c379a0": "Error(string)",
-      "0x4e487b71": "Panic(uint256)",
-    };
-    if (KNOWN_ERRORS[selector]) {
-      if (selector === "0x08c379a0") {
-        const data = hexData.slice(10);
-        const offset = parseInt(data.slice(0, 64), 16);
-        const length = parseInt(data.slice(offset * 2, offset * 2 + 64), 16);
-        const message = hexData.slice((offset * 2) + 64, (offset * 2) + 64 + (length * 2));
-        const decoded = Buffer.from(message, "hex").toString("utf8");
-        return decoded;
-      }
-      if (selector === "0x4e487b71") {
-        const panicCode = parseInt(hexData.slice(10, 74), 16);
-        const PANIC_CODES: Record<number, string> = {
-          0x00: "Generic compiler panic",
-          0x01: "Assert failed",
-          0x11: "Arithmetic overflow",
-          0x12: "Division by zero",
-          0x21: "Invalid enum value",
-          0x22: "Storage access out of bounds",
-          0x31: "Empty array pop",
-          0x32: "Array index out of bounds",
-          0x41: "Memory allocation failed",
-          0x51: "Invalid internal function call",
-        };
-        return PANIC_CODES[panicCode] || `Panic(${panicCode})`;
-      }
-    }
-    const customErrors: Record<string, string> = {
-      "0x1c3e7a2e": "AgentAlreadyRegistered",
-      "0xf4e9a3c5": "AgentNotFound",
-      "0x7a2b1c4d": "Unauthorized",
-      "0x3c5d8e1f": "InvalidSkill",
-      "0x8e2a4f7b": "ProfileNotFound",
-      "0x9c1b3d5e": "UserNotRegistered",
-      "0x2e8f4a1c": "RateTooLow",
-    };
-    if (customErrors[selector]) {
-      return customErrors[selector];
-    }
-    return null;
-  } catch {
-    return null;
-  }
+  return "Transaction failed";
 }
 
 export function formatOG(amount: string | number | bigint): string {

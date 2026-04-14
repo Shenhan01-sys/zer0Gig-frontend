@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { ethers } from "ethers";
 import { CONTRACT_ADDRESSES } from "@/lib/contracts";
+import { supabase } from "@/lib/supabase";
 
 const AGENT_REGISTRY_ABI = [
   "function totalAgents() view returns (uint256)",
@@ -25,11 +26,25 @@ interface AgentProfile {
   defaultRate: string;
   createdAt: number;
   isActive: boolean;
+  displayName: string | null;
+  tags: string[] | null;
+}
+
+function decodeCapabilitySkills(capabilityCID: string): string[] {
+  try {
+    if (!capabilityCID) return [];
+    let base64 = capabilityCID;
+    if (capabilityCID.includes(":")) {
+      base64 = capabilityCID.split(":")[1];
+    }
+    const decoded = JSON.parse(atob(base64));
+    return decoded.skills || [];
+  } catch {
+    return [];
+  }
 }
 
 export async function GET() {
-  const errors: string[] = [];
-
   try {
     const provider = new ethers.JsonRpcProvider(RPC_URL);
     const contract = new ethers.Contract(
@@ -41,55 +56,65 @@ export async function GET() {
     const totalAgentsBig = await contract.totalAgents();
     const totalAgents = Number(totalAgentsBig);
 
-    console.log(`[agents] totalAgents returned: ${totalAgents}`);
-
-    if (totalAgents === 0) {
-      return NextResponse.json({ agents: [], total: 0 });
-    }
-
+    const maxToQuery = totalAgents + 2;
     const agents: AgentProfile[] = [];
 
-    const maxIdToCheck = Math.min(totalAgents + 2, 100);
-    let foundCount = 0;
-
-    for (let i = 0; i < maxIdToCheck && foundCount < totalAgents; i++) {
+    for (let i = 0; i < maxToQuery; i++) {
       try {
         const profile = await contract.getAgentProfile(i);
 
+        if (profile[0] === "0x0000000000000000000000000000000000000000") {
+          continue;
+        }
+
+        const skillIds = decodeCapabilitySkills(profile[4] as string);
+
         agents.push({
           agentId: i,
-          owner: profile[0],
-          agentWallet: profile[1],
-          capabilityCID: profile[4],
-          profileCID: profile[5],
+          owner: profile[0] as string,
+          agentWallet: profile[1] as string,
+          capabilityCID: profile[4] as string,
+          profileCID: profile[5] as string,
           overallScore: Number(profile[6]),
           totalJobsCompleted: Number(profile[7]),
           totalJobsAttempted: Number(profile[8]),
-          totalEarningsWei: profile[9].toString(),
-          defaultRate: profile[10].toString(),
+          totalEarningsWei: (profile[9] as bigint).toString(),
+          defaultRate: (profile[10] as bigint).toString(),
           createdAt: Number(profile[11]),
-          isActive: profile[12],
+          isActive: profile[12] as boolean,
+          displayName: null,
+          tags: skillIds,
         });
-        foundCount++;
-        console.log(`[agents] Successfully fetched agent ${i}`);
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        if (!msg.includes("does not exist")) {
-          errors.push(`Agent ${i}: ${msg}`);
-        }
-        console.log(`[agents] Skipping agent ${i} (does not exist or error)`);
+      } catch {
+        continue;
       }
     }
 
-    console.log(`[agents] Total fetched: ${agents.length}, errors: ${errors.length}`);
+    const agentIds = agents.map(a => a.agentId);
+    const { data: profiles } = await supabase
+      .from("agent_profiles")
+      .select("agent_id, display_name, tags")
+      .in("agent_id", agentIds.length > 0 ? agentIds : [0]);
 
-    return NextResponse.json({ 
-      agents, 
+    const profileMap = new Map<number, { displayName: string | null; tags: string[] | null }>();
+    (profiles || []).forEach((p: { agent_id: number; display_name: string | null; tags: string[] | null }) => {
+      profileMap.set(p.agent_id, { displayName: p.display_name, tags: p.tags });
+    });
+
+    const result = agents.map(a => {
+      const supabaseProfile = profileMap.get(a.agentId);
+      return {
+        ...a,
+        displayName: supabaseProfile?.displayName || null,
+        tags: supabaseProfile?.tags || a.tags,
+      };
+    });
+
+    return NextResponse.json({
+      agents: result,
       total: totalAgents,
-      errors: errors.length > 0 ? errors : undefined 
     });
   } catch (err) {
-    console.error("[agents] Fatal error:", err);
     return NextResponse.json(
       { error: err instanceof Error ? err.message : String(err) },
       { status: 500 }

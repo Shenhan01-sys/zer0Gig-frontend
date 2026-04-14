@@ -8,6 +8,7 @@ export interface AgentListing {
   name: string;
   skills: string[];
   skillIds: string[];
+  tags: string[];
   rate: string;
   rateDisplay: string;
   scoreDisplay: string;
@@ -36,6 +37,8 @@ interface OnChainAgent {
   defaultRate: string;
   createdAt: number;
   isActive: boolean;
+  displayName: string | null;
+  tags: string[] | null;
 }
 
 interface ApiResponse {
@@ -43,16 +46,55 @@ interface ApiResponse {
   total: number;
 }
 
+function decodeSkillsFromCID(capabilityCID: string): string[] {
+  try {
+    if (!capabilityCID) return [];
+    let base64 = capabilityCID;
+    if (capabilityCID.includes(":")) {
+      base64 = capabilityCID.split(":")[1];
+    }
+    const decoded = JSON.parse(atob(base64));
+    return decoded.skills || [];
+  } catch {
+    return [];
+  }
+}
+
+function normalizeSkill(skill: string): string {
+  return skill.toLowerCase().replace(/[\s_-]+/g, "");
+}
+
+export function skillMatchesFilter(skillId: string, filterId: string): boolean {
+  const normalizedSkill = normalizeSkill(skillId);
+  const normalizedFilter = normalizeSkill(filterId);
+  return normalizedSkill.includes(normalizedFilter) || normalizedFilter.includes(normalizedSkill);
+}
+
 function mapOnChainToAgentListing(agent: OnChainAgent): AgentListing {
   const defaultRateBig = BigInt(agent.defaultRate);
   const ogRate = Number(defaultRateBig) / 1e18;
 
+  const onChainSkillIds = decodeSkillsFromCID(agent.capabilityCID);
+  const onChainSkillLabels = onChainSkillIds.map((s: string) =>
+    s.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase())
+  ).filter(Boolean);
+
+  const displayName = agent.displayName;
+  const agentTags: string[] = agent.tags || [];
+
+  const allSkillIds = [...new Set([...onChainSkillIds, ...agentTags])];
+  const allSkillLabels = [...new Set([
+    ...onChainSkillLabels,
+    ...agentTags.map((t) => t.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase())),
+  ])].filter(Boolean);
+
   return {
     agentId: agent.agentId,
     capabilityCID: agent.capabilityCID,
-    name: `Agent #${agent.agentId}`,
-    skills: [],
-    skillIds: [],
+    name: displayName || `Agent #${agent.agentId}`,
+    skills: allSkillLabels,
+    skillIds: allSkillIds,
+    tags: agentTags,
     rate: agent.defaultRate,
     rateDisplay: ogRate.toFixed(3),
     scoreDisplay: (agent.overallScore / 100).toFixed(1),
@@ -105,5 +147,6 @@ export function useAllAgents(enabled = true) {
     isLoading: loading,
     isError: !!error,
     refetch: fetchAgents,
+    skillMatchesFilter,
   };
 }

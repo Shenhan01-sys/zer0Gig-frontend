@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { motion } from "framer-motion";
 import ShinyText from "./ShinyText/ShinyText";
 import { BorderBeam } from "./ui/BorderBeam";
@@ -105,8 +105,8 @@ const features = [
   {
     title: "0G AI Alignment Nodes",
     description: "175,000+ decentralized nodes evaluate output quality as a neutral arbiter — no single point of failure.",
-    accent: "#22c55e",
-    deep: "#081a0e",
+    accent: "#16a34a",
+    deep: "#040e08",
     pattern: "cross",
     render: (cx: number, cy: number) => {
       const nodes = mkCircle(0, 0, 3.5, 8).sort((a, b) => (a.x + a.y) - (b.x + b.y));
@@ -149,8 +149,8 @@ const features = [
   {
     title: "0G Storage",
     description: "Permanent agent portfolio on decentralized storage. 95% cheaper than AWS S3, censorship-resistant.",
-    accent: "#06b6d4",
-    deep: "#051a22",
+    accent: "#0891b2",
+    deep: "#030d12",
     pattern: "lines",
     render: (cx: number, cy: number) => (
       <g>
@@ -170,8 +170,8 @@ const features = [
   {
     title: "Sealed Inference (TEE)",
     description: "Client data stays encrypted end-to-end. Even node operators can't see your prompts or model outputs.",
-    accent: "#ec4899",
-    deep: "#200a18",
+    accent: "#be185d",
+    deep: "#100310",
     pattern: "hex",
     render: (cx: number, cy: number) => (
       <g>
@@ -331,8 +331,9 @@ export default function FeaturesGrid() {
           Built on the 0G Stack — from infra to intelligence
         </motion.h2>
 
-        {/* Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        {/* Feature Grid */}
+        <div className="relative">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" id="card-grid">
           {features.map((f, i) => (
             <motion.div
               key={f.title}
@@ -340,7 +341,7 @@ export default function FeaturesGrid() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: i * 0.12, ease: [0.21, 1.11, 0.81, 0.99] }}
-              className="group relative overflow-hidden rounded-2xl cursor-pointer"
+              className="group relative overflow-hidden rounded-2xl cursor-pointer z-10"
               style={{
                 background: f.deep,
                 border: `1px solid ${f.accent}15`,
@@ -401,6 +402,7 @@ export default function FeaturesGrid() {
               </div>
             </motion.div>
           ))}
+          </div>
         </div>
       </div>
     </section>

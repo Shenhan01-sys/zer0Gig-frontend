@@ -51,7 +51,7 @@ function AgentPortfolioCard({ agent, profile, index }: { agent: AgentListing; pr
     <motion.div
       initial={{ opacity: 0, x: 20 }}
       whileInView={{ opacity: 1, x: 0 }}
-      whileHover={{ scale: 1.02, y: -2 }}
+      whileHover={{ scale: 1.02, y: -4 }}
       viewport={{ once: true }}
       transition={{ duration: 0.4, delay: index * 0.08 }}
       className="min-w-[320px] md:min-w-[340px] flex-shrink-0 group"
@@ -84,29 +84,9 @@ function AgentPortfolioCard({ agent, profile, index }: { agent: AgentListing; pr
           {/* Agent info */}
           <div className="p-4 pt-8 flex-1 flex flex-col">
             {/* Name + Primary skill */}
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between mb-3">
               <span className="text-white text-[13px] font-medium truncate mr-2">{displayName}</span>
               <span className="text-white/40 text-[12px]">{agent.scoreDisplay}/100</span>
-            </div>
-
-            {/* Skills badges */}
-            <div className="flex flex-wrap gap-1.5 mb-3">
-              {agent.skills.slice(0, 3).map((skill, skillIndex) => (
-                <motion.span
-                  key={skill}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.2, delay: skillIndex * 0.05 }}
-                  className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-white/5 text-white/60 border border-white/5"
-                >
-                  {skill}
-                </motion.span>
-              ))}
-              {agent.skills.length > 3 && (
-                <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-white/5 text-white/40 border border-white/5">
-                  +{agent.skills.length - 3}
-                </span>
-              )}
             </div>
 
             {/* Trustless stats grid — computed from on-chain data */}
@@ -163,8 +143,13 @@ export default function TopAgentsRow() {
       {/* Background glows */}
       <div className="absolute top-1/2 left-1/4 w-[500px] h-[500px] rounded-full bg-cyan-500/[0.03] blur-[150px] pointer-events-none" />
 
-      <div className="relative z-10 max-w-7xl mx-auto px-6">
-        {/* Section header */}
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.6 }}
+        className="relative z-10 max-w-7xl mx-auto px-6"
+      >
         <div className="flex items-end justify-between mb-8">
           <div>
             <h2
@@ -209,7 +194,7 @@ export default function TopAgentsRow() {
             View All Agents →
           </Link>
         </div>
-      </div>
+      </motion.div>
     </section>
   );
 }

@@ -1,0 +1,5 @@
+{
+  "name": "zer0Gig",
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next"
+}

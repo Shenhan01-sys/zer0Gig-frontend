@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { parseEther } from "viem";
-import { useWaitForTransactionReceipt } from "wagmi";
+import { useWaitForTransactionReceipt, useReadContract } from "wagmi";
 import {
   useSubscription,
   useTopUp,
@@ -14,10 +14,13 @@ import {
   useSetWebhookUrl,
   useFinalizeExpired,
 } from "@/hooks/useSubscriptionEscrow";
+import { CONTRACT_CONFIG } from "@/lib/contracts";
 import { SubscriptionStatusBadge } from "@/components/subscriptions/SubscriptionCard";
 import GracePeriodBanner from "@/components/subscriptions/GracePeriodBanner";
 import DrainHistory from "@/components/subscriptions/DrainHistory";
+import ClientTelegramBotSection from "@/components/subscriptions/ClientTelegramBotSection";
 import { formatOG } from "@/lib/utils";
+import { useAgentProfile } from "@/hooks/useAgentProfile";
 
 function intervalModeLabel(mode: number): string {
   return ["Client-Set", "Agent-Proposed", "Agent-Auto"][mode] ?? "Unknown";
@@ -33,10 +36,14 @@ function formatInterval(seconds: bigint): string {
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl bg-[#050810]/60 border border-white/10 px-4 py-3">
+    <motion.div
+      whileHover={{ scale: 1.02, borderColor: "rgba(255,255,255,0.2)" }}
+      transition={{ duration: 0.15 }}
+      className="rounded-xl bg-[#050810]/60 border border-white/10 px-4 py-3 cursor-default"
+    >
       <p className="text-[11px] text-white/40 uppercase tracking-wide mb-1">{label}</p>
       <p className="text-white text-[15px] font-medium">{value}</p>
-    </div>
+    </motion.div>
   );
 }
 
@@ -80,6 +87,35 @@ export default function SubscriptionDetailPage() {
       refetch();
     }
   }, [topUpConfirmed, cancelConfirmed, approveConfirmed, webhookConfirmed, finalizeConfirmed, refetch]);
+
+  // Fetch agent profile for capabilities display
+  const subAgentId = (sub as any)?.agentId;
+  const { data: agentProfile } = useReadContract({
+    address: CONTRACT_CONFIG.AgentRegistry.address,
+    abi: CONTRACT_CONFIG.AgentRegistry.abi,
+    functionName: "getAgentProfile",
+    args: [subAgentId ? BigInt(subAgentId.toString()) : 0n],
+    query: { enabled: subAgentId && Number(subAgentId) > 0 },
+  });
+
+  // Fetch agent display name from Supabase
+  const { profile: agentDisplayProfile } = useAgentProfile(
+    subAgentId && Number(subAgentId) > 0 ? Number(subAgentId.toString()) : undefined
+  );
+
+  const agentCapabilities = useMemo(() => {
+    if (!agentProfile) return [];
+    try {
+      const cid = (agentProfile as any).capabilityCID;
+      if (!cid) return [];
+      let base64 = cid;
+      if (cid.includes(":")) base64 = cid.split(":")[1];
+      const decoded = JSON.parse(atob(base64));
+      return decoded.skills || [];
+    } catch {
+      return [];
+    }
+  }, [agentProfile]);
 
   // Handlers
   const handleTopUp = (amount: bigint) => {
@@ -172,7 +208,12 @@ export default function SubscriptionDetailPage() {
   const webhookUrlValue    = subData.webhookUrl         as string;
 
   return (
-    <div className="max-w-3xl">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.4 }}
+      className="max-w-3xl"
+    >
       {/* A. Back navigation */}
       <Link
         href="/dashboard"
@@ -190,23 +231,37 @@ export default function SubscriptionDetailPage() {
       >
         <div className="flex items-start justify-between gap-4 mb-4">
           <div>
-            <div className="flex items-center gap-3 mb-2 flex-wrap">
-              <h1 className="text-2xl font-medium text-white">Subscription #{params?.id}</h1>
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
+              <span className="text-[11px] text-white/25 font-mono">#{params?.id}</span>
               <SubscriptionStatusBadge status={status} />
             </div>
-            <p className="text-white/50 text-[14px] leading-relaxed">{taskDescription}</p>
-            <p className="text-white/30 text-[12px] mt-1">
-              Agent #{agentId.toString()} · {intervalModeLabel(intervalMode)}
+            <h1 className="text-2xl font-medium text-white mb-1">
+              {taskDescription || `Subscription #${params?.id}`}
+            </h1>
+            <p className="text-white/30 text-[12px]">
+              {agentDisplayProfile?.display_name || `Agent #${agentId.toString()}`} · {intervalModeLabel(intervalMode)}
             </p>
+            {agentCapabilities.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {agentCapabilities.map((cap: string) => (
+                  <span
+                    key={cap}
+                    className="inline-flex items-center px-2 py-0.5 rounded-md bg-[#38bdf8]/10 border border-[#38bdf8]/15 text-[#38bdf8]/70 text-[11px]"
+                  >
+                    {cap.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
         {/* 4-column stats row */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <StatCard label="Current Balance" value={`${formatOG(balance)} OG`} />
-          <StatCard label="Total Drained" value={`${formatOG(totalDrained)} OG`} />
-          <StatCard label="Check-in Rate" value={`${formatOG(checkInRate)} OG/run`} />
-          <StatCard label="Alert Rate" value={`${formatOG(alertRate)} OG/alert`} />
+          <StatCard label="Current Balance" value={formatOG(balance)} />
+          <StatCard label="Total Drained"   value={formatOG(totalDrained)} />
+          <StatCard label="Check-in Rate"   value={`${formatOG(checkInRate)}/run`} />
+          <StatCard label="Alert Rate"      value={`${formatOG(alertRate)}/alert`} />
         </div>
       </motion.div>
 
@@ -299,7 +354,11 @@ export default function SubscriptionDetailPage() {
 
             {/* Update Webhook */}
             <div>
-              <p className="text-[13px] text-white/50 mb-2">Webhook URL</p>
+              <p className="text-[13px] text-white/50 mb-1">Webhook URL</p>
+              <p className="text-[11px] text-white/25 mb-2">
+                Your server receives a POST whenever the agent completes a check-in.
+                Leave blank if you don&apos;t need notifications.
+              </p>
               <div className="flex gap-2">
                 <input
                   type="url"
@@ -354,20 +413,29 @@ export default function SubscriptionDetailPage() {
         </motion.div>
       )}
 
-      {/* F. Drain history */}
+      {/* F. Customer service bot config (client-side) */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: 0.2 }}
       >
-        <DrainHistory subscriptionId={subId} />
+        <ClientTelegramBotSection subscriptionId={subId} />
       </motion.div>
 
-      {/* G. Subscription details section */}
+      {/* G. Drain history */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: 0.25 }}
+      >
+        <DrainHistory subscriptionId={subId} />
+      </motion.div>
+
+      {/* H. Subscription details section */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.3 }}
         className="rounded-2xl border border-white/10 bg-[#0d1525]/90 p-6 mt-6"
       >
         <h2 className="text-[13px] font-medium text-white/50 uppercase tracking-wider mb-3">
@@ -400,6 +468,6 @@ export default function SubscriptionDetailPage() {
           )}
         </div>
       </motion.div>
-    </div>
+    </motion.div>
   );
 }

@@ -19,6 +19,7 @@ import { SubscriptionStatusBadge } from "@/components/subscriptions/Subscription
 import GracePeriodBanner from "@/components/subscriptions/GracePeriodBanner";
 import DrainHistory from "@/components/subscriptions/DrainHistory";
 import ClientTelegramBotSection from "@/components/subscriptions/ClientTelegramBotSection";
+import AgentActivityByWallet from "@/components/jobs/AgentActivityByWallet";
 import { formatOG } from "@/lib/utils";
 import { useAgentProfile } from "@/hooks/useAgentProfile";
 
@@ -422,20 +423,29 @@ export default function SubscriptionDetailPage() {
         <ClientTelegramBotSection subscriptionId={subId} />
       </motion.div>
 
-      {/* G. Drain history */}
+      {/* G. Agent Activity Log */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: 0.25 }}
       >
-        <DrainHistory subscriptionId={subId} />
+        {agentWallet && <AgentActivityByWallet agentWallet={agentWallet} maxEntries={20} />}
       </motion.div>
 
-      {/* H. Subscription details section */}
+      {/* I. Drain history */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: 0.3 }}
+      >
+        <DrainHistory subscriptionId={subId} />
+      </motion.div>
+
+      {/* J. Subscription details section */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.35 }}
         className="rounded-2xl border border-white/10 bg-[#0d1525]/90 p-6 mt-6"
       >
         <h2 className="text-[13px] font-medium text-white/50 uppercase tracking-wider mb-3">

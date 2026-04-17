@@ -35,16 +35,20 @@ export function useAgentProfiles(agentIds: number[]) {
     if (agentIds.length === 0) return;
     setIsLoading(true);
 
-    supabase
-      .from("agent_profiles")
-      .select("*")
-      .in("agent_id", agentIds)
-      .then(({ data }) => {
-        const map: Record<number, AgentProfile> = {};
-        (data ?? []).forEach((p) => { map[p.agent_id] = p; });
-        setProfiles(map);
-        setIsLoading(false);
-      });
+    // Fetch all profiles in parallel via API route (admin key bypasses RLS)
+    Promise.all(
+      agentIds.map(id =>
+        fetch(`/api/agent-profile?agent_id=${id}`)
+          .then(r => r.json())
+          .then(({ data }) => data)
+          .catch(() => null)
+      )
+    ).then(results => {
+      const map: Record<number, AgentProfile> = {};
+      results.forEach(p => { if (p) map[p.agent_id] = p; });
+      setProfiles(map);
+      setIsLoading(false);
+    });
   }, [agentIds.join(",")]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return { profiles, isLoading };

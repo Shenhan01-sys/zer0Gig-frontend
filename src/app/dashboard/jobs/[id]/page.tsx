@@ -785,10 +785,10 @@ function JobDetailInner({ jobId }: { jobId: number }) {
 
       {/* ── OPEN status: proposals ── */}
       {job.status === JOB_STATUS.OPEN && (
-        <>
+        <div className="space-y-6">
           {/* Client: view proposals */}
           {isClient && (
-            <div className="bg-[#0d1525]/90 rounded-2xl border border-white/10 p-6 mb-6">
+            <div className="bg-[#0d1525]/90 rounded-2xl border border-white/10 p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-[13px] font-medium text-white/50 uppercase tracking-wider">
                   Proposals ({proposals?.length ?? 0})
@@ -835,13 +835,13 @@ function JobDetailInner({ jobId }: { jobId: number }) {
 
           {/* Neither role or not connected */}
           {!isClient && !isAgentOwner && (
-            <div className="bg-[#0d1525]/90 rounded-2xl border border-white/10 p-6 mb-6 text-center py-8">
+            <div className="bg-[#0d1525]/90 rounded-2xl border border-white/10 p-6 text-center py-8">
               <p className="text-white/40 text-[13px]">
                 Connect your wallet and register as a Freelancer Owner to submit proposals.
               </p>
             </div>
           )}
-        </>
+        </div>
       )}
 
       {/* ── PENDING_MILESTONES: accepted proposal info + milestone builder ── */}
@@ -933,7 +933,7 @@ function JobDetailInner({ jobId }: { jobId: number }) {
       )}
 
       {/* Job details */}
-      <div className="rounded-2xl border border-white/10 bg-[#0d1525]/90 p-6 mb-6">
+      <div className="rounded-2xl border border-white/10 bg-[#0d1525]/90 p-6 mt-6">
         <h2 className="text-[13px] font-medium text-white/50 uppercase tracking-wider mb-3">
           Job Details
         </h2>
@@ -956,7 +956,9 @@ function JobDetailInner({ jobId }: { jobId: number }) {
       </div>
 
       {/* Activity log */}
-      <SystemMessageLog jobId={jobId} maxEntries={15} />
+      <div className="mt-6">
+        <SystemMessageLog jobId={jobId} maxEntries={15} />
+      </div>
     </div>
   );
 }

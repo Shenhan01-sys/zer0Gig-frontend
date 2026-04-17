@@ -228,7 +228,7 @@ export default function SubscriptionDetailPage() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="rounded-2xl border border-white/10 bg-[#0d1525]/90 p-6 mb-6"
+        className="rounded-2xl border border-white/10 bg-[#0d1525]/90 p-6"
       >
         <div className="flex items-start justify-between gap-4 mb-4">
           <div>
@@ -446,7 +446,7 @@ export default function SubscriptionDetailPage() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: 0.35 }}
-        className="rounded-2xl border border-white/10 bg-[#0d1525]/90 p-6 mt-6"
+        className="rounded-2xl border border-white/10 bg-[#0d1525]/90 p-6"
       >
         <h2 className="text-[13px] font-medium text-white/50 uppercase tracking-wider mb-3">
           Details

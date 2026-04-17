@@ -82,7 +82,7 @@ export default function ClientTelegramBotSection({ subscriptionId }: { subscript
   if (loading) return null;
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-[#0d1525]/90 p-6 mt-6">
+    <div className="rounded-2xl border border-white/10 bg-[#0d1525]/90 p-6">
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div>

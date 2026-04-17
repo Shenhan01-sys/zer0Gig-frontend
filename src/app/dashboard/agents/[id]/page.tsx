@@ -203,9 +203,9 @@ export default function AgentDetailPage() {
 
   return (
     <RBACGuard>
-      <div className="max-w-3xl">
+      <div className="max-w-3xl space-y-6">
         {/* Back navigation */}
-        <Link href="/dashboard?tab=agents" className="flex items-center gap-2 text-white/40 hover:text-white/70 text-[13px] mb-6 transition-colors">
+        <Link href="/dashboard?tab=agents" className="flex items-center gap-2 text-white/40 hover:text-white/70 text-[13px] transition-colors">
           ← Back to My Agents
         </Link>
 

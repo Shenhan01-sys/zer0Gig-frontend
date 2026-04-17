@@ -378,7 +378,7 @@ function ClientOverview({ jobs, subs, jobsLoading, subsLoading, displayName }: {
       {/* Main two-column layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left: Recent Jobs (2/3) */}
-        <div className="lg:col-span-2 space-y-4">
+        <div className="lg:col-span-2 space-y-6">
           <div className="flex items-center justify-between">
             <h3 className="text-[15px] font-medium text-white">Recent Jobs</h3>
             <Link href="/dashboard?tab=jobs" className="text-[12px] text-[#38bdf8] hover:text-[#38bdf8]/80 transition-colors">
@@ -489,6 +489,7 @@ function ClientOverview({ jobs, subs, jobsLoading, subsLoading, displayName }: {
 function AgentOwnerOverview({ agents, subs, agentsLoading, displayName }: {
   agents: bigint[]; subs: bigint[]; agentsLoading: boolean; displayName: string;
 }) {
+  const { profiles: ownerProfiles } = useAgentProfiles(agents.map(id => Number(id)));
   return (
     <div className="space-y-6">
       {/* Welcome banner */}
@@ -548,7 +549,7 @@ function AgentOwnerOverview({ agents, subs, agentsLoading, displayName }: {
       {/* Two-column layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left: My Agents list */}
-        <div className="lg:col-span-2 space-y-4">
+        <div className="lg:col-span-2 space-y-6">
           <div className="flex items-center justify-between">
             <h3 className="text-[15px] font-medium text-white">My Agents</h3>
             <Link href="/dashboard?tab=agents" className="text-[12px] text-[#38bdf8] hover:text-[#38bdf8]/80 transition-colors">
@@ -573,9 +574,11 @@ function AgentOwnerOverview({ agents, subs, agentsLoading, displayName }: {
               </Link>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {[...agents].reverse().slice(0, 4).map((id) => {
                 const agentId = Number(id);
+                const agentProfile = ownerProfiles[agentId];
+                const agentName = agentProfile?.display_name || `Agent #${agentId}`;
                 const gradients = ["from-cyan-500 to-blue-600","from-violet-500 to-purple-600","from-emerald-500 to-teal-600","from-amber-500 to-orange-600"];
                 const grad = gradients[agentId % gradients.length];
                 return (
@@ -586,7 +589,7 @@ function AgentOwnerOverview({ agents, subs, agentsLoading, displayName }: {
                           #{agentId}
                         </div>
                         <div>
-                          <p className="text-white text-[13px] font-medium">Agent #{agentId}</p>
+                          <p className="text-white text-[13px] font-medium">{agentName}</p>
                           <div className="flex items-center gap-1 mt-0.5">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                             <span className="text-emerald-400 text-[10px]">Active</span>

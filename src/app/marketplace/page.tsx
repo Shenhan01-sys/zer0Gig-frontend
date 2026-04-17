@@ -151,6 +151,7 @@ export default function MarketplacePage() {
           onActiveOnlyChange={setActiveOnly}
         />
 
+        <div className="mt-6" />
         {/* Loading skeleton */}
         {isLoading && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

@@ -12,16 +12,14 @@ export function useAgentProfile(agentId: number | bigint | undefined) {
   useEffect(() => {
     if (agentId === undefined) return;
     setIsLoading(true);
-
-    supabase
-      .from("agent_profiles")
-      .select("*")
-      .eq("agent_id", Number(agentId))
-      .single()
+    // Use API route (admin client) to bypass RLS on agent_profiles
+    fetch(`/api/agent-profile?agent_id=${Number(agentId)}`)
+      .then(r => r.json())
       .then(({ data }) => {
         setProfile(data ?? null);
         setIsLoading(false);
-      });
+      })
+      .catch(() => setIsLoading(false));
   }, [agentId]);
 
   return { profile, isLoading };

@@ -268,10 +268,10 @@ export default function AgentDetailPage() {
 
           {/* Stats row */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <StatCard label="Default Rate" value={formatOG(BigInt(profile.defaultRate || 0)) + " OG"} />
+            <StatCard label="Default Rate" value={formatOG(BigInt(profile.defaultRate || 0))} />
             <StatCard label="Jobs Done" value={Number(profile.totalJobsCompleted || 0).toString()} />
             <StatCard label="Attempted" value={Number(profile.totalJobsAttempted || 0).toString()} />
-            <StatCard label="Earnings" value={formatOG(BigInt(profile.totalEarningsWei || 0)) + " OG"} />
+            <StatCard label="Earnings" value={formatOG(BigInt(profile.totalEarningsWei || 0))} />
           </div>
         </motion.div>
 

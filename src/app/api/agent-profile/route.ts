@@ -9,6 +9,25 @@ function getAdminClient() {
 }
 
 /**
+ * GET /api/agent-profile?agent_id=N
+ * Returns the Supabase profile for a given agent (bypasses RLS via service role).
+ */
+export async function GET(request: NextRequest) {
+  const agentId = request.nextUrl.searchParams.get("agent_id");
+  if (!agentId) return NextResponse.json({ data: null });
+
+  const admin = getAdminClient();
+  const { data, error } = await admin
+    .from("agent_profiles")
+    .select("agent_id, display_name, bio, avatar_url, tags, metadata")
+    .eq("agent_id", Number(agentId))
+    .maybeSingle();
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ data });
+}
+
+/**
  * POST /api/agent-profile
  * Upserts an agent profile using the service role key to bypass RLS.
  * Also upserts prebuilt agent_skills and stores custom tools in metadata.

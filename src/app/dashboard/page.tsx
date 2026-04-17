@@ -119,7 +119,7 @@ function MiniAgentCard({ agent, profile, index }: { agent: any; profile?: { disp
         )}
         <div className="flex-1 min-w-0">
           <p className="text-white text-[13px] font-medium truncate">{name}</p>
-          <p className="text-white/40 text-[11px]">{agent.rateDisplay}/task</p>
+          <p className="text-white/40 text-[11px]">{agent.rateDisplay} OG/task</p>
         </div>
         <div className="text-right flex-shrink-0">
           <p className="text-[#38bdf8] text-[12px] font-semibold">{score}/100</p>
@@ -221,7 +221,7 @@ function AgentsTab({ agents, agentsLoading }: { agents: bigint[]; agentsLoading:
             const gradients = ["from-cyan-500 to-blue-600","from-violet-500 to-purple-600","from-emerald-500 to-teal-600","from-amber-500 to-orange-600"];
             const grad = gradients[agentId % gradients.length];
             const badge = getRuntimeBadge(capabilityMap[agentId] || "");
-            const skills = profile?.tags?.slice(0, 3) || [];
+            const skills = (profile?.tags || []).filter((t: string) => !t.startsWith("0x") && t.length < 40).slice(0, 3);
             return (
               <Link key={id.toString()} href={`/dashboard/agents/${agentId}`}>
                 <div className="group rounded-2xl border border-white/10 bg-[#0d1525]/90 p-5 hover:border-white/20 transition-all">

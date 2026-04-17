@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
 import { createClient } from "@supabase/supabase-js";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -21,7 +20,8 @@ export async function POST(request: NextRequest) {
     const { chatId, telegramUserId } = await request.json();
     if (!chatId) return NextResponse.json({ error: "Missing chatId" }, { status: 400 });
 
-    await supabase
+    const admin = getAdminClient();
+    await admin
       .from("telegram_links")
       .upsert(
         { chat_id: String(chatId), telegram_user_id: telegramUserId, linked_at: new Date().toISOString() },
@@ -61,8 +61,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ chatId: chatIdFromProfile });
   }
 
+  const admin = getAdminClient();
+
   if (chatId) {
-    const { data } = await supabase
+    const { data } = await admin
       .from("telegram_links")
       .select("chat_id, linked_at")
       .eq("chat_id", chatId)
@@ -71,12 +73,12 @@ export async function GET(request: NextRequest) {
   }
 
   // No chatId — return most recent link (used by ConnectTelegramButton status polling)
-  const { data } = await supabase
+  const { data } = await admin
     .from("telegram_links")
     .select("chat_id, linked_at")
     .order("linked_at", { ascending: false })
     .limit(1)
     .single();
 
-  return NextResponse.json({ linked: !!data, chatId: data?.chat_id, linkedAt: data?.linked_at });
+  return NextResponse.json({ linked: !!data, chat_id: data?.chat_id, linkedAt: data?.linked_at });
 }

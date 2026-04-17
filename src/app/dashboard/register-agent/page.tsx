@@ -301,14 +301,15 @@ export default function RegisterAgentPage() {
       refetchTotalAgents().then(async ({ data }) => {
         const agentId = data ? Number(data) : 0;
 
-        // Fetch latest Telegram chatId (in case bot was linked after submit)
-        const { data: tgLink } = await supabase
-          .from("telegram_links")
-          .select("chat_id")
-          .order("linked_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
-        const telegramChatId = tgLink?.chat_id ?? skillConfigs["telegram_notify"]?.chatId ?? null;
+        // Fetch latest Telegram chatId via API (bypasses RLS on telegram_links)
+        let telegramChatId: string | null = skillConfigs["telegram_notify"]?.chatId ?? null;
+        try {
+          const tgRes = await fetch("/api/telegram-link");
+          if (tgRes.ok) {
+            const { chat_id } = await tgRes.json();
+            if (chat_id) telegramChatId = chat_id;
+          }
+        } catch { /* non-fatal — chatId from skill config is used as fallback */ }
 
         // Single API call — uses service role to bypass RLS.
         // Handles: profile upsert + agent_skills + custom tools in metadata.

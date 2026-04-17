@@ -6,9 +6,8 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { useWalletClient } from "wagmi";
 import { createPublicClient, http, parseEther } from "viem";
-import { supabase } from "@/lib/supabase";
 import { useAllAgents } from "@/hooks/useAllAgents";
-import { useAgentProfile } from "@/hooks/useAgentProfile";
+import { useAgentProfile, useAgentProfiles } from "@/hooks/useAgentProfile";
 import { useCreateSubscription } from "@/hooks/useSubscriptionEscrow";
 import { ogNewton } from "@/lib/wagmi";
 import { formatOG } from "@/lib/utils";
@@ -43,13 +42,16 @@ function ProposalCard({
   isSelected,
   onClick,
   index,
+  displayName,
 }: {
   proposal: Proposal;
   isSelected: boolean;
   onClick: () => void;
   index: number;
+  displayName?: string;
 }) {
   const rate = proposal.metadata?.rate_og || proposal.check_in_rate;
+  const name = displayName || `Agent #${proposal.agent_id}`;
 
   return (
     <motion.button
@@ -71,7 +73,7 @@ function ProposalCard({
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-white text-[14px] font-medium truncate">
-            Agent #{proposal.agent_id}
+            {name}
           </p>
           <p className="text-white/40 text-[12px] truncate">
             {proposal.task_description || "No description"}
@@ -242,22 +244,21 @@ export default function ProposalsPage() {
   const { profile: agentProfile } = useAgentProfile(
     selectedProposal ? BigInt(selectedProposal.agent_id) : undefined
   );
+  // Fetch profiles for all proposals to show real names in the list
+  const proposalAgentIds = proposals.map(p => p.agent_id);
+  const { profiles: proposalProfiles } = useAgentProfiles(proposalAgentIds);
 
   useEffect(() => {
     if (!walletAddress) return;
     setIsLoadingProposals(true);
 
-    supabase
-      .from("subscription_proposals")
-      .select("*")
-      .eq("client_address", walletAddress.toLowerCase())
-      .eq("status", "pending")
-      .then(({ data, error }) => {
-        if (!error && data) {
-          setProposals(data as Proposal[]);
-        }
+    fetch(`/api/subscription-proposals?client_address=${walletAddress.toLowerCase()}`)
+      .then(r => r.json())
+      .then(({ data }) => {
+        setProposals((data ?? []) as Proposal[]);
         setIsLoadingProposals(false);
-      });
+      })
+      .catch(() => setIsLoadingProposals(false));
   }, [walletAddress]);
 
   useEffect(() => {
@@ -267,15 +268,13 @@ export default function ProposalsPage() {
     }
 
     setIsLoadingStats(true);
-    supabase
-      .from("agent_proposal_stats")
-      .select("*")
-      .eq("agent_id", selectedProposal.agent_id)
-      .single()
+    fetch(`/api/agent-stats?agent_id=${selectedProposal.agent_id}`)
+      .then(r => r.json())
       .then(({ data }) => {
         setAgentStats((data as AgentStats) ?? null);
         setIsLoadingStats(false);
-      });
+      })
+      .catch(() => setIsLoadingStats(false));
   }, [selectedProposal]);
 
   const handleApprove = async () => {
@@ -309,10 +308,11 @@ export default function ProposalsPage() {
         await publicClient.waitForTransactionReceipt({ hash: txHash, confirmations: 1 });
       }
 
-      await supabase
-        .from("subscription_proposals")
-        .update({ status: "approved" })
-        .eq("id", selectedProposal.id);
+      await fetch(`/api/subscription-proposals?id=${selectedProposal.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "approved" }),
+      });
 
       setProposals((prev) => prev.filter((p) => p.id !== selectedProposal.id));
       setSelectedProposal(null);
@@ -328,10 +328,11 @@ export default function ProposalsPage() {
     setIsRejecting(true);
 
     try {
-      await supabase
-        .from("subscription_proposals")
-        .update({ status: "rejected" })
-        .eq("id", selectedProposal.id);
+      await fetch(`/api/subscription-proposals?id=${selectedProposal.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "rejected" }),
+      });
 
       setProposals((prev) => prev.filter((p) => p.id !== selectedProposal.id));
       setSelectedProposal(null);
@@ -389,6 +390,7 @@ export default function ProposalsPage() {
                     isSelected={selectedProposal?.id === proposal.id}
                     onClick={() => setSelectedProposal(proposal)}
                     index={index}
+                    displayName={proposalProfiles[proposal.agent_id]?.display_name ?? undefined}
                   />
                 ))}
               </div>

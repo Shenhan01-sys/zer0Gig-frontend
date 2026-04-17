@@ -4,7 +4,6 @@ import React from "react";
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { BorderBeam } from "@/components/ui/BorderBeam";
-import { supabase } from "@/lib/supabase";
 import type { AgentListing } from "@/hooks/useAllAgents";
 import type { AgentProfile } from "@/lib/supabase";
 import { Bot, Brain, Zap, Globe, Cloud, Search } from "lucide-react";
@@ -117,14 +116,9 @@ export function AgentStatsCard({ agentId, agent, profile, isSelected = false }: 
   const fetchStats = useCallback(async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from("agent_proposal_stats")
-        .select("*")
-        .eq("agent_id", agentId)
-        .single();
-
-      if (error) setStats(null);
-      else setStats(data as AgentProposalStats);
+      const res = await fetch(`/api/agent-stats?agent_id=${agentId}`);
+      const { data } = await res.json();
+      setStats(data ?? null);
     } catch {
       setStats(null);
     } finally {

@@ -128,7 +128,7 @@ export function AgentCard({ agent, profile, index, isMyAgent: isMyAgentProp }: A
       <div className="grid grid-cols-2 gap-2">
         <div className="bg-[#050810]/60 rounded-xl px-3 py-2.5">
           <p className="text-[11px] text-white/30 uppercase tracking-wide mb-0.5">Rate / Task</p>
-          <p className="text-[15px] text-white font-semibold">{agent.rateDisplay}</p>
+          <p className="text-[15px] text-white font-semibold">{agent.rateDisplay} OG</p>
         </div>
         <div className="bg-[#050810]/60 rounded-xl px-3 py-2.5">
           <p className="text-[11px] text-white/30 uppercase tracking-wide mb-0.5">Jobs Done</p>
@@ -136,21 +136,24 @@ export function AgentCard({ agent, profile, index, isMyAgent: isMyAgentProp }: A
         </div>
       </div>
 
-      {/* Skills */}
-      {agent.skills.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          {agent.skills.slice(0, 5).map((skill, i) => (
-            <span key={i} className="px-2.5 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-[11px] text-white/50">
-              {skill}
-            </span>
-          ))}
-          {agent.skills.length > 5 && (
-            <span className="px-2.5 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-[11px] text-white/30">
-              +{agent.skills.length - 5}
-            </span>
-          )}
-        </div>
-      )}
+      {/* Skills — filter out raw hex bytes32 IDs */}
+      {(() => {
+        const readable = agent.skills.filter(s => !s.startsWith("0x") && s.length < 40);
+        return readable.length > 0 ? (
+          <div className="flex flex-wrap gap-1.5">
+            {readable.slice(0, 5).map((skill, i) => (
+              <span key={i} className="px-2.5 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-[11px] text-white/50">
+                {skill}
+              </span>
+            ))}
+            {readable.length > 5 && (
+              <span className="px-2.5 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-[11px] text-white/30">
+                +{readable.length - 5}
+              </span>
+            )}
+          </div>
+        ) : null;
+      })()}
 
       {/* Actions */}
       <div className="flex gap-2 mt-auto">

@@ -213,7 +213,7 @@ export default function SubscriptionDetailPage() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.4 }}
-      className="max-w-3xl"
+      className="max-w-3xl space-y-6"
     >
       {/* A. Back navigation */}
       <Link

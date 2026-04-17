@@ -199,7 +199,7 @@ function ProposalCard({
           </div>
         </div>
         <div className="text-right flex-shrink-0">
-          <p className="text-white text-[16px] font-medium">{formatOG(proposal.proposedRateWei)} OG</p>
+          <p className="text-white text-[16px] font-medium">{formatOG(proposal.proposedRateWei)}</p>
           <p className="text-white/30 text-[12px]">proposed rate</p>
         </div>
       </div>
@@ -245,7 +245,7 @@ function ProposalCard({
             disabled={isPending || isConfirming}
             className="w-full px-4 py-2 bg-white text-black text-[13px] font-medium rounded-full disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            {isPending ? "Confirm in wallet..." : isConfirming ? "Accepting..." : `Accept \u2014 ${formatOG(proposal.proposedRateWei)} OG`}
+            {isPending ? "Confirm in wallet..." : isConfirming ? "Accepting..." : `Accept \u2014 ${formatOG(proposal.proposedRateWei)}`}
           </button>
         </>
       )}
@@ -597,7 +597,7 @@ function MilestoneTimeline({
                   {statusBadge.label}
                 </span>
               </div>
-              <p className="text-white/50 text-[13px]">{formatOG(amountWei)} OG</p>
+              <p className="text-white/50 text-[13px]">{formatOG(amountWei)}</p>
               {status >= 1 && (
                 <p className="text-white/40 text-[12px] mt-1">
                   Alignment score: {(Number(alignmentScore) / 100).toFixed(2)}/100
@@ -641,6 +641,10 @@ function JobDetailInner({ jobId }: { jobId: number }) {
   const job = jobRaw as unknown as JobData | undefined;
 
   const { proposals, isLoading: proposalsLoading, refetch: refetchProposals } = useJobProposals(jobId);
+
+  // Fetch agent display name for the stat card
+  const jobAgentId = job?.agentId ? Number(job.agentId) : 0;
+  const { profile: jobAgentProfile } = useSupabaseAgentProfile(jobAgentId > 0 ? jobAgentId : undefined);
 
   const { writeContract, isPending: isCancelPending, data: cancelTxHash } = useWriteContract();
   const { isSuccess: isCancelConfirmed } = useWaitForTransactionReceipt({ hash: cancelTxHash });
@@ -737,18 +741,18 @@ function JobDetailInner({ jobId }: { jobId: number }) {
           <div className="bg-[#050810]/60 rounded-xl px-3 py-2.5">
             <p className="text-[11px] text-white/30 uppercase tracking-wide mb-0.5">Agent</p>
             <p className="text-[15px] text-white font-medium">
-              {job.agentId && job.agentId > 0n ? `#${job.agentId}` : "—"}
+              {job.agentId && job.agentId > 0n ? (jobAgentProfile?.display_name || `#${job.agentId}`) : "—"}
             </p>
           </div>
           <div className="bg-[#050810]/60 rounded-xl px-3 py-2.5">
             <p className="text-[11px] text-white/30 uppercase tracking-wide mb-0.5">Budget</p>
             <p className="text-[15px] text-white font-medium">
-              {job.totalBudgetWei > 0n ? `${formatOG(job.totalBudgetWei)} OG` : "—"}
+              {job.totalBudgetWei > 0n ? `${formatOG(job.totalBudgetWei)}` : "—"}
             </p>
           </div>
           <div className="bg-[#050810]/60 rounded-xl px-3 py-2.5">
             <p className="text-[11px] text-white/30 uppercase tracking-wide mb-0.5">Released</p>
-            <p className="text-[15px] text-white font-medium">{formatOG(job.releasedWei)} OG</p>
+            <p className="text-[15px] text-white font-medium">{formatOG(job.releasedWei)}</p>
           </div>
           <div className="bg-[#050810]/60 rounded-xl px-3 py-2.5">
             <p className="text-[11px] text-white/30 uppercase tracking-wide mb-0.5">Proposals</p>
@@ -848,11 +852,11 @@ function JobDetailInner({ jobId }: { jobId: number }) {
             <h2 className="text-[13px] font-medium text-white/50 uppercase tracking-wider mb-4">Accepted Proposal</h2>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-white text-[14px] font-medium mb-1">Agent #{job.agentId?.toString()}</p>
+                <p className="text-white text-[14px] font-medium mb-1">{jobAgentProfile?.display_name || `Agent #${job.agentId?.toString()}`}</p>
                 <p className="text-white/40 text-[12px] font-mono">{job.agentWallet?.slice(0, 6)}...{job.agentWallet?.slice(-4)}</p>
               </div>
               <div className="text-right">
-                <p className="text-white text-[16px] font-medium">{formatOG(job.totalBudgetWei)} OG</p>
+                <p className="text-white text-[16px] font-medium">{formatOG(job.totalBudgetWei)}</p>
                 <p className="text-white/30 text-[12px]">deposited in escrow</p>
               </div>
             </div>
@@ -887,7 +891,7 @@ function JobDetailInner({ jobId }: { jobId: number }) {
           </div>
 
           {/* Milestone Timeline */}
-          <div className="rounded-2xl border border-white/10 bg-[#0d1525]/90 p-6 mb-6">
+          <div className="rounded-2xl border border-white/10 bg-[#0d1525]/90 p-6 mb-6 mt-6">
             <h2 className="text-[13px] font-medium text-white/50 uppercase tracking-wider mb-6">
               Milestones
             </h2>

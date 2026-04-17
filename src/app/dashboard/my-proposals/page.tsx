@@ -119,7 +119,7 @@ function JobProposalsRow({
               </div>
             </div>
             <div className="text-right">
-              <p className="text-white text-[14px] font-semibold">{formatOG(p.proposedRateWei ?? 0n)} OG</p>
+              <p className="text-white text-[14px] font-semibold">{formatOG(p.proposedRateWei ?? 0n)}</p>
             </div>
           </div>
         ))}

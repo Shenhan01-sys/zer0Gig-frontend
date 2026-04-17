@@ -130,7 +130,7 @@ export default function DrainHistory({ subscriptionId }: DrainHistoryProps) {
               >
                 {entry.type === "check-in" ? "Check-in" : "Alert"}
               </span>
-              <span className="text-white text-[13px]">{formatOG(entry.amount)} OG</span>
+              <span className="text-white text-[13px]">{formatOG(entry.amount)}</span>
               <span className="text-white/40 text-[12px]">
                 {formatRelativeTime(entry.timestamp)}
               </span>

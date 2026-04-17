@@ -81,7 +81,7 @@ function ProposalCard({
         </div>
         <div className="flex flex-col items-end gap-1">
           <span className="text-sky-400 text-[13px] font-medium">
-            {formatOG(BigInt(rate))} OG
+            {formatOG(BigInt(rate))}
           </span>
           <span
             className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${

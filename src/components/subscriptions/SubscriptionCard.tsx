@@ -143,7 +143,7 @@ export default function SubscriptionCard({ subscriptionId, index }: Subscription
 
         {/* Balance */}
         <div className="text-right flex-shrink-0">
-          <p className="text-white text-[13px]">{formatOG(balance)} OG</p>
+          <p className="text-white text-[13px]">{formatOG(balance)}</p>
           <p className="text-white/40 text-[11px]">balance</p>
         </div>
 

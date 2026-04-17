@@ -1,7 +1,15 @@
 import { NextResponse } from "next/server";
 import { ethers } from "ethers";
 import { CONTRACT_ADDRESSES } from "@/lib/contracts";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@supabase/supabase-js";
+
+// Use service role to bypass RLS on agent_profiles
+function getAdminClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 const AGENT_REGISTRY_ABI = [
   "function totalAgents() view returns (uint256)",
@@ -91,22 +99,30 @@ export async function GET() {
     }
 
     const agentIds = agents.map(a => a.agentId);
-    const { data: profiles } = await supabase
+    const admin = getAdminClient();
+    const { data: profiles } = await admin
       .from("agent_profiles")
-      .select("agent_id, display_name, tags")
+      .select("agent_id, display_name, tags, bio, avatar_url")
       .in("agent_id", agentIds.length > 0 ? agentIds : [0]);
 
-    const profileMap = new Map<number, { displayName: string | null; tags: string[] | null }>();
-    (profiles || []).forEach((p: { agent_id: number; display_name: string | null; tags: string[] | null }) => {
-      profileMap.set(p.agent_id, { displayName: p.display_name, tags: p.tags });
+    const profileMap = new Map<number, { displayName: string | null; tags: string[] | null; bio: string | null; avatarUrl: string | null }>();
+    (profiles || []).forEach((p: any) => {
+      profileMap.set(p.agent_id, {
+        displayName: p.display_name,
+        tags: p.tags,
+        bio: p.bio,
+        avatarUrl: p.avatar_url,
+      });
     });
 
     const result = agents.map(a => {
-      const supabaseProfile = profileMap.get(a.agentId);
+      const sp = profileMap.get(a.agentId);
       return {
         ...a,
-        displayName: supabaseProfile?.displayName || null,
-        tags: supabaseProfile?.tags || a.tags,
+        displayName: sp?.displayName || null,
+        tags: sp?.tags || a.tags,
+        bio: sp?.bio || null,
+        avatarUrl: sp?.avatarUrl || null,
       };
     });
 

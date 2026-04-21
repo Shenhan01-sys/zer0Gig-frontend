@@ -83,6 +83,23 @@ export function AgentCard({ agent, profile, index, isMyAgent: isMyAgentProp }: A
         />
       )}
 
+      {/* Featured rotating conic halo — masked into thin ring around the card */}
+      {featured && (
+        <div
+          className="absolute -inset-px rounded-2xl pointer-events-none opacity-70 overflow-hidden"
+          aria-hidden
+        >
+          <div
+            className="absolute inset-[-50%] animate-[conicSpin_8s_linear_infinite]"
+            style={{
+              background:
+                "conic-gradient(from 0deg, transparent 0deg, rgba(56,189,248,0.55) 60deg, transparent 120deg, transparent 240deg, rgba(168,85,247,0.45) 300deg, transparent 360deg)",
+            }}
+          />
+          <div className="absolute inset-[1.5px] rounded-2xl bg-[#0d1525]/95" />
+        </div>
+      )}
+
       {/* Featured badge */}
       {featured && (
         <div className="absolute top-4 right-4 z-30 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#38bdf8]/10 text-[#38bdf8] border border-[#38bdf8]/20">
@@ -91,7 +108,7 @@ export function AgentCard({ agent, profile, index, isMyAgent: isMyAgentProp }: A
       )}
 
       {/* Header: avatar + name + status */}
-      <div className={`flex items-start gap-3 ${featured ? "pr-16" : ""}`}>
+      <div className={`relative flex items-start gap-3 ${featured ? "pr-16" : ""}`}>
         {/* Avatar */}
         <div className="shrink-0">
           {avatarUrl ? (
@@ -121,9 +138,15 @@ export function AgentCard({ agent, profile, index, isMyAgent: isMyAgentProp }: A
               </span>
             )}
           </div>
-          <p className="text-white/35 text-[12px] font-mono mt-0.5">
-            {agent.agentWallet.slice(0, 6)}...{agent.agentWallet.slice(-4)}
-          </p>
+          <div className="flex items-center gap-2 mt-0.5">
+            <p className="text-white/35 text-[12px] font-mono">
+              {agent.agentWallet.slice(0, 6)}...{agent.agentWallet.slice(-4)}
+            </p>
+            <span className="text-white/15 text-[10px]">·</span>
+            <p className="text-[#38bdf8]/50 text-[10px] font-mono uppercase tracking-[0.18em]">
+              0G.{agent.agentId.toString().padStart(4, "0")}
+            </p>
+          </div>
         </div>
 
         {/* Active badge - moves below name when featured to avoid overlap */}
@@ -140,16 +163,32 @@ export function AgentCard({ agent, profile, index, isMyAgent: isMyAgentProp }: A
 
       {/* Bio */}
       {bio && (
-        <p className="text-white/45 text-[13px] leading-relaxed line-clamp-2 -mt-1">
+        <p className="relative text-white/45 text-[13px] leading-relaxed line-clamp-2 -mt-1">
           {bio}
         </p>
       )}
 
       {/* Reputation bar */}
-      <div>
+      <div className="relative">
         <div className="flex items-center justify-between mb-1.5">
           <span className="text-[11px] text-white/35 uppercase tracking-wide">Reputation</span>
-          <span className="text-white font-medium text-[12px]">{agent.scoreDisplay}/100</span>
+          <div className="flex items-center gap-2">
+            {/* Mini telemetry sparkline — 7 bars pulsing at staggered delays */}
+            <div className="flex items-end gap-[2px] h-3" aria-hidden>
+              {[0.4, 0.7, 0.5, 0.9, 0.6, 0.85, 0.55].map((h, i) => (
+                <div
+                  key={i}
+                  className="w-[2px] rounded-sm bg-[#38bdf8]/60"
+                  style={{
+                    height: `${h * 100}%`,
+                    animation: `barPulse 1.6s ease-in-out ${i * 0.12}s infinite`,
+                    transformOrigin: "bottom",
+                  }}
+                />
+              ))}
+            </div>
+            <span className="text-white font-medium text-[12px]">{agent.scoreDisplay}/100</span>
+          </div>
         </div>
         <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
           <div
@@ -160,7 +199,7 @@ export function AgentCard({ agent, profile, index, isMyAgent: isMyAgentProp }: A
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 gap-2">
+      <div className="relative grid grid-cols-2 gap-2">
         <div className="bg-[#050810]/60 rounded-xl px-3 py-2.5">
           <p className="text-[11px] text-white/30 uppercase tracking-wide mb-0.5">Rate / Task</p>
           <p className="text-[15px] text-white font-semibold">{agent.rateDisplay} OG</p>
@@ -175,7 +214,7 @@ export function AgentCard({ agent, profile, index, isMyAgent: isMyAgentProp }: A
       {(() => {
         const readable = agent.skills.filter(s => !s.startsWith("0x") && s.length < 40);
         return readable.length > 0 ? (
-          <div className="flex flex-wrap gap-1.5">
+          <div className="relative flex flex-wrap gap-1.5">
             {readable.slice(0, 5).map((skill, i) => (
               <span key={i} className="px-2.5 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-[11px] text-white/50">
                 {skill}
@@ -191,7 +230,7 @@ export function AgentCard({ agent, profile, index, isMyAgent: isMyAgentProp }: A
       })()}
 
       {/* Actions */}
-      <div className="flex gap-2 mt-auto">
+      <div className="relative flex gap-2 mt-auto">
         <Link
           href={`/dashboard/create-job?agent=${agent.agentId}`}
           className="flex-1 px-4 py-2 bg-white text-black text-[13px] font-medium rounded-full text-center hover:bg-white/90 transition-colors"

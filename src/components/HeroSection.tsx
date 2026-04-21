@@ -361,6 +361,45 @@ export default function HeroSection() {
         <span>node · galileo-testnet</span>
       </div>
 
+      {/* Live telemetry ticker — monospace readout ribbon above bottom fade */}
+      <div
+        className="absolute bottom-6 left-0 right-0 z-10 hidden md:flex items-center gap-3 pointer-events-none overflow-hidden"
+        aria-hidden
+      >
+        <div className="flex items-center gap-2 pl-8 font-mono text-[10px] uppercase tracking-[0.25em] text-[#38bdf8]/70 flex-shrink-0">
+          <span className="relative flex h-1.5 w-1.5">
+            <span className="absolute inline-flex h-full w-full rounded-full bg-[#38bdf8] opacity-75 animate-ping" />
+            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#38bdf8]" />
+          </span>
+          <span>live</span>
+        </div>
+        <div className="flex-1 overflow-hidden border-y border-white/5 py-1.5">
+          <div className="flex whitespace-nowrap animate-ticker font-mono text-[11px] tracking-[0.15em] text-white/40">
+            {Array.from({ length: 2 }).map((_, dup) => (
+              <div key={dup} className="flex items-center gap-8 pr-8">
+                <span><span className="text-white/25">block</span> <span className="text-[#38bdf8]/80">28,740,162</span></span>
+                <span className="text-white/15">·</span>
+                <span><span className="text-white/25">tx</span> <span className="text-[#a855f7]/80">0x9f3a…c41e</span> <span className="text-emerald-400/70">confirmed</span></span>
+                <span className="text-white/15">·</span>
+                <span><span className="text-white/25">agent</span> <span className="text-[#38bdf8]/80">#{agentCount > 0 ? agentCount : 12}</span> <span className="text-white/50">registered</span></span>
+                <span className="text-white/15">·</span>
+                <span><span className="text-white/25">gas</span> <span className="text-[#38bdf8]/80">1.2 gwei</span></span>
+                <span className="text-white/15">·</span>
+                <span><span className="text-white/25">job</span> <span className="text-[#a855f7]/80">#{jobCount > 0 ? jobCount : 7}</span> <span className="text-emerald-400/70">settled</span></span>
+                <span className="text-white/15">·</span>
+                <span><span className="text-white/25">kv</span> <span className="text-[#38bdf8]/80">stream.0x14a2</span> <span className="text-white/50">synced</span></span>
+                <span className="text-white/15">·</span>
+                <span><span className="text-white/25">align</span> <span className="text-[#38bdf8]/80">175,402</span> <span className="text-white/50">nodes</span></span>
+                <span className="text-white/15">·</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="pr-8 font-mono text-[10px] uppercase tracking-[0.25em] text-white/35 flex-shrink-0">
+          16602 · chain-id
+        </div>
+      </div>
+
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen pt-[140px] md:pt-[200px] pb-[80px] px-6">
         <div className="flex flex-col items-center gap-8 max-w-[800px]">
@@ -507,7 +546,11 @@ export default function HeroSection() {
                 spread={100}
                 className="text-[24px] md:text-[28px] font-semibold"
               />
-              <span className="text-[12px] text-white/50 uppercase tracking-wider">
+              <span className="text-[12px] text-white/50 uppercase tracking-wider flex items-center gap-1.5">
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" />
+                </span>
                 Agents Registered
               </span>
             </div>
@@ -521,7 +564,11 @@ export default function HeroSection() {
                 spread={100}
                 className="text-[24px] md:text-[28px] font-semibold"
               />
-              <span className="text-[12px] text-white/50 uppercase tracking-wider">
+              <span className="text-[12px] text-white/50 uppercase tracking-wider flex items-center gap-1.5">
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" style={{ animationDelay: "0.4s" }} />
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" />
+                </span>
                 Jobs Completed
               </span>
             </div>
@@ -535,7 +582,11 @@ export default function HeroSection() {
                 spread={100}
                 className="text-[24px] md:text-[28px] font-semibold"
               />
-              <span className="text-[12px] text-white/50 uppercase tracking-wider">
+              <span className="text-[12px] text-white/50 uppercase tracking-wider flex items-center gap-1.5">
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" style={{ animationDelay: "0.8s" }} />
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" />
+                </span>
                 Alignment Nodes
               </span>
             </div>

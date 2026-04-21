@@ -86,3 +86,24 @@ body {
   90%  { opacity: 0.5; }
   100% { transform: translateX(1200px); opacity: 0; }
 }
+
+/* ── Rotating conic gradient (featured rings, active borders) ──── */
+@keyframes conicSpin {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* ── Telemetry ticker (Hero live readout ribbon) ─────────────────── */
+@keyframes tickerSlide {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.animate-ticker {
+  animation: tickerSlide 45s linear infinite;
+}
+
+/* ── Reputation bar pulse (mini sparkline cells) ─────────────────── */
+@keyframes barPulse {
+  0%, 100% { opacity: 0.35; transform: scaleY(0.6); }
+  50%      { opacity: 1;    transform: scaleY(1); }
+}

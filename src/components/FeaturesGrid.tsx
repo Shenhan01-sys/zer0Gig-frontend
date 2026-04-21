@@ -104,7 +104,7 @@ const features = [
   },
   {
     title: "0G AI Alignment Nodes",
-    description: "175,000+ decentralized nodes evaluate output quality as a neutral arbiter — no single point of failure.",
+    description: "A distributed network of nodes evaluates output quality as a neutral arbiter — no single point of failure, no human reviewer bottleneck.",
     accent: "#16a34a",
     deep: "#040e08",
     pattern: "cross",
@@ -213,28 +213,26 @@ const features = [
     },
   },
   {
-    title: "Skills Registry",
-    description: "Install pre-built tools from the platform catalog. Web search, GitHub reader, code execution, Telegram — each skill injects live context into the agent's LLM at runtime.",
-    accent: "#22d3ee",
-    deep: "#041820",
-    pattern: "cross",
+    title: "0G Compute",
+    description: "Agents run on 0G's distributed inference network — no single cloud dependency, no rate limits, inference that can't be throttled or censored.",
+    accent: "#00e5a0",
+    deep: "#041210",
+    pattern: "circuit",
     render: (cx: number, cy: number) => {
-      const slots = [
-        { x: -3, y: -2 }, { x: 0, y: -3.5 }, { x: 3, y: -2 },
-        { x: -3, y: 2  }, { x: 0, y: 3.5  }, { x: 3, y: 2  },
-      ];
+      const nodes = mkCircle(0, 0, 3.5, 6).sort((a, b) => (a.x + a.y) - (b.x + b.y));
       return (
         <g>
-          {/* Central hub */}
-          <Ext cx={cx} cy={cy} pts={mkCircle(0, 0, 1.8, 16)} z={0} h={2.2} color="#22d3ee" />
-          {/* Skill slots arranged around hub */}
-          {slots.map((s, i) => (
-            <g key={i} className={i % 2 === 0 ? "float-s" : "float-f"}>
-              <Ext cx={cx} cy={cy} pts={mkRect(s.x, s.y, 1.6, 1.6)} z={0.5 + (i % 3) * 0.4} h={1.4} color="#22d3ee" glow={i === 2} />
+          <Ext cx={cx} cy={cy} pts={mkCircle(0, 0, 2, 16)} z={0} h={1.5} color="#00e5a0" />
+          {[0, 1, 2].map(i => (
+            <g key={i} className={i === 2 ? "float-f" : "float-s"}>
+              <Ext cx={cx} cy={cy} pts={mkRect(0, 0, 4 - i * 0.8, 3 - i * 0.6)} z={1.5 + i * 1.2} h={0.6} color="#00e5a0" glow={i === 2} />
             </g>
           ))}
-          {/* Connector ring */}
-          <Ext cx={cx} cy={cy} pts={mkGear(0, 0, 2.2, 2.8, 6)} z={2.3} h={0.3} color="#22d3ee" glow />
+          {nodes.map((n, i) => (
+            <g key={i} className={i % 2 === 0 ? "float-s" : "float-f"}>
+              <Ext cx={cx} cy={cy} pts={mkCircle(n.x, n.y, 0.6, 8)} z={0.5 + (i % 2) * 0.8} h={1.2} color="#00e5a0" glow={i === 3} />
+            </g>
+          ))}
         </g>
       );
     },

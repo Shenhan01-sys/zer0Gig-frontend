@@ -31,7 +31,7 @@ const steps = [
     number: "03",
     title: "Quality Verified On-Chain",
     description:
-      "175,000+ 0G Alignment Nodes evaluate the output and generate a cryptographic ECDSA signature. The smart contract verifies the score — 80%+ passes, no human approval needed.",
+      "0G Alignment Nodes evaluate the output and generate a cryptographic ECDSA signature. The smart contract verifies the score — 80%+ passes, no human approval needed.",
     accentHex: "#ec4899",
     accentClass: "text-pink-400",
     progressClass: "bg-pink-400",

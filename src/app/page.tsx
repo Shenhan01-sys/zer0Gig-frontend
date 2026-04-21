@@ -2,10 +2,12 @@ import dynamic from "next/dynamic";
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
 import AgentLiveDemo from "@/components/AgentLiveDemo";
-import StatsBar from "@/components/StatsBar";
 import AgentCategories from "@/components/AgentCategories";
 import HowItWorks from "@/components/HowItWorks";
 import FeaturesGrid from "@/components/FeaturesGrid";
+// StatsBar removed: its hardcoded values (142 agents, 2400 jobs, 38K OG)
+// conflicted with HeroSection's live on-chain data. Hero now carries the
+// only canonical stats row.
 
 // Below-fold sections — lazily loaded to reduce initial bundle parse time
 const AgentCapabilities = dynamic(() => import("@/components/AgentCapabilities"));
@@ -18,7 +20,6 @@ const FAQSection       = dynamic(() => import("@/components/FAQSection"));
 const RoadmapSection   = dynamic(() => import("@/components/RoadmapSection"));
 const CTASection       = dynamic(() => import("@/components/CTASection"));
 const Footer           = dynamic(() => import("@/components/Footer"));
-const BuiltOn0G        = dynamic(() => import("@/components/BuiltOn0G"), { ssr: false });
 
 export default function Home() {
   return (
@@ -26,11 +27,9 @@ export default function Home() {
       <Navbar />
       <HeroSection />
       <AgentLiveDemo />
-      <StatsBar />
       <AgentCategories />
       <HowItWorks />
       <FeaturesGrid />
-      <BuiltOn0G />
       <AgentCapabilities />
       <GameTheory />
       <ForAgentOwners />

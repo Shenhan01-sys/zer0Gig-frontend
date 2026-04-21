@@ -78,3 +78,11 @@ body {
   90%  { opacity: 0.4; }
   100% { transform: translateY(100%); opacity: 0; }
 }
+
+/* ── List-card horizontal scanline (left → right sweep) ─────────── */
+@keyframes cardScanX {
+  0%   { transform: translateX(-100%); opacity: 0; }
+  10%  { opacity: 0.5; }
+  90%  { opacity: 0.5; }
+  100% { transform: translateX(1200px); opacity: 0; }
+}

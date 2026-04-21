@@ -6,6 +6,7 @@ import { useSubscription } from "@/hooks/useSubscriptionEscrow";
 import { useAgentProfile } from "@/hooks/useAgentProfile";
 import { formatOG } from "@/lib/utils";
 import { MOCK_SUBSCRIPTIONS } from "@/lib/mockData";
+import CornerBrackets from "../ui/CornerBrackets";
 
 interface SubscriptionCardProps {
   subscriptionId: number;
@@ -124,8 +125,31 @@ export default function SubscriptionCard({ subscriptionId, index }: Subscription
         initial={{ opacity: 0, x: -10 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.3, delay: index * 0.05 }}
-        className="flex items-center gap-4 rounded-xl border border-white/10 bg-[#0d1525]/90 px-4 py-3.5 hover:border-white/20 transition-colors cursor-pointer"
+        className="group relative flex items-center gap-4 rounded-xl border border-white/10 bg-[#0d1525]/90 px-4 py-3.5 hover:border-white/20 hover:shadow-[0_0_20px_rgba(168,85,247,0.08)] transition-all duration-200 cursor-pointer"
       >
+        {/* Terminal corner brackets — subtle on rest, crisper on hover */}
+        <CornerBrackets
+          size="sm"
+          weight="hair"
+          accent="rgba(168,85,247,0.5)"
+          inset={6}
+          className="absolute inset-0 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+        />
+
+        {/* Hover scanline — horizontal sweep left→right (violet for subscriptions) */}
+        <div
+          className="absolute inset-0 pointer-events-none overflow-hidden rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10"
+          aria-hidden
+        >
+          <div
+            className="absolute top-0 bottom-0 w-px group-hover:animate-[cardScanX_2s_linear_infinite]"
+            style={{
+              background:
+                "linear-gradient(180deg, transparent 0%, rgba(168,85,247,0.7) 50%, transparent 100%)",
+            }}
+          />
+        </div>
+
         {/* Status badge */}
         <SubscriptionStatusBadge status={status} />
 

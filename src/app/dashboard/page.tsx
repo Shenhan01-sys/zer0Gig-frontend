@@ -18,6 +18,7 @@ import JobCard from "@/components/jobs/JobCard";
 import SubscriptionCard from "@/components/subscriptions/SubscriptionCard";
 import { MOCK_JOBS, MOCK_SUBSCRIPTIONS } from "@/lib/mockData";
 import { Hand, Lightbulb, Zap, Rocket } from "lucide-react";
+import CornerBrackets from "@/components/ui/CornerBrackets";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -329,8 +330,22 @@ function ClientOverview({ jobs, subs, jobsLoading, subsLoading, displayName }: {
         initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
         className="rounded-2xl border border-white/10 bg-gradient-to-r from-[#0d1525] to-[#0a1020] p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 overflow-hidden relative"
       >
+        {/* Decorative: cyan gradient aura on right edge */}
         <div className="absolute right-0 top-0 w-64 h-full bg-gradient-to-l from-[#38bdf8]/5 to-transparent pointer-events-none" />
-        <div>
+        {/* Decorative: faint tech-grid background */}
+        <div
+          className="absolute inset-0 pointer-events-none opacity-[0.04]"
+          style={{
+            backgroundImage:
+              "linear-gradient(to right, #38bdf8 1px, transparent 1px), linear-gradient(to bottom, #38bdf8 1px, transparent 1px)",
+            backgroundSize: "48px 48px",
+          }}
+          aria-hidden
+        />
+        {/* Decorative: terminal corner brackets */}
+        <CornerBrackets size="md" weight="hair" accent="rgba(56,189,248,0.55)" inset={12} className="absolute inset-0" />
+
+        <div className="relative">
           <p className="text-white/40 text-[13px] mb-1">{getGreeting()},</p>
           <h2 className="text-2xl font-medium text-white">{displayName} <Hand size={16} /></h2>
           <p className="text-white/50 text-[13px] mt-1">
@@ -339,7 +354,7 @@ function ClientOverview({ jobs, subs, jobsLoading, subsLoading, displayName }: {
               : `You have ${jobs.length} job${jobs.length !== 1 ? "s" : ""} and ${subs.length} active subscription${subs.length !== 1 ? "s" : ""}.`}
           </p>
         </div>
-        <div className="flex gap-3 flex-shrink-0">
+        <div className="relative flex gap-3 flex-shrink-0">
           <Link href="/dashboard/create-job"
             className="px-5 py-2.5 bg-white text-black text-[13px] font-medium rounded-full hover:bg-white/90 transition-colors whitespace-nowrap">
             Post a Job
@@ -497,8 +512,22 @@ function AgentOwnerOverview({ agents, subs, agentsLoading, displayName }: {
         initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
         className="rounded-2xl border border-white/10 bg-gradient-to-r from-[#0d1525] to-[#0a1020] p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 relative overflow-hidden"
       >
+        {/* Decorative: violet gradient aura (differentiates owner from client view) */}
         <div className="absolute right-0 top-0 w-64 h-full bg-gradient-to-l from-[#a855f7]/5 to-transparent pointer-events-none" />
-        <div>
+        {/* Decorative: faint tech-grid background */}
+        <div
+          className="absolute inset-0 pointer-events-none opacity-[0.04]"
+          style={{
+            backgroundImage:
+              "linear-gradient(to right, #a855f7 1px, transparent 1px), linear-gradient(to bottom, #a855f7 1px, transparent 1px)",
+            backgroundSize: "48px 48px",
+          }}
+          aria-hidden
+        />
+        {/* Decorative: terminal corner brackets */}
+        <CornerBrackets size="md" weight="hair" accent="rgba(168,85,247,0.55)" inset={12} className="absolute inset-0" />
+
+        <div className="relative">
           <p className="text-white/40 text-[13px] mb-1">{getGreeting()},</p>
           <h2 className="text-2xl font-medium text-white">{displayName} <Zap size={16} /></h2>
           <p className="text-white/50 text-[13px] mt-1">
@@ -507,7 +536,7 @@ function AgentOwnerOverview({ agents, subs, agentsLoading, displayName }: {
               : `You own ${agents.length} AI agent${agents.length !== 1 ? "s" : ""} earning on zer0Gig.`}
           </p>
         </div>
-        <div className="flex gap-3 flex-shrink-0">
+        <div className="relative flex gap-3 flex-shrink-0">
           <Link href="/dashboard/jobs"
             className="px-5 py-2.5 bg-[#38bdf8] text-black text-[13px] font-medium rounded-full hover:bg-[#7dd3fc] transition-colors whitespace-nowrap">
             Find Jobs

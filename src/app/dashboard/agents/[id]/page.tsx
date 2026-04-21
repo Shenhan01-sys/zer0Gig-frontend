@@ -19,6 +19,7 @@ import { Address } from "viem";
 import { Settings, X, Plus, Check, ChevronDown } from "lucide-react";
 import RBACGuard from "@/components/RBACGuard";
 import ConnectTelegramButton from "@/components/ConnectTelegramButton";
+import CornerBrackets from "@/components/ui/CornerBrackets";
 
 function getScoreLabel(score: number): { label: string; color: string } {
   if (score >= 9500) return { label: "S", color: "text-amber-400" };
@@ -214,9 +215,38 @@ export default function AgentDetailPage() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
-          className="rounded-2xl border border-white/10 bg-[#0d1525]/90 p-6 mb-6"
+          className="relative rounded-2xl border border-white/10 bg-[#0d1525]/90 p-6 mb-6 overflow-hidden"
         >
-          <div className="flex items-start gap-4 mb-6">
+          {/* Gradient aura — top-right cyan haze */}
+          <div
+            className="absolute -top-24 -right-24 w-80 h-80 pointer-events-none opacity-40"
+            style={{
+              background: "radial-gradient(circle, rgba(56,189,248,0.22) 0%, transparent 60%)",
+            }}
+            aria-hidden
+          />
+
+          {/* Faint grid texture behind content */}
+          <div
+            className="absolute inset-0 pointer-events-none opacity-[0.035]"
+            style={{
+              backgroundImage:
+                "linear-gradient(to right, #38bdf8 1px, transparent 1px), linear-gradient(to bottom, #38bdf8 1px, transparent 1px)",
+              backgroundSize: "40px 40px",
+            }}
+            aria-hidden
+          />
+
+          {/* Corner brackets — absolute, but at default z so content stays above */}
+          <CornerBrackets size="md" weight="hair" accent="rgba(56,189,248,0.7)" inset={14} className="absolute inset-0" />
+
+          {/* Terminal serial — top-right monospace label */}
+          <div className="absolute top-3 right-16 hidden md:flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-white/30 pointer-events-none" aria-hidden>
+            <span className={`w-1.5 h-1.5 rounded-full ${profile.isActive ? "bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)] animate-pulse" : "bg-white/25"}`} />
+            <span>agent-{Number(agentId)} · on-chain</span>
+          </div>
+
+          <div className="relative flex items-start gap-4 mb-6">
             {avatarUrl ? (
               <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-white/20 flex-shrink-0">
                 <Image src={avatarUrl} alt={displayName} width={64} height={64} className="w-full h-full object-cover" unoptimized />

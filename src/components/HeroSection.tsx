@@ -7,6 +7,7 @@ import Link from "next/link";
 import BorderGlow from "./BorderGlow/BorderGlow";
 import RotatingText from "./RotatingText/RotatingText";
 import ShinyText from "./ShinyText/ShinyText";
+import CornerBrackets from "./ui/CornerBrackets";
 import { useAllAgents } from "@/hooks/useAllAgents";
 import { useAgentProfiles } from "@/hooks/useAgentProfile";
 import { useTotalAgents } from "@/hooks/useAgentManagement";
@@ -315,6 +316,50 @@ export default function HeroSection() {
 
       {/* Dark Overlay */}
       <div className="absolute inset-0 bg-black/50" />
+
+      {/* Precision-instrument grid overlay — very faint, gives the Hero
+          an "agent operations console" feel without overpowering video */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-[0.07] mix-blend-overlay"
+        style={{
+          backgroundImage:
+            "linear-gradient(to right, #38bdf8 1px, transparent 1px), linear-gradient(to bottom, #38bdf8 1px, transparent 1px)",
+          backgroundSize: "80px 80px",
+        }}
+        aria-hidden
+      />
+
+      {/* Diagonal scanline sweep — ambient motion across the whole Hero */}
+      <div
+        className="absolute inset-0 pointer-events-none overflow-hidden opacity-[0.06]"
+        aria-hidden
+      >
+        <div
+          className="absolute inset-y-0 w-[200%] -left-[50%] animate-[heroScan_14s_linear_infinite]"
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(-20deg, transparent 0px, transparent 120px, rgba(56,189,248,0.4) 121px, transparent 122px)",
+          }}
+        />
+      </div>
+
+      {/* Corner brackets at the viewport edges — terminal motif */}
+      <CornerBrackets
+        size="lg"
+        accent="#38bdf8"
+        glow
+        inset={24}
+        className="absolute inset-0 z-10"
+      />
+
+      {/* Monospace terminal serial — unobtrusive top-right label */}
+      <div
+        className="absolute top-6 right-8 z-10 hidden md:flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.2em] text-white/35 pointer-events-none"
+        aria-hidden
+      >
+        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)] animate-pulse" />
+        <span>node · galileo-testnet</span>
+      </div>
 
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen pt-[140px] md:pt-[200px] pb-[80px] px-6">

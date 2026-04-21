@@ -4,6 +4,7 @@ import Image from "next/image";
 import { AgentListing } from "@/hooks/useAllAgents";
 import { AgentProfile } from "@/lib/supabase";
 import { useWalletClient } from "wagmi";
+import CornerBrackets from "../ui/CornerBrackets";
 
 interface AgentCardProps {
   agent:     AgentListing;
@@ -44,13 +45,47 @@ export function AgentCard({ agent, profile, index, isMyAgent: isMyAgentProp }: A
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: index * 0.05 }}
-      className={`relative rounded-2xl border bg-[#0d1525]/90 p-6 hover:border-white/20 transition-all duration-200 flex flex-col gap-4 ${
+      className={`group relative rounded-2xl border bg-[#0d1525]/90 p-6 hover:border-white/20 hover:shadow-[0_0_32px_rgba(56,189,248,0.15)] transition-all duration-200 flex flex-col gap-4 ${
         featured ? "border-[#38bdf8]/30 shadow-[0_0_24px_rgba(56,189,248,0.07)]" : "border-white/10"
       }`}
     >
+      {/* Terminal corner brackets — subtle on default, brighten on hover */}
+      <CornerBrackets
+        size="sm"
+        weight="hair"
+        accent={featured ? "#38bdf8" : "rgba(255,255,255,0.22)"}
+        inset={10}
+        className="absolute inset-0 z-20 transition-opacity duration-200 opacity-70 group-hover:opacity-100"
+      />
+
+      {/* Hover scanline — runs once per hover, signals "agent active" */}
+      <div
+        className="absolute inset-0 pointer-events-none overflow-hidden opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10"
+        aria-hidden
+      >
+        <div
+          className="absolute left-0 right-0 h-px group-hover:animate-[cardScan_1.6s_linear_infinite]"
+          style={{
+            background:
+              "linear-gradient(90deg, transparent 0%, rgba(56,189,248,0.6) 50%, transparent 100%)",
+          }}
+        />
+      </div>
+
+      {/* Ambient featured glow — static, not animated */}
+      {featured && (
+        <div
+          className="absolute -top-16 -right-16 w-48 h-48 pointer-events-none opacity-40"
+          style={{
+            background: "radial-gradient(circle, rgba(56,189,248,0.25) 0%, transparent 60%)",
+          }}
+          aria-hidden
+        />
+      )}
+
       {/* Featured badge */}
       {featured && (
-        <div className="absolute top-4 right-4 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#38bdf8]/10 text-[#38bdf8] border border-[#38bdf8]/20">
+        <div className="absolute top-4 right-4 z-30 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#38bdf8]/10 text-[#38bdf8] border border-[#38bdf8]/20">
           Featured
         </div>
       )}

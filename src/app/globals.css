@@ -64,3 +64,17 @@ body {
 .animate-shiny-text {
   animation: shiny-text 8s infinite;
 }
+
+/* ── HeroSection ambient scanline sweep ───────────────────────────── */
+@keyframes heroScan {
+  0%   { transform: translateX(-30%); }
+  100% { transform: translateX(30%); }
+}
+
+/* ── AgentCard hover scanline (driven by group-hover) ─────────────── */
+@keyframes cardScan {
+  0%   { transform: translateY(-100%); opacity: 0; }
+  10%  { opacity: 0.4; }
+  90%  { opacity: 0.4; }
+  100% { transform: translateY(100%); opacity: 0; }
+}

@@ -20,6 +20,7 @@ import { Settings, X, Plus, Check, ChevronDown } from "lucide-react";
 import RBACGuard from "@/components/RBACGuard";
 import ConnectTelegramButton from "@/components/ConnectTelegramButton";
 import CornerBrackets from "@/components/ui/CornerBrackets";
+import ReputationRadar from "@/components/agents/ReputationRadar";
 
 function getScoreLabel(score: number): { label: string; color: string } {
   if (score >= 9500) return { label: "S", color: "text-amber-400" };
@@ -304,6 +305,71 @@ export default function AgentDetailPage() {
             <StatCard label="Earnings" value={formatOG(BigInt(profile.totalEarningsWei || 0))} />
           </div>
         </motion.div>
+
+        {/* Reputation radar — composite view of the 5 trust axes */}
+        {(() => {
+          const done = Number(profile.totalJobsCompleted || 0);
+          const attempted = Number(profile.totalJobsAttempted || 0);
+          const completionPct = attempted > 0 ? (done / attempted) * 100 : (done > 0 ? 100 : 0);
+          const skillsCount = (onChainSkillIds as unknown as string[] | undefined)?.length ?? 0;
+          const volumeScore = Math.min(100, done * 8); // 12+ jobs = full
+          const skillScore = Math.min(100, skillsCount * 20); // 5+ skills = full
+          const activeScore = profile.isActive ? Math.max(40, Math.min(100, score / 100)) : 25;
+
+          return (
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.15 }}
+              className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#0d1525]/90 p-6 md:p-8 mb-6"
+            >
+              {/* Subtle tech grid backdrop */}
+              <div
+                className="absolute inset-0 pointer-events-none opacity-[0.04]"
+                style={{
+                  backgroundImage:
+                    "linear-gradient(to right, #38bdf8 1px, transparent 1px), linear-gradient(to bottom, #38bdf8 1px, transparent 1px)",
+                  backgroundSize: "32px 32px",
+                }}
+                aria-hidden
+              />
+              <CornerBrackets
+                size="sm"
+                weight="hair"
+                accent="rgba(56,189,248,0.35)"
+                inset={12}
+                className="absolute inset-0 pointer-events-none"
+              />
+
+              <div className="relative flex items-center justify-between mb-5">
+                <div>
+                  <h2 className="text-[14px] font-semibold text-white/70 uppercase tracking-[0.2em]">
+                    Trust Composite
+                  </h2>
+                  <p className="text-white/40 text-[12px] mt-1">
+                    Five-axis reputation read from on-chain performance
+                  </p>
+                </div>
+                <div className="hidden md:flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-white/35">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#38bdf8] animate-pulse shadow-[0_0_6px_rgba(56,189,248,0.8)]" />
+                  on-chain · live
+                </div>
+              </div>
+
+              <div className="relative">
+                <ReputationRadar
+                  axes={[
+                    { label: "Reputation", value: score / 100 },
+                    { label: "Completion", value: completionPct, sub: `${done}/${attempted || "—"}` },
+                    { label: "Volume", value: volumeScore, sub: `${done} jobs` },
+                    { label: "Skills", value: skillScore, sub: `${skillsCount}` },
+                    { label: "Activity", value: activeScore },
+                  ]}
+                />
+              </div>
+            </motion.div>
+          );
+        })()}
 
         {/* Edit Panel */}
         <AnimatePresence>

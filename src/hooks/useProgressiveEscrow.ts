@@ -4,6 +4,8 @@ import { useReadContract, useWriteContract, useWaitForTransactionReceipt, useAcc
 import { useState, useMemo } from "react";
 import { CONTRACT_CONFIG } from "@/lib/contracts";
 import { Address } from "viem";
+import { useTx } from "@/components/ui/TxToast";
+import { parseContractError } from "@/lib/utils";
 
 export interface JobData {
   jobId: bigint;
@@ -102,6 +104,7 @@ export function useJobProposals(jobId: number) {
 
 export function useSubmitProposal() {
   const { writeContractAsync, isPending: isWritePending } = useWriteContract();
+  const tx = useTx();
   const [isPending, setIsPending] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
@@ -122,6 +125,7 @@ export function useSubmitProposal() {
     setIsConfirmed(false);
     setError(null);
 
+    const toastId = tx.start(`Submit proposal · Job #${params.jobId}`);
     try {
       const hash = await writeContractAsync({
         address: CONTRACT_CONFIG.ProgressiveEscrow.address,
@@ -129,10 +133,12 @@ export function useSubmitProposal() {
         functionName: "submitProposal",
         args: [params.jobId, params.agentId, params.proposedRateWei, params.descriptionCID],
       });
+      tx.broadcast(toastId, hash);
       setIsConfirming(true);
       setIsPending(false);
       return hash;
     } catch (err) {
+      tx.fail(toastId, parseContractError(err));
       setError(err as Error);
       setIsPending(false);
       setIsConfirming(false);
@@ -151,6 +157,7 @@ export function useSubmitProposal() {
 
 export function useAcceptProposal() {
   const { writeContractAsync, isPending: isWritePending } = useWriteContract();
+  const tx = useTx();
   const [isPending, setIsPending] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
@@ -162,6 +169,7 @@ export function useAcceptProposal() {
     setIsConfirmed(false);
     setError(null);
 
+    const toastId = tx.start(`Accept proposal · Job #${params.jobId}`);
     try {
       const hash = await writeContractAsync({
         address: CONTRACT_CONFIG.ProgressiveEscrow.address,
@@ -170,10 +178,12 @@ export function useAcceptProposal() {
         args: [params.jobId, params.proposalIndex],
         value: params.value,
       });
+      tx.broadcast(toastId, hash);
       setIsConfirming(true);
       setIsPending(false);
       return hash;
     } catch (err) {
+      tx.fail(toastId, parseContractError(err));
       setError(err as Error);
       setIsPending(false);
       setIsConfirming(false);
@@ -224,6 +234,7 @@ export function useDefineMilestones() {
 
 export function useReleaseMilestone() {
   const { writeContractAsync, isPending: isWritePending } = useWriteContract();
+  const tx = useTx();
   const [isPending, setIsPending] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
@@ -241,6 +252,7 @@ export function useReleaseMilestone() {
     setIsConfirmed(false);
     setError(null);
 
+    const toastId = tx.start(`Release milestone ${params.milestoneIndex + 1} · Job #${params.jobId}`);
     try {
       const hash = await writeContractAsync({
         address: CONTRACT_CONFIG.ProgressiveEscrow.address,
@@ -254,10 +266,12 @@ export function useReleaseMilestone() {
           params.signature,
         ],
       });
+      tx.broadcast(toastId, hash);
       setIsConfirming(true);
       setIsPending(false);
       return hash;
     } catch (err) {
+      tx.fail(toastId, parseContractError(err));
       setError(err as Error);
       setIsPending(false);
       setIsConfirming(false);
@@ -349,6 +363,7 @@ export function useProgressiveEscrow() {
 
 export function usePostJob() {
   const { writeContractAsync, isPending } = useWriteContract();
+  const tx = useTx();
   const [isConfirming, setIsConfirming] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [txHash, setTxHash] = useState<string | null>(null);
@@ -359,6 +374,7 @@ export function usePostJob() {
     setIsConfirmed(false);
     setError(null);
 
+    const toastId = tx.start("Post new job");
     try {
       const hash = await writeContractAsync({
         address: CONTRACT_CONFIG.ProgressiveEscrow.address,
@@ -366,10 +382,12 @@ export function usePostJob() {
         functionName: "postJob",
         args: [cid, skillBytes32],
       });
+      tx.broadcast(toastId, hash);
       setTxHash(hash);
       setIsConfirming(true);
       return hash;
     } catch (err) {
+      tx.fail(toastId, parseContractError(err));
       setError(err as Error);
       throw err;
     }

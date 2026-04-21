@@ -6,6 +6,7 @@ import { http } from "wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ogNewton } from "@/lib/wagmi";
 import { useState } from "react";
+import { TxToastProvider } from "@/components/ui/TxToast";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   // Create both configs inside the component so they are never shared across
@@ -49,7 +50,9 @@ export default function Providers({ children }: { children: React.ReactNode }) {
     >
       <QueryClientProvider client={queryClient}>
         <WagmiProvider config={wagmiConfig}>
-          {children}
+          <TxToastProvider>
+            {children}
+          </TxToastProvider>
         </WagmiProvider>
       </QueryClientProvider>
     </PrivyProvider>

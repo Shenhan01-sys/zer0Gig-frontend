@@ -1,6 +1,8 @@
 import { useReadContract, useWriteContract } from "wagmi";
 import { CONTRACT_CONFIG } from "@/lib/contracts";
 import { Address } from "viem";
+import { useTx } from "@/components/ui/TxToast";
+import { parseContractError } from "@/lib/utils";
 
 export function useSubscription(subscriptionId: bigint | number) {
   return useReadContract({
@@ -40,6 +42,7 @@ export function useTotalSubscriptions() {
 
 export function useCreateSubscription() {
   const { writeContractAsync, isPending, isSuccess, isError, error, data: txHash } = useWriteContract();
+  const tx = useTx();
 
   const createSubscription = async (
     agentId: bigint,
@@ -54,14 +57,21 @@ export function useCreateSubscription() {
     webhookUrl: string,
     value: bigint
   ): Promise<`0x${string}` | undefined> => {
-    const hash = await writeContractAsync({
-      address: CONTRACT_CONFIG.SubscriptionEscrow.address as Address,
-      abi: CONTRACT_CONFIG.SubscriptionEscrow.abi,
-      functionName: "createSubscription",
-      args: [agentId, taskDescription, intervalSeconds, checkInRate, alertRate, gracePeriodSeconds, x402Enabled, x402VerificationMode, clientX402Sig, webhookUrl],
-      value,
-    });
-    return hash;
+    const toastId = tx.start(`Create subscription · Agent #${agentId}`);
+    try {
+      const hash = await writeContractAsync({
+        address: CONTRACT_CONFIG.SubscriptionEscrow.address as Address,
+        abi: CONTRACT_CONFIG.SubscriptionEscrow.abi,
+        functionName: "createSubscription",
+        args: [agentId, taskDescription, intervalSeconds, checkInRate, alertRate, gracePeriodSeconds, x402Enabled, x402VerificationMode, clientX402Sig, webhookUrl],
+        value,
+      });
+      tx.broadcast(toastId, hash);
+      return hash;
+    } catch (err) {
+      tx.fail(toastId, parseContractError(err));
+      throw err;
+    }
   };
 
   return { createSubscription, isPending, isSuccess, isError, error, txHash };

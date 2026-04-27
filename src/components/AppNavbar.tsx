@@ -15,7 +15,7 @@ import { Store, Zap, Book } from "lucide-react";
 const APP_LINKS = [
   { label: "Marketplace", href: "/marketplace",  icon: <Store size={16} /> },
   { label: "Dashboard",   href: "/dashboard",    icon: <Zap size={16} /> },
-  { label: "Docs",        href: "/docs",         icon: <Book size={16} /> },
+  { label: "Docs",        href: "https://stylenecy.gitbook.io/zer0gig",         icon: <Book size={16} /> },
 ];
 
 // ── Back button config per route ───────────────────────────────────────────────

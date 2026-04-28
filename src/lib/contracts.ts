@@ -34,15 +34,15 @@ export const SKILL_IDS = {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DEPLOYED CONTRACT ADDRESSES (0G Newton Testnet - Chain ID: 16602)
-// Deployed: 2026-04-06 (Session 7 — proposal-based job flow)
+// Deployed: 2026-04-28 (ERC-7857 + ERC-8183 migration)
 // Deployer: 0x48379F4d1427209311E9FF0bcC4a354953ea631B
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const CONTRACT_ADDRESSES = {
-  AgentRegistry: "0x43Bb5761cC621eC7dB754010650Be6303eC5311F",
-  ProgressiveEscrow: "0x8C1Df1F5E32523cEfA52fa29146686B53b486Ae8",
-  SubscriptionEscrow: "0x2628C364f879E1E594f500fb096123830d853078",
-  UserRegistry: "0x6bb8678A8337B687A9522BC1c802Fb63279a9DA1",
+  AgentRegistry: "0x4c49D008E72eF1E098Bcd6E75857Ed17377dB4ab",
+  ProgressiveEscrow: "0xe9d1d260c08385b3beB68012D425e208b4cd2295",
+  SubscriptionEscrow: "0x088400FFf9d37851173e22eef904e710B88F6312",
+  UserRegistry: "0x1958bdbb5926674026b9ac630c9A4Cb91718Aee7",
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────────────

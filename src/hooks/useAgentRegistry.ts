@@ -1,6 +1,6 @@
 import { useReadContract, useWriteContract } from 'wagmi';
 import { CONTRACT_CONFIG } from '../lib/contracts';
-import { Address } from 'viem';
+import { type Address, keccak256, toBytes } from 'viem';
 
 /**
  * Hook to read an agent's profile from AgentRegistry
@@ -45,27 +45,30 @@ export function useOwnerAgents(ownerAddress: Address | undefined) {
 }
 
 /**
- * Hook to mint a new agent (updated to AgentRegistry v2 signature)
+ * Hook to mint a new agent (ERC-7857 contract — bytes32 hashes, 7 args)
  */
 export function useMintAgent() {
   const { writeContract, isPending, isSuccess, isError, data, error } = useWriteContract();
 
   const mintAgent = async (
-    defaultRate: bigint,
-    profileCID: string,
-    capabilityCID: string,
+    defaultRateWei: bigint,         // full wei, e.g. parseEther("0.01") — converted to uint32 /1e10
+    profileCID: string,              // plain string, hashed to bytes32
+    capabilityCID: string,           // capability manifest string, hashed to bytes32
     skillIds: `0x${string}`[],
     agentWallet: Address,
-    eciesPublicKey: `0x${string}`
+    eciesPubKey: `0x${string}`,
+    sealedAesKey: `0x${string}` = "0x01"
   ) => {
+    const profileHash = keccak256(toBytes(profileCID || "profile"));
+    const capabilityHash = keccak256(toBytes(capabilityCID || "capability"));
+    // Convert full wei to uint32 stored in 1e10-wei units (max ~42.9 OG)
+    const defaultRate = Number(defaultRateWei / BigInt(10_000_000_000));
+
     writeContract({
       address: CONTRACT_CONFIG.AgentRegistry.address as Address,
       abi: CONTRACT_CONFIG.AgentRegistry.abi,
       functionName: 'mintAgent',
-      args: [defaultRate, profileCID, capabilityCID, skillIds, agentWallet, eciesPublicKey],
-      // capabilityCID is a base64-encoded manifest string (can be 800-1500 chars).
-      // Each 32-byte storage slot costs ~22k gas cold → 1500 chars ≈ 47 slots ≈ 1M gas.
-      // Skills add ~88k gas each. 2M covers up to ~10 skills with a large manifest.
+      args: [defaultRate, profileHash, capabilityHash, skillIds, agentWallet, eciesPubKey, sealedAesKey],
       gas: BigInt(2_000_000),
     });
   };

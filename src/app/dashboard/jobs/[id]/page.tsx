@@ -664,7 +664,7 @@ function JobDetailInner({ jobId }: { jobId: number }) {
 
   if (isLoading) {
     return (
-      <div className="max-w-4xl mx-auto p-6 bg-[#050810] min-h-screen">
+      <div className="max-w-4xl">
         <div className="rounded-2xl border border-white/10 bg-[#0d1525]/90 p-6 animate-pulse">
           <div className="h-6 bg-white/10 rounded-lg mb-4 w-48" />
           <div className="h-4 bg-white/10 rounded-lg mb-2 w-64" />
@@ -678,7 +678,7 @@ function JobDetailInner({ jobId }: { jobId: number }) {
 
   if (isError || !job) {
     return (
-      <div className="max-w-4xl mx-auto p-6 bg-[#050810] min-h-screen">
+      <div className="max-w-4xl">
         <div className="text-white/30 text-center py-20">
           {isError ? "Failed to load job. Check the job ID." : "Job not found."}
         </div>
@@ -691,15 +691,15 @@ function JobDetailInner({ jobId }: { jobId: number }) {
   const isAgentOwner = role === UserRole.FreelancerOwner;
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-[#050810] min-h-screen">
+    <div className="max-w-4xl space-y-6">
       {/* Back navigation */}
-      <Link href="/dashboard" className="flex items-center gap-2 text-white/40 hover:text-white/70 text-[13px] mb-6 transition-colors">
+      <Link href="/dashboard" className="flex items-center gap-2 text-white/40 hover:text-white/70 text-[13px] transition-colors">
         ← Back to Dashboard
       </Link>
 
       {/* New job success banner */}
       {isNew && (
-        <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-4 py-3 mb-6 flex items-center gap-3">
+        <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-4 py-3 flex items-center gap-3">
           <div className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-emerald-500" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -712,7 +712,7 @@ function JobDetailInner({ jobId }: { jobId: number }) {
       )}
 
       {/* Job header card */}
-      <div className="rounded-2xl border border-white/10 bg-[#0d1525]/90 p-6 mb-6">
+      <div className="rounded-2xl border border-white/10 bg-[#0d1525]/90 p-6">
         <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
           <div>
             <div className="flex items-center gap-3 mb-1">
@@ -848,7 +848,7 @@ function JobDetailInner({ jobId }: { jobId: number }) {
       {job.status === JOB_STATUS.PENDING_MILESTONES && (
         <>
           {/* Accepted proposal summary */}
-          <div className="bg-[#0d1525]/90 rounded-2xl border border-white/10 p-6 mb-6">
+          <div className="bg-[#0d1525]/90 rounded-2xl border border-white/10 p-6">
             <h2 className="text-[13px] font-medium text-white/50 uppercase tracking-wider mb-4">Accepted Proposal</h2>
             <div className="flex items-center justify-between">
               <div>
@@ -891,7 +891,7 @@ function JobDetailInner({ jobId }: { jobId: number }) {
           </div>
 
           {/* Milestone Timeline */}
-          <div className="rounded-2xl border border-white/10 bg-[#0d1525]/90 p-6 mb-6 mt-6">
+          <div className="rounded-2xl border border-white/10 bg-[#0d1525]/90 p-6">
             <h2 className="text-[13px] font-medium text-white/50 uppercase tracking-wider mb-6">
               Milestones
             </h2>
@@ -927,13 +927,13 @@ function JobDetailInner({ jobId }: { jobId: number }) {
 
       {/* ── CANCELLED ── */}
       {job.status === JOB_STATUS.CANCELLED && (
-        <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-6 mb-6">
+        <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-6">
           <p className="text-red-400 text-[14px]">This job has been cancelled.</p>
         </div>
       )}
 
       {/* Job details */}
-      <div className="rounded-2xl border border-white/10 bg-[#0d1525]/90 p-6 mt-6">
+      <div className="rounded-2xl border border-white/10 bg-[#0d1525]/90 p-6">
         <h2 className="text-[13px] font-medium text-white/50 uppercase tracking-wider mb-3">
           Job Details
         </h2>
@@ -956,9 +956,7 @@ function JobDetailInner({ jobId }: { jobId: number }) {
       </div>
 
       {/* Activity log */}
-      <div className="mt-6">
-        <SystemMessageLog jobId={jobId} maxEntries={15} />
-      </div>
+      <SystemMessageLog jobId={jobId} maxEntries={15} />
     </div>
   );
 }
@@ -969,7 +967,7 @@ export default function JobDetailPage({ params }: { params: { id: string } }) {
 
   return (
     <Suspense fallback={
-      <div className="max-w-4xl mx-auto p-6 bg-[#050810] min-h-screen">
+      <div className="max-w-4xl">
         <div className="rounded-2xl border border-white/10 bg-[#0d1525]/90 p-6 animate-pulse">
           <div className="h-6 bg-white/10 rounded-lg mb-4 w-48" />
           <div className="h-4 bg-white/10 rounded-lg mb-2 w-64" />

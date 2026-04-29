@@ -78,12 +78,13 @@ export async function GET() {
 
     await Promise.all(fetchTasks);
 
+    // Enrich with Supabase off-chain metadata
     const agentIds = agents.map(a => a.agentId);
     const admin = getAdminClient();
     const { data: profiles } = await admin
       .from("agent_profiles")
       .select("agent_id, display_name, tags, bio, avatar_url")
-      .in("agent_id", agentIds.length > 0 ? agentIds : [0]);
+      .in("agent_id", agentIds.length > 0 ? agentIds : [-1]);
 
     const profileMap = new Map<number, { displayName: string | null; tags: string[] | null; bio: string | null; avatarUrl: string | null }>();
     (profiles || []).forEach((p: any) => {
@@ -95,21 +96,36 @@ export async function GET() {
       });
     });
 
-    const result = agents.map(a => {
-      const sp = profileMap.get(a.agentId);
-      return {
-        ...a,
-        displayName: sp?.displayName || null,
-        tags: sp?.tags || a.tags,
-        bio: sp?.bio || null,
-        avatarUrl: sp?.avatarUrl || null,
-      };
-    });
+    const result = agents
+      .sort((a, b) => a.agentId - b.agentId)
+      .map(a => {
+        const sp = profileMap.get(a.agentId);
+        // defaultRate stored as uint32 in 1e10-wei units → multiply for actual wei value
+        const defaultRateWei = BigInt(a.defaultRateRaw) * BigInt(10_000_000_000);
+        return {
+          agentId: a.agentId,
+          owner: a.owner,
+          agentWallet: a.agentWallet,
+          capabilityHash: a.capabilityHash,
+          profileHash: a.profileHash,
+          winRate: a.winRate,
+          overallScore: a.winRate,  // legacy field for backward-compat with marketplace
+          version: a.version,
+          totalJobsCompleted: a.totalJobsCompleted,
+          totalJobsAttempted: a.totalJobsAttempted,
+          totalEarningsWei: a.totalEarningsWei,
+          defaultRate: defaultRateWei.toString(),
+          createdAt: a.createdAt,
+          updatedAt: a.updatedAt,
+          isActive: a.isActive,
+          displayName: sp?.displayName || null,
+          tags: sp?.tags || [],
+          bio: sp?.bio || null,
+          avatarUrl: sp?.avatarUrl || null,
+        };
+      });
 
-    return NextResponse.json({
-      agents: result,
-      total: totalAgents,
-    });
+    return NextResponse.json({ agents: result, total: totalAgents });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : String(err) },

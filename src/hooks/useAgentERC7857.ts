@@ -66,3 +66,84 @@ export function useAuthorizeUsage() {
   }, [writeContractAsync]);
 
   return { authorizeUsage, loading };
+}
+
+// ── revokeUsage ───────────────────────────────────────────────────────────────
+
+export function useRevokeUsage() {
+  const { writeContractAsync } = useWriteContract();
+  const [loading, setLoading] = useState(false);
+
+  const revokeUsage = useCallback(async (agentId: number, executor: Address) => {
+    setLoading(true);
+    try {
+      return await writeContractAsync({
+        address: CONTRACT_CONFIG.AgentRegistry.address,
+        abi: CONTRACT_CONFIG.AgentRegistry.abi,
+        functionName: "revokeUsage",
+        args: [BigInt(agentId), executor],
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [writeContractAsync]);
+
+  return { revokeUsage, loading };
+}
+
+// ── iTransfer ─────────────────────────────────────────────────────────────────
+
+export function useITransfer() {
+  const { writeContractAsync } = useWriteContract();
+  const [loading, setLoading] = useState(false);
+
+  const iTransfer = useCallback(async (
+    agentId: number,
+    to: Address,
+    newCapabilityHash: `0x${string}`,
+    newSealedKey: `0x${string}`,
+    oracleProof: `0x${string}`
+  ) => {
+    setLoading(true);
+    try {
+      return await writeContractAsync({
+        address: CONTRACT_CONFIG.AgentRegistry.address,
+        abi: CONTRACT_CONFIG.AgentRegistry.abi,
+        functionName: "iTransfer",
+        args: [BigInt(agentId), to, newCapabilityHash, newSealedKey, oracleProof],
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [writeContractAsync]);
+
+  return { iTransfer, loading };
+}
+
+// ── iClone ────────────────────────────────────────────────────────────────────
+
+export function useIClone() {
+  const { writeContractAsync } = useWriteContract();
+  const [loading, setLoading] = useState(false);
+
+  const iClone = useCallback(async (
+    agentId: number,
+    newOwner: Address,
+    newCapabilityHash: `0x${string}`,
+    newSealedKey: `0x${string}`,
+    oracleProof: `0x${string}`
+  ) => {
+    setLoading(true);
+    try {
+      return await writeContractAsync({
+        address: CONTRACT_CONFIG.AgentRegistry.address,
+        abi: CONTRACT_CONFIG.AgentRegistry.abi,
+        functionName: "iClone",
+        args: [BigInt(agentId), newOwner, newCapabilityHash, newSealedKey, oracleProof],
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [writeContractAsync]);
+
+  return { iClone, loading };

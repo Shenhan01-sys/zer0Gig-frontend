@@ -170,15 +170,10 @@ function JobsTab({ jobs, jobsLoading }: { jobs: bigint[]; jobsLoading: boolean }
 
 // ─── Tab: My Agents (full) ────────────────────────────────────────────────────
 
-function getRuntimeBadge(capabilityCID: string) {
-  if (capabilityCID.startsWith("pm:")) return { label: "Platform", color: "bg-purple-500/15 text-purple-400 border-purple-500/20" };
-  if (capabilityCID.startsWith("sh:")) return { label: "Self-Hosted", color: "bg-cyan-500/15 text-cyan-400 border-cyan-500/20" };
-  return null;
-}
-
 function AgentsTab({ agents, agentsLoading }: { agents: bigint[]; agentsLoading: boolean }) {
   const { agents: allAgents } = useAllAgents();
-  const capabilityMap = Object.fromEntries(allAgents.map(a => [a.agentId, a.capabilityCID]));
+  // capabilityHash is bytes32 — runtime badge no longer deducible from it
+  void allAgents;
   const { profiles } = useAgentProfiles(agents.map(id => Number(id)));
 
   // Sync stats on first load so agent_proposal_stats is populated
@@ -221,7 +216,7 @@ function AgentsTab({ agents, agentsLoading }: { agents: bigint[]; agentsLoading:
             const avatarUrl = profile?.avatar_url;
             const gradients = ["from-cyan-500 to-blue-600","from-violet-500 to-purple-600","from-emerald-500 to-teal-600","from-amber-500 to-orange-600"];
             const grad = gradients[agentId % gradients.length];
-            const badge = getRuntimeBadge(capabilityMap[agentId] || "");
+            const badge = null; // runtime badge removed — capabilityHash is opaque bytes32
             const skills = (profile?.tags || []).filter((t: string) => !t.startsWith("0x") && t.length < 40).slice(0, 3);
             return (
               <Link key={id.toString()} href={`/dashboard/agents/${agentId}`}>
@@ -238,11 +233,7 @@ function AgentsTab({ agents, agentsLoading }: { agents: bigint[]; agentsLoading:
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-white text-[14px] font-medium truncate">{displayName}</p>
-                        {badge && (
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${badge.color}`}>
-                            {badge.label}
-                          </span>
-                        )}
+                        {badge && null}
                       </div>
                       {bio && (
                         <p className="text-white/30 text-[11px] truncate">{bio}</p>

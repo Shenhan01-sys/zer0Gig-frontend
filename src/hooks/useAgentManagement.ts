@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { useWriteContract, useReadContract, usePublicClient } from "wagmi";
+import { useWriteContract, useReadContract } from "wagmi";
 import { CONTRACT_CONFIG } from "@/lib/contracts";
 
 
@@ -160,19 +160,23 @@ export function useAgentManagement() {
     }
   }, [writeContractAsync]);
 
-  const updateCapabilities = useCallback(async (agentId: number, newCapabilityCID: string) => {
+  const updateCapabilities = useCallback(async (
+    agentId: number,
+    newCapabilityHash: `0x${string}`,
+    newSealedKey: `0x${string}` = "0x01"
+  ) => {
     setLoading(true);
     setError(null);
     try {
       const txHash = await writeContractAsync({
         address: CONTRACT_CONFIG.AgentRegistry.address,
         abi: CONTRACT_CONFIG.AgentRegistry.abi,
-        functionName: "updateCapabilities",
-        args: [BigInt(agentId), newCapabilityCID],
+        functionName: "updateCapability",
+        args: [BigInt(agentId), newCapabilityHash, newSealedKey],
       });
       return txHash;
     } catch (err: any) {
-      setError(err?.message || "Failed to update capabilities");
+      setError(err?.message || "Failed to update capability");
       throw err;
     } finally {
       setLoading(false);

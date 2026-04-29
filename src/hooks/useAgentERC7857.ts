@@ -147,3 +147,37 @@ export function useIClone() {
   }, [writeContractAsync]);
 
   return { iClone, loading };
+}
+
+// ── transferDigest (view) ─────────────────────────────────────────────────────
+
+export function useTransferDigest(
+  agentId: number,
+  version: number,
+  oldHash: `0x${string}`,
+  newHash: `0x${string}`,
+  to: string
+) {
+  const valid = isValidAddress(to);
+  return useReadContract({
+    address: CONTRACT_CONFIG.AgentRegistry.address,
+    abi: CONTRACT_CONFIG.AgentRegistry.abi,
+    functionName: "transferDigest",
+    args: valid ? [BigInt(agentId), version, oldHash, newHash, to as Address] : undefined,
+    query: {
+      enabled: valid && newHash !== `0x${"00".repeat(32)}`,
+    },
+  });
+}
+
+// ── authorizedUsersOf (view) ──────────────────────────────────────────────────
+
+export function useAuthorizedUsersOf(agentId: number) {
+  return useReadContract({
+    address: CONTRACT_CONFIG.AgentRegistry.address,
+    abi: CONTRACT_CONFIG.AgentRegistry.abi,
+    functionName: "authorizedUsersOf",
+    args: [BigInt(agentId)],
+    query: { enabled: agentId > 0 },
+  });
+}

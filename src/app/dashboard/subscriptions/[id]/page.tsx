@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { parseEther } from "viem";
-import { useWaitForTransactionReceipt, useReadContract } from "wagmi";
+import { useWaitForTransactionReceipt } from "wagmi";
 import {
   useSubscription,
   useTopUp,
@@ -14,7 +14,6 @@ import {
   useSetWebhookUrl,
   useFinalizeExpired,
 } from "@/hooks/useSubscriptionEscrow";
-import { CONTRACT_CONFIG } from "@/lib/contracts";
 import { SubscriptionStatusBadge } from "@/components/subscriptions/SubscriptionCard";
 import GracePeriodBanner from "@/components/subscriptions/GracePeriodBanner";
 import DrainHistory from "@/components/subscriptions/DrainHistory";
@@ -89,34 +88,18 @@ export default function SubscriptionDetailPage() {
     }
   }, [topUpConfirmed, cancelConfirmed, approveConfirmed, webhookConfirmed, finalizeConfirmed, refetch]);
 
-  // Fetch agent profile for capabilities display
+  // Fetch agent display name + tags from Supabase
   const subAgentId = (sub as any)?.agentId;
-  const { data: agentProfile } = useReadContract({
-    address: CONTRACT_CONFIG.AgentRegistry.address,
-    abi: CONTRACT_CONFIG.AgentRegistry.abi,
-    functionName: "getAgentProfile",
-    args: [subAgentId ? BigInt(subAgentId.toString()) : 0n],
-    query: { enabled: subAgentId && Number(subAgentId) > 0 },
-  });
-
-  // Fetch agent display name from Supabase
   const { profile: agentDisplayProfile } = useAgentProfile(
     subAgentId && Number(subAgentId) > 0 ? Number(subAgentId.toString()) : undefined
   );
 
   const agentCapabilities = useMemo(() => {
-    if (!agentProfile) return [];
-    try {
-      const cid = (agentProfile as any).capabilityCID;
-      if (!cid) return [];
-      let base64 = cid;
-      if (cid.includes(":")) base64 = cid.split(":")[1];
-      const decoded = JSON.parse(atob(base64));
-      return decoded.skills || [];
-    } catch {
-      return [];
-    }
-  }, [agentProfile]);
+    // Skills come from Supabase tags — agent profile tags are human-readable skill labels
+    const tags = agentDisplayProfile?.tags as string[] | undefined;
+    if (!tags || tags.length === 0) return [];
+    return tags.map(t => t.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()));
+  }, [agentDisplayProfile]);
 
   // Handlers
   const handleTopUp = (amount: bigint) => {
@@ -192,7 +175,6 @@ export default function SubscriptionDetailPage() {
   const subData = sub as any;
   const agentId            = subData.agentId            as bigint;
   const agentWallet        = subData.agentWallet        as string;
-  const taskDescription    = subData.taskDescription    as string;
   const intervalSeconds    = subData.intervalSeconds    as bigint;
   const intervalMode       = Number(subData.intervalMode);
   const checkInRate        = subData.checkInRate        as bigint;
@@ -206,7 +188,6 @@ export default function SubscriptionDetailPage() {
   const proposedInterval   = subData.proposedInterval   as bigint;
   const x402Enabled        = subData.x402Enabled        as boolean;
   const x402VerificationMode = Number(subData.x402VerificationMode);
-  const webhookUrlValue    = subData.webhookUrl         as string;
 
   return (
     <motion.div
@@ -237,7 +218,7 @@ export default function SubscriptionDetailPage() {
               <SubscriptionStatusBadge status={status} />
             </div>
             <h1 className="text-2xl font-medium text-white mb-1">
-              {taskDescription || `Subscription #${params?.id}`}
+              Subscription #{params?.id}
             </h1>
             <p className="text-white/30 text-[12px]">
               {agentDisplayProfile?.display_name || `Agent #${agentId.toString()}`} · {intervalModeLabel(intervalMode)}
@@ -365,7 +346,7 @@ export default function SubscriptionDetailPage() {
                   type="url"
                   value={newWebhookUrl}
                   onChange={(e) => setNewWebhookUrl(e.target.value)}
-                  placeholder={webhookUrlValue || "https://your-server.com/webhook"}
+                  placeholder="https://your-server.com/webhook"
                   className="flex-1 bg-[#050810]/80 border border-white/10 rounded-xl px-4 py-2.5 text-white text-[14px] placeholder:text-white/30 focus:outline-none focus:border-white/30"
                 />
                 <button
@@ -468,7 +449,7 @@ export default function SubscriptionDetailPage() {
               value={x402VerificationMode === 0 ? "Agent-Side" : "On-Chain"}
             />
           )}
-          <InfoRow label="Webhook" value={webhookUrlValue || "—"} />
+          <InfoRow label="Webhook" value="—" />
           <InfoRow
             label="Agent Wallet"
             value={`${agentWallet.slice(0, 6)}...${agentWallet.slice(-4)}`}

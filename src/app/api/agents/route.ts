@@ -20,31 +20,19 @@ interface AgentProfile {
   agentId: number;
   owner: string;
   agentWallet: string;
-  capabilityCID: string;
-  profileCID: string;
-  overallScore: number;
+  capabilityHash: string;
+  profileHash: string;
+  winRate: number;
+  version: number;
   totalJobsCompleted: number;
   totalJobsAttempted: number;
   totalEarningsWei: string;
-  defaultRate: string;
+  defaultRateRaw: number;   // uint32 in 1e10-wei units
   createdAt: number;
+  updatedAt: number;
   isActive: boolean;
   displayName: string | null;
   tags: string[] | null;
-}
-
-function decodeCapabilitySkills(capabilityCID: string): string[] {
-  try {
-    if (!capabilityCID) return [];
-    let base64 = capabilityCID;
-    if (capabilityCID.includes(":")) {
-      base64 = capabilityCID.split(":")[1];
-    }
-    const decoded = JSON.parse(atob(base64));
-    return decoded.skills || [];
-  } catch {
-    return [];
-  }
 }
 
 export async function GET() {
@@ -52,46 +40,43 @@ export async function GET() {
     const provider = new ethers.JsonRpcProvider(RPC_URL);
     const contract = new ethers.Contract(
       CONTRACT_ADDRESSES.AgentRegistry,
-      AGENT_REGISTRY_ABI,
+      AgentRegistryABI.abi,
       provider
     );
 
     const totalAgentsBig = await contract.totalAgents();
     const totalAgents = Number(totalAgentsBig);
 
-    const maxToQuery = totalAgents + 2;
     const agents: AgentProfile[] = [];
 
-    for (let i = 0; i < maxToQuery; i++) {
+    const fetchTasks = Array.from({ length: totalAgents }, (_, i) => i + 1).map(async (agentId) => {
       try {
-        const profile = await contract.getAgentProfile(i);
-
-        if (profile[0] === "0x0000000000000000000000000000000000000000") {
-          continue;
-        }
-
-        const skillIds = decodeCapabilitySkills(profile[4] as string);
-
+        const p = await contract.getAgentProfile(agentId);
+        if (!p || p.owner === ethers.ZeroAddress) return;
         agents.push({
-          agentId: i,
-          owner: profile[0] as string,
-          agentWallet: profile[1] as string,
-          capabilityCID: profile[4] as string,
-          profileCID: profile[5] as string,
-          overallScore: Number(profile[6]),
-          totalJobsCompleted: Number(profile[7]),
-          totalJobsAttempted: Number(profile[8]),
-          totalEarningsWei: (profile[9] as bigint).toString(),
-          defaultRate: (profile[10] as bigint).toString(),
-          createdAt: Number(profile[11]),
-          isActive: profile[12] as boolean,
+          agentId,
+          owner: p.owner as string,
+          agentWallet: p.agentWallet as string,
+          capabilityHash: p.capabilityHash as string,
+          profileHash: p.profileHash as string,
+          winRate: Number(p.winRate),
+          version: Number(p.version),
+          totalJobsCompleted: Number(p.totalJobsCompleted),
+          totalJobsAttempted: Number(p.totalJobsAttempted),
+          totalEarningsWei: (p.totalEarningsWei as bigint).toString(),
+          defaultRateRaw: Number(p.defaultRate),
+          createdAt: Number(p.createdAt),
+          updatedAt: Number(p.updatedAt),
+          isActive: p.isActive as boolean,
           displayName: null,
-          tags: skillIds,
+          tags: null,
         });
       } catch {
-        continue;
+        // agent id doesn't exist or reverted — skip
       }
-    }
+    });
+
+    await Promise.all(fetchTasks);
 
     const agentIds = agents.map(a => a.agentId);
     const admin = getAdminClient();

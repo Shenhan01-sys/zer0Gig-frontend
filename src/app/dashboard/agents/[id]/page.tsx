@@ -698,6 +698,256 @@ export default function AgentDetailPage() {
           )}
         </AnimatePresence>
 
+        {/* ERC-7857 Agent Actions — owner only */}
+        {isOwner && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.1 }}
+            className="rounded-2xl border border-white/10 bg-[#0d1525]/90 overflow-hidden"
+          >
+            {/* Section header */}
+            <div className="px-6 pt-5 pb-4 border-b border-white/5">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#38bdf8] shadow-[0_0_6px_rgba(56,189,248,0.8)]" />
+                <h2 className="text-[13px] font-medium text-white/70 uppercase tracking-wider">ERC-7857 Agent Actions</h2>
+              </div>
+              <p className="text-[11px] text-white/30 pl-3.5">Encrypted intelligence control — capability, access, ownership</p>
+            </div>
+
+            {/* Action buttons grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-white/5">
+              {ACTION_TABS.map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => toggleAction(tab.id)}
+                  className={`flex flex-col items-start gap-1.5 px-4 py-3.5 text-left transition-all ${
+                    activeAction === tab.id
+                      ? "bg-[#38bdf8]/8 text-[#38bdf8]"
+                      : "bg-[#0d1525]/90 text-white/50 hover:bg-white/[0.03] hover:text-white/70"
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    {tab.icon}
+                    <span className="text-[12px] font-medium">{tab.label}</span>
+                    {activeAction === tab.id
+                      ? <ChevronUp className="w-3 h-3 ml-auto opacity-60" />
+                      : <ChevronDown className="w-3 h-3 ml-auto opacity-30" />}
+                  </div>
+                  <span className="text-[11px] opacity-50 leading-snug pl-5">{tab.desc}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Expanded action panels */}
+            <AnimatePresence>
+              {activeAction && (
+                <motion.div
+                  key={activeAction}
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.22, ease: "easeInOut" }}
+                  className="overflow-hidden"
+                >
+                  <div className="px-6 py-5 space-y-4 border-t border-white/5">
+
+                    {/* ── Update Capability ── */}
+                    {activeAction === "updateCapability" && (
+                      <>
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <p className="text-[13px] text-white/70 font-medium">Rotate encrypted capability</p>
+                            <p className="text-[11px] text-white/30 mt-0.5">No oracle needed — you re-seal to yourself. Bumps version.</p>
+                          </div>
+                          <span className="font-mono text-[10px] text-white/25 text-right">
+                            Current v{Number(profile.version || 1)}<br />
+                            {String(profile.capabilityHash || "").slice(0, 12)}…
+                          </span>
+                        </div>
+                        <InputField
+                          label="New Capability Identifier (IPFS CID or descriptor)"
+                          value={newCapValue}
+                          onChange={setNewCapValue}
+                          placeholder="Qm... or any identifier — will be keccak256 hashed"
+                        />
+                        <InputField
+                          label="New Sealed AES Key (hex bytes for new owner)"
+                          value={newSealedKey}
+                          onChange={setNewSealedKey}
+                          placeholder="0x01 (placeholder — use actual ECIES-sealed key in production)"
+                          mono
+                        />
+                        {newCapValue && (
+                          <div className="rounded-lg bg-white/[0.03] border border-white/8 px-3 py-2 flex items-center gap-2">
+                            <span className="text-[10px] text-white/30">Computed hash:</span>
+                            <span className="font-mono text-[11px] text-white/50 truncate">{hashString(newCapValue)}</span>
+                            <button onClick={() => navigator.clipboard.writeText(hashString(newCapValue))} className="ml-auto flex-shrink-0 hover:text-[#38bdf8] text-white/30 transition-colors">
+                              <Copy className="w-3 h-3" />
+                            </button>
+                          </div>
+                        )}
+                        <button
+                          onClick={handleUpdateCapability}
+                          disabled={updCapLoading || !newCapValue.trim()}
+                          className="w-full py-2.5 rounded-lg bg-[#38bdf8]/10 border border-[#38bdf8]/30 text-[#38bdf8] text-[13px] font-medium hover:bg-[#38bdf8]/15 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                        >
+                          {updCapLoading ? "Broadcasting…" : "Update Capability"}
+                        </button>
+                      </>
+                    )}
+
+                    {/* ── Authorize Usage ── */}
+                    {activeAction === "authorize" && (
+                      <>
+                        <div>
+                          <p className="text-[13px] text-white/70 font-medium">Grant time-bounded access</p>
+                          <p className="text-[11px] text-white/30 mt-0.5">Executor can use the agent&apos;s capabilities without owning it.</p>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <InputField label="Executor Address" value={execAddr} onChange={setExecAddr} placeholder="0x..." mono />
+                          <InputField label="Duration (hours)" value={durationHours} onChange={setDurationHours} placeholder="24" type="number" />
+                        </div>
+                        <InputField label="Permissions Description (hashed on-chain)" value={permissionsDesc} onChange={setPermissionsDesc} placeholder="e.g. read-only job execution" />
+
+                        {/* Active authorizations */}
+                        {(authorizedUsers as string[] | undefined)?.length ? (
+                          <div className="space-y-2">
+                            <p className="text-[11px] text-white/30 uppercase tracking-wider">Current Authorizations</p>
+                            {(authorizedUsers as string[]).map(addr => (
+                              <div key={addr} className="flex items-center justify-between rounded-lg bg-white/[0.03] border border-white/8 px-3 py-2">
+                                <div className="flex items-center gap-2">
+                                  <Clock className="w-3.5 h-3.5 text-[#38bdf8]/60" />
+                                  <span className="font-mono text-[11px] text-white/50">{addr.slice(0, 12)}…{addr.slice(-6)}</span>
+                                </div>
+                                <button
+                                  onClick={() => handleRevoke(addr)}
+                                  disabled={revokeLoading}
+                                  className="text-[11px] text-red-400/60 hover:text-red-400 transition-colors"
+                                >
+                                  Revoke
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-[12px] text-white/25">No active authorizations.</p>
+                        )}
+
+                        <button
+                          onClick={handleAuthorize}
+                          disabled={authLoading || !isValidAddress(execAddr)}
+                          className="w-full py-2.5 rounded-lg bg-[#38bdf8]/10 border border-[#38bdf8]/30 text-[#38bdf8] text-[13px] font-medium hover:bg-[#38bdf8]/15 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                        >
+                          {authLoading ? "Broadcasting…" : "Authorize Executor"}
+                        </button>
+                      </>
+                    )}
+
+                    {/* ── Transfer Agent ── */}
+                    {activeAction === "transfer" && (
+                      <>
+                        <div className="flex items-start gap-2 rounded-lg bg-amber-500/5 border border-amber-500/20 px-3 py-2.5">
+                          <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-[12px] text-amber-400 font-medium">Irreversible ownership transfer</p>
+                            <p className="text-[11px] text-white/40 mt-0.5">Requires oracle signature over the transfer digest. New owner reads sealed key from event logs.</p>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 gap-3">
+                          <InputField label="Recipient Address" value={transferTo} onChange={setTransferTo} placeholder="0x..." mono />
+                          <InputField label="New Capability Identifier" value={transferCapValue} onChange={setTransferCapValue} placeholder="New IPFS CID or descriptor for the new owner" />
+                          <InputField label="New Sealed AES Key (hex)" value={transferSealedKey} onChange={setTransferSealedKey} placeholder="0x01" mono />
+                        </div>
+
+                        {txDigest && (
+                          <div className="rounded-lg bg-white/[0.03] border border-white/8 px-3 py-2.5 space-y-1.5">
+                            <p className="text-[10px] text-white/30 uppercase tracking-wider">Transfer Digest (oracle must sign this)</p>
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono text-[11px] text-white/50 break-all">{txDigest as string}</span>
+                              <button onClick={() => navigator.clipboard.writeText(txDigest as string)} className="ml-auto flex-shrink-0 hover:text-[#38bdf8] text-white/30 transition-colors">
+                                <Copy className="w-3 h-3" />
+                              </button>
+                            </div>
+                            <p className="text-[10px] text-white/25">Sign with personal_sign (EIP-191) using the oracle address and paste below.</p>
+                          </div>
+                        )}
+
+                        <InputField label="Oracle Signature (0x...)" value={transferOracleSig} onChange={setTransferOracleSig} placeholder="0x..." mono />
+
+                        <button
+                          onClick={handleTransfer}
+                          disabled={transferLoading || !isValidAddress(transferTo) || !transferCapValue || !transferOracleSig.startsWith("0x")}
+                          className="w-full py-2.5 rounded-lg bg-amber-500/10 border border-amber-500/25 text-amber-400 text-[13px] font-medium hover:bg-amber-500/15 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                        >
+                          {transferLoading ? "Broadcasting…" : "Transfer Agent (iTransfer)"}
+                        </button>
+                      </>
+                    )}
+
+                    {/* ── Clone Agent ── */}
+                    {activeAction === "clone" && (
+                      <>
+                        <div className="flex items-start gap-2 rounded-lg bg-purple-500/5 border border-purple-500/20 px-3 py-2.5">
+                          <Layers className="w-4 h-4 text-purple-400 flex-shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-[12px] text-purple-400 font-medium">Mints a new agent for a new owner</p>
+                            <p className="text-[11px] text-white/40 mt-0.5">Skills and capabilities are copied. Reputation resets to 80% win rate. Requires oracle signature.</p>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 gap-3">
+                          <InputField label="New Owner Address" value={cloneTo} onChange={setCloneTo} placeholder="0x..." mono />
+                          <InputField label="New Capability Identifier" value={cloneCapValue} onChange={setCloneCapValue} placeholder="New IPFS CID or descriptor for the clone" />
+                          <InputField label="New Sealed AES Key (hex)" value={cloneSealedKey} onChange={setCloneSealedKey} placeholder="0x01" mono />
+                        </div>
+
+                        {cloneDigest && (
+                          <div className="rounded-lg bg-white/[0.03] border border-white/8 px-3 py-2.5 space-y-1.5">
+                            <p className="text-[10px] text-white/30 uppercase tracking-wider">Clone Digest (oracle must sign this)</p>
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono text-[11px] text-white/50 break-all">{cloneDigest as string}</span>
+                              <button onClick={() => navigator.clipboard.writeText(cloneDigest as string)} className="ml-auto flex-shrink-0 hover:text-[#38bdf8] text-white/30 transition-colors">
+                                <Copy className="w-3 h-3" />
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        <InputField label="Oracle Signature (0x...)" value={cloneOracleSig} onChange={setCloneOracleSig} placeholder="0x..." mono />
+
+                        <button
+                          onClick={handleClone}
+                          disabled={cloneLoading || !isValidAddress(cloneTo) || !cloneCapValue || !cloneOracleSig.startsWith("0x")}
+                          className="w-full py-2.5 rounded-lg bg-purple-500/10 border border-purple-500/25 text-purple-400 text-[13px] font-medium hover:bg-purple-500/15 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                        >
+                          {cloneLoading ? "Broadcasting…" : "Clone Agent (iClone)"}
+                        </button>
+                      </>
+                    )}
+
+                    {/* Shared error / success feedback */}
+                    <AnimatePresence>
+                      {actionError && (
+                        <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-2.5">
+                          <p className="text-red-400 text-[12px]">{actionError}</p>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                    <AnimatePresence>
+                      {actionSuccess && (
+                        <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-4 py-2.5 flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                          <p className="text-emerald-400 text-[12px]">{actionSuccess}</p>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        )}
+
         {/* On-chain data section */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}

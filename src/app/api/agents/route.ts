@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { ethers } from "ethers";
 import { CONTRACT_ADDRESSES } from "@/lib/contracts";
 import { createClient } from "@supabase/supabase-js";
+import AgentRegistryABI from "@/lib/abis/AgentRegistry.json";
 
-// Use service role to bypass RLS on agent_profiles
 function getAdminClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -11,12 +11,7 @@ function getAdminClient() {
   );
 }
 
-const AGENT_REGISTRY_ABI = [
-  "function totalAgents() view returns (uint256)",
-  "function getAgentProfile(uint256 agentId) view returns (tuple(address owner, address agentWallet, bytes eciesPublicKey, bytes32 capabilityHash, string capabilityCID, string profileCID, uint256 overallScore, uint256 totalJobsCompleted, uint256 totalJobsAttempted, uint256 totalEarningsWei, uint256 defaultRate, uint256 createdAt, bool isActive))",
-];
-
-const RPC_URL = "https://evmrpc-testnet.0g.ai";
+const RPC_URL = process.env.OG_NEWTON_RPC_URL || "https://evmrpc-testnet.0g.ai";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;

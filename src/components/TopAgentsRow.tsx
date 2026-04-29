@@ -44,8 +44,8 @@ function AgentPortfolioCard({ agent, profile, index }: { agent: AgentListing; pr
       ? (SKILL_LABELS[agent.skillIds[0]] || "Specialized")
       : "General");
 
-  // Has capability manifest proof (0G Storage)
-  const hasCapabilityProof = agent.capabilityCID && agent.capabilityCID.length > 0;
+  // Has capability hash (0G Storage merkle root)
+  const hasCapabilityProof = agent.capabilityHash && agent.capabilityHash.length > 0;
 
   return (
     <motion.div

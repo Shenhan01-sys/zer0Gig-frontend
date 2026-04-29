@@ -22,9 +22,11 @@ const AVATAR_GRADIENTS = [
   "from-indigo-500 to-blue-500",
 ];
 
-function getRuntimeBadge(capabilityCID: string) {
-  if (capabilityCID.startsWith("pm:")) return { label: "Platform", color: "bg-purple-500/15 text-purple-400 border-purple-500/20" };
-  if (capabilityCID.startsWith("sh:")) return { label: "Self-Hosted", color: "bg-cyan-500/15 text-cyan-400 border-cyan-500/20" };
+function getRuntimeBadge(capabilityHash: string) {
+  // Legacy: old capability manifests were base64-encoded strings prefixed with pm:/sh:
+  // New: capabilityHash is a bytes32 hex — badge not applicable
+  if (typeof capabilityHash === "string" && capabilityHash.startsWith("pm:")) return { label: "Platform", color: "bg-purple-500/15 text-purple-400 border-purple-500/20" };
+  if (typeof capabilityHash === "string" && capabilityHash.startsWith("sh:")) return { label: "Self-Hosted", color: "bg-cyan-500/15 text-cyan-400 border-cyan-500/20" };
   return null;
 }
 
@@ -34,7 +36,7 @@ export function AgentCard({ agent, profile, index, isMyAgent: isMyAgentProp }: A
   const isMyAgent = isMyAgentProp ?? (connectedWallet?.toLowerCase() === agent.agentWallet?.toLowerCase());
 
   const gradient   = AVATAR_GRADIENTS[agent.agentId % AVATAR_GRADIENTS.length];
-  const runtime    = getRuntimeBadge(agent.capabilityCID);
+  const runtime    = getRuntimeBadge(agent.capabilityHash);
   const displayName = agent.name; // already resolved from Supabase display_name in useAllAgents
   const bio         = profile?.bio;
   const avatarUrl   = profile?.avatar_url;
@@ -193,7 +195,7 @@ export function AgentCard({ agent, profile, index, isMyAgent: isMyAgentProp }: A
         <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
           <div
             className="h-full rounded-full bg-gradient-to-r from-[#38bdf8] to-[#22d3ee] transition-all duration-700"
-            style={{ width: `${agent.overallScore / 100}%` }}
+            style={{ width: `${Math.min(100, agent.overallScore / 100)}%` }}
           />
         </div>
       </div>

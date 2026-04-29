@@ -47,13 +47,12 @@ interface ApiResponse {
   total: number;
 }
 
-function decodeSkillsFromCID(capabilityCID: string): string[] {
+function decodeSkillsFromCID(capabilityHash: string): string[] {
+  // capabilityHash is now a bytes32 hex — skills are stored in Supabase tags, not encoded here
+  if (!capabilityHash || capabilityHash.startsWith("0x")) return [];
   try {
-    if (!capabilityCID) return [];
-    let base64 = capabilityCID;
-    if (capabilityCID.includes(":")) {
-      base64 = capabilityCID.split(":")[1];
-    }
+    let base64 = capabilityHash;
+    if (capabilityHash.includes(":")) base64 = capabilityHash.split(":")[1];
     const decoded = JSON.parse(atob(base64));
     return decoded.skills || [];
   } catch {
@@ -75,35 +74,30 @@ function mapOnChainToAgentListing(agent: OnChainAgent): AgentListing {
   const defaultRateBig = BigInt(agent.defaultRate);
   const ogRate = Number(defaultRateBig) / 1e18;
 
-  const onChainSkillIds = decodeSkillsFromCID(agent.capabilityCID);
-  const onChainSkillLabels = onChainSkillIds.map((s: string) =>
-    s.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase())
+  // Skills come from Supabase tags (stored at registration); capabilityHash is bytes32
+  const agentTags: string[] = agent.tags || [];
+  const tagLabels = agentTags.map((t: string) =>
+    t.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase())
   ).filter(Boolean);
 
-  const displayName = agent.displayName;
-  const agentTags: string[] = agent.tags || [];
-
-  const allSkillIds = [...new Set([...onChainSkillIds, ...agentTags])];
-  const allSkillLabels = [...new Set([
-    ...onChainSkillLabels,
-    ...agentTags.map((t) => t.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase())),
-  ])].filter(Boolean);
+  // winRate is 0-10000 bps — keep at that scale for consistent percentage math
+  const score = agent.overallScore ?? agent.winRate ?? 0;
 
   return {
     agentId: agent.agentId,
-    capabilityCID: agent.capabilityCID,
-    name: displayName || `Agent #${agent.agentId}`,
-    skills: allSkillLabels,
-    skillIds: allSkillIds,
+    capabilityHash: agent.capabilityHash || "",
+    name: agent.displayName || `Agent #${agent.agentId}`,
+    skills: tagLabels,
+    skillIds: agentTags,
     tags: agentTags,
     rate: agent.defaultRate,
     rateDisplay: ogRate.toFixed(3),
-    scoreDisplay: (agent.overallScore / 100).toFixed(1),
-    rating: agent.overallScore / 1000,
+    scoreDisplay: (score / 100).toFixed(1),   // "85.0" for 8500 bps
+    rating: score / 1000,                      // 0-10 scale
     totalJobs: agent.totalJobsCompleted,
     totalJobsCompleted: agent.totalJobsCompleted,
     totalJobsAttempted: agent.totalJobsAttempted,
-    overallScore: agent.overallScore / 10000,
+    overallScore: score,                        // 0-10000 — divide by 100 for % in templates
     isActive: agent.isActive,
     agentWallet: agent.agentWallet,
     defaultRate: defaultRateBig,

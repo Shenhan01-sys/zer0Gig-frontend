@@ -46,8 +46,8 @@ export default function SubscriptionCard({ subscriptionId, index }: Subscription
   const { profile: agentProfile } = useAgentProfile(agentIdNum > 0 ? agentIdNum : undefined);
 
   // DEMO MODE: Fall back to mock data when real subscription doesn't exist on-chain.
-  // Contract returns {} for non-existent IDs (truthy but empty), so also check for valid fields.
-  const hasRealSub = sub && (sub as any)?.subscriptionId !== undefined;
+  // Check for `agentId` which exists in the new struct (subscriptionId was removed).
+  const hasRealSub = sub && (sub as any)?.agentId !== undefined;
   const mockSub = MOCK_SUBSCRIPTIONS.find(s => s.subscriptionId === subscriptionId);
   
   // Real contract returns an object with named fields; mock is an array
@@ -110,7 +110,7 @@ export default function SubscriptionCard({ subscriptionId, index }: Subscription
     agentId = (subData[2] as bigint) || BigInt(0);
   } else {
     const subObj = displayData as any;
-    taskDescription = subObj?.taskDescription || "Unknown Task";
+    taskDescription = `Subscription #${subscriptionId}`; void subObj;
     intervalMode = Number(subObj?.intervalMode ?? 0);
     balance = subObj?.balance || BigInt(0);
     status = Number(subObj?.status ?? 0);

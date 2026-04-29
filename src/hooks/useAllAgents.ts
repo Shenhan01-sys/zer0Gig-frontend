@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 
 export interface AgentListing {
   agentId: number;
-  capabilityCID: string;
+  capabilityHash: string;
   name: string;
   skills: string[];
   skillIds: string[];
@@ -16,7 +16,7 @@ export interface AgentListing {
   totalJobs: number;
   totalJobsCompleted: number;
   totalJobsAttempted: number;
-  overallScore: number;
+  overallScore: number;  // 0-10000 bps (winRate from contract)
   isActive: boolean;
   agentWallet: string;
   defaultRate: bigint;
@@ -28,13 +28,14 @@ interface OnChainAgent {
   agentId: number;
   owner: string;
   agentWallet: string;
-  capabilityCID: string;
-  profileCID: string;
-  overallScore: number;
+  capabilityHash: string;
+  profileHash: string;
+  winRate: number;       // 0-10000 bps (replaces overallScore)
+  overallScore: number;  // legacy alias = winRate, set by API route
   totalJobsCompleted: number;
   totalJobsAttempted: number;
   totalEarningsWei: string;
-  defaultRate: string;
+  defaultRate: string;  // wei string (API already multiplied by 1e10)
   createdAt: number;
   isActive: boolean;
   displayName: string | null;

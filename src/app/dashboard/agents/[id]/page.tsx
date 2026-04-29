@@ -58,6 +58,26 @@ function StatCard({ label, value }: { label: string; value: string }) {
   );
 }
 
+function InputField({
+  label, value, onChange, placeholder, type = "text", mono = false,
+}: {
+  label: string; value: string; onChange: (v: string) => void;
+  placeholder?: string; type?: string; mono?: boolean;
+}) {
+  return (
+    <div>
+      <label className="block text-[11px] text-white/40 mb-1.5">{label}</label>
+      <input
+        type={type}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder={placeholder}
+        className={`w-full bg-[#050810]/80 border border-white/10 rounded-lg px-3 py-2.5 text-white text-[13px] placeholder:text-white/20 focus:outline-none focus:border-[#38bdf8]/40 transition-colors ${mono ? "font-mono" : ""}`}
+      />
+    </div>
+  );
+}
+
 // ─── action tab types ─────────────────────────────────────────────────────────
 
 type ActionTab = "updateCapability" | "authorize" | "transfer" | "clone" | null;
@@ -334,6 +354,8 @@ export default function AgentDetailPage() {
     }
   };
 
+  // ── render ──────────────────────────────────────────────────────────────────
+
   if (onChainLoading) {
     return (
       <RBACGuard>
@@ -392,35 +414,26 @@ export default function AgentDetailPage() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
-          className="relative rounded-2xl border border-white/10 bg-[#0d1525]/90 p-6 mb-6 overflow-hidden"
+          className="relative rounded-2xl border border-white/10 bg-[#0d1525]/90 p-6 overflow-hidden"
         >
-          {/* Gradient aura — top-right cyan haze */}
           <div
             className="absolute -top-24 -right-24 w-80 h-80 pointer-events-none opacity-40"
-            style={{
-              background: "radial-gradient(circle, rgba(56,189,248,0.22) 0%, transparent 60%)",
-            }}
+            style={{ background: "radial-gradient(circle, rgba(56,189,248,0.22) 0%, transparent 60%)" }}
             aria-hidden
           />
-
-          {/* Faint grid texture behind content */}
           <div
             className="absolute inset-0 pointer-events-none opacity-[0.035]"
             style={{
-              backgroundImage:
-                "linear-gradient(to right, #38bdf8 1px, transparent 1px), linear-gradient(to bottom, #38bdf8 1px, transparent 1px)",
+              backgroundImage: "linear-gradient(to right, #38bdf8 1px, transparent 1px), linear-gradient(to bottom, #38bdf8 1px, transparent 1px)",
               backgroundSize: "40px 40px",
             }}
             aria-hidden
           />
-
-          {/* Corner brackets — absolute, but at default z so content stays above */}
           <CornerBrackets size="md" weight="hair" accent="rgba(56,189,248,0.7)" inset={14} className="absolute inset-0" />
 
-          {/* Terminal serial — top-right monospace label */}
           <div className="absolute top-3 right-16 hidden md:flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-white/30 pointer-events-none" aria-hidden>
             <span className={`w-1.5 h-1.5 rounded-full ${profile.isActive ? "bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)] animate-pulse" : "bg-white/25"}`} />
-            <span>agent-{Number(agentId)} · on-chain</span>
+            <span>agent-{agentIdNum} · erc-7857 · v{Number(profile.version || 1)}</span>
           </div>
 
           <div className="relative flex items-start gap-4 mb-6">
@@ -429,11 +442,11 @@ export default function AgentDetailPage() {
                 <Image src={avatarUrl} alt={displayName} width={64} height={64} className="w-full h-full object-cover" unoptimized />
               </div>
             ) : (
-              <div className={`w-16 h-16 rounded-full bg-gradient-to-br ${avatarGradient(Number(agentId))} flex items-center justify-center text-white text-[18px] font-bold flex-shrink-0`}>
-                #{Number(agentId)}
+              <div className={`w-16 h-16 rounded-full bg-gradient-to-br ${avatarGradient(agentIdNum)} flex items-center justify-center text-white text-[18px] font-bold flex-shrink-0`}>
+                #{agentIdNum}
               </div>
             )}
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3 mb-1 flex-wrap">
                 <h1 className="text-2xl font-medium text-white">{displayName}</h1>
                 <span className={`px-2.5 py-1 rounded-full text-[12px] font-medium ${profile.isActive ? "bg-emerald-500/10 text-emerald-400" : "bg-red-500/10 text-red-400"}`}>
@@ -443,10 +456,10 @@ export default function AgentDetailPage() {
                   {scoreInfo.label}-Tier
                 </span>
               </div>
-              <p className="text-white/40 text-[13px] font-mono">
+              <p className="text-white/40 text-[13px] font-mono truncate">
                 Wallet: {profile.agentWallet?.slice(0, 10)}...{profile.agentWallet?.slice(-6)}
               </p>
-              <p className="text-white/40 text-[12px] font-mono mt-0.5">
+              <p className="text-white/40 text-[12px] font-mono mt-0.5 truncate">
                 Owner: {profile.owner?.slice(0, 10)}...{profile.owner?.slice(-6)}
               </p>
               {bio && <p className="text-white/50 text-[13px] mt-2 leading-relaxed">{bio}</p>}
@@ -465,11 +478,16 @@ export default function AgentDetailPage() {
           {/* Score bar */}
           <div className="mb-6">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[12px] text-white/40">Reputation Score</span>
-              <span className="text-white font-medium text-[14px]">{(score / 100).toFixed(2)}/100</span>
+              <span className="text-[12px] text-white/40">Win Rate</span>
+              <span className="text-white font-medium text-[14px]">{(score / 100).toFixed(2)}%</span>
             </div>
             <div className="h-2 bg-[#050810]/80 border border-white/10 rounded-full overflow-hidden">
-              <motion.div initial={{ width: 0 }} animate={{ width: `${Math.min(100, score / 100)}%` }} transition={{ duration: 0.8, ease: "easeOut" }} className="h-full bg-gradient-to-r from-[#38bdf8] to-[#22d3ee] rounded-full" />
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${Math.min(100, score / 100)}%` }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+                className="h-full bg-gradient-to-r from-[#38bdf8] to-[#22d3ee] rounded-full"
+              />
             </div>
           </div>
 
@@ -482,14 +500,14 @@ export default function AgentDetailPage() {
           </div>
         </motion.div>
 
-        {/* Reputation radar — composite view of the 5 trust axes */}
+        {/* Reputation radar */}
         {(() => {
           const done = Number(profile.totalJobsCompleted || 0);
           const attempted = Number(profile.totalJobsAttempted || 0);
           const completionPct = attempted > 0 ? (done / attempted) * 100 : (done > 0 ? 100 : 0);
           const skillsCount = (onChainSkillIds as unknown as string[] | undefined)?.length ?? 0;
-          const volumeScore = Math.min(100, done * 8); // 12+ jobs = full
-          const skillScore = Math.min(100, skillsCount * 20); // 5+ skills = full
+          const volumeScore = Math.min(100, done * 8);
+          const skillScore = Math.min(100, skillsCount * 20);
           const activeScore = profile.isActive ? Math.max(40, Math.min(100, score / 100)) : 25;
 
           return (
@@ -497,34 +515,22 @@ export default function AgentDetailPage() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.15 }}
-              className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#0d1525]/90 p-6 md:p-8 mb-6"
+              className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#0d1525]/90 p-6 md:p-8"
             >
-              {/* Subtle tech grid backdrop */}
               <div
                 className="absolute inset-0 pointer-events-none opacity-[0.04]"
                 style={{
-                  backgroundImage:
-                    "linear-gradient(to right, #38bdf8 1px, transparent 1px), linear-gradient(to bottom, #38bdf8 1px, transparent 1px)",
+                  backgroundImage: "linear-gradient(to right, #38bdf8 1px, transparent 1px), linear-gradient(to bottom, #38bdf8 1px, transparent 1px)",
                   backgroundSize: "32px 32px",
                 }}
                 aria-hidden
               />
-              <CornerBrackets
-                size="sm"
-                weight="hair"
-                accent="rgba(56,189,248,0.35)"
-                inset={12}
-                className="absolute inset-0 pointer-events-none"
-              />
+              <CornerBrackets size="sm" weight="hair" accent="rgba(56,189,248,0.35)" inset={12} className="absolute inset-0 pointer-events-none" />
 
               <div className="relative flex items-center justify-between mb-5">
                 <div>
-                  <h2 className="text-[14px] font-semibold text-white/70 uppercase tracking-[0.2em]">
-                    Trust Composite
-                  </h2>
-                  <p className="text-white/40 text-[12px] mt-1">
-                    Five-axis reputation read from on-chain performance
-                  </p>
+                  <h2 className="text-[14px] font-semibold text-white/70 uppercase tracking-[0.2em]">Trust Composite</h2>
+                  <p className="text-white/40 text-[12px] mt-1">Five-axis reputation read from on-chain performance</p>
                 </div>
                 <div className="hidden md:flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-white/35">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#38bdf8] animate-pulse shadow-[0_0_6px_rgba(56,189,248,0.8)]" />
@@ -547,7 +553,7 @@ export default function AgentDetailPage() {
           );
         })()}
 
-        {/* Edit Panel */}
+        {/* Edit Profile Panel */}
         <AnimatePresence>
           {isEditing && (
             <motion.div
@@ -555,28 +561,26 @@ export default function AgentDetailPage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.25 }}
-              className="rounded-2xl border border-[#38bdf8]/20 bg-[#0d1525]/90 p-6 mb-6 space-y-5"
+              className="rounded-2xl border border-[#38bdf8]/20 bg-[#0d1525]/90 p-6 space-y-5"
             >
-              <div className="flex items-center justify-between">
-                <h2 className="text-[14px] font-semibold text-white/70 uppercase tracking-wider">Edit Agent Profile</h2>
-              </div>
+              <h2 className="text-[14px] font-semibold text-white/70 uppercase tracking-wider">Edit Agent Profile</h2>
 
-              {/* Supabase profile fields */}
               <div className="space-y-4">
                 <p className="text-[11px] text-white/30 uppercase tracking-wider">Off-Chain Profile (Supabase)</p>
                 <div className="grid grid-cols-1 gap-3">
+                  <InputField label="Display Name" value={editDisplayName} onChange={setEditDisplayName} placeholder="Agent display name" />
                   <div>
-                    <label className="block text-[11px] text-white/40 mb-1">Display Name</label>
-                    <input value={editDisplayName} onChange={e => setEditDisplayName(e.target.value)} placeholder="Agent display name" className="w-full bg-[#050810]/80 border border-white/10 rounded-lg px-3 py-2 text-white text-[13px] placeholder:text-white/20 focus:outline-none focus:border-[#38bdf8]/30" />
+                    <label className="block text-[11px] text-white/40 mb-1.5">Bio</label>
+                    <textarea
+                      value={editBio}
+                      onChange={e => setEditBio(e.target.value)}
+                      placeholder="Short bio..."
+                      rows={2}
+                      className="w-full bg-[#050810]/80 border border-white/10 rounded-lg px-3 py-2.5 text-white text-[13px] placeholder:text-white/20 focus:outline-none focus:border-[#38bdf8]/40 transition-colors resize-none"
+                    />
                   </div>
-                  <div>
-                    <label className="block text-[11px] text-white/40 mb-1">Bio</label>
-                    <textarea value={editBio} onChange={e => setEditBio(e.target.value)} placeholder="Short bio..." rows={2} className="w-full bg-[#050810]/80 border border-white/10 rounded-lg px-3 py-2 text-white text-[13px] placeholder:text-white/20 focus:outline-none focus:border-[#38bdf8]/30 resize-none" />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] text-white/40 mb-1">Avatar URL</label>
-                    <input value={editAvatarUrl} onChange={e => setEditAvatarUrl(e.target.value)} placeholder="https://..." className="w-full bg-[#050810]/80 border border-white/10 rounded-lg px-3 py-2 text-white text-[13px] placeholder:text-white/20 focus:outline-none focus:border-[#38bdf8]/30" />
-                  </div>
+                  <InputField label="Avatar URL" value={editAvatarUrl} onChange={setEditAvatarUrl} placeholder="https://..." />
+
                   <div>
                     <label className="block text-[11px] text-white/40 mb-2">Tags / Capabilities</label>
                     <div className="flex flex-wrap gap-2 mb-2">
@@ -598,7 +602,6 @@ export default function AgentDetailPage() {
                 </div>
               </div>
 
-              {/* On-chain section */}
               <div className="space-y-4 pt-2 border-t border-white/5">
                 <p className="text-[11px] text-white/30 uppercase tracking-wider">On-Chain Skills</p>
                 <div className="flex flex-wrap gap-2 mb-3">
@@ -621,28 +624,35 @@ export default function AgentDetailPage() {
                   >
                     <Plus className="w-4 h-4" /> Add On-Chain Skill
                   </button>
-                  {showSkillDropdown && (
-                    <div className="absolute z-10 mt-2 w-56 bg-[#0a0f1a] border border-white/10 rounded-xl shadow-xl overflow-hidden">
-                      {availableSkills.length === 0 ? (
-                        <p className="px-4 py-3 text-white/30 text-[12px]">All skills added</p>
-                      ) : (
-                        availableSkills.map(skill => (
-                          <button
-                            key={skill.id}
-                            onClick={() => { addOnChainSkill(skill.id); setShowSkillDropdown(false); }}
-                            className="w-full px-4 py-2.5 text-left text-[13px] text-white/60 hover:bg-white/5 hover:text-white transition-all flex items-center gap-2"
-                          >
-                            <span className="text-[10px] text-white/30">{skill.category}</span>
-                            {skill.label}
-                          </button>
-                        ))
-                      )}
-                    </div>
-                  )}
+                  <AnimatePresence>
+                    {showSkillDropdown && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -4 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute z-10 mt-2 w-56 bg-[#0a0f1a] border border-white/10 rounded-xl shadow-xl overflow-hidden"
+                      >
+                        {availableSkills.length === 0 ? (
+                          <p className="px-4 py-3 text-white/30 text-[12px]">All skills added</p>
+                        ) : (
+                          availableSkills.map(skill => (
+                            <button
+                              key={skill.id}
+                              onClick={() => { addOnChainSkill(skill.id); setShowSkillDropdown(false); }}
+                              className="w-full px-4 py-2.5 text-left text-[13px] text-white/60 hover:bg-white/5 hover:text-white transition-all flex items-center gap-2"
+                            >
+                              <span className="text-[10px] text-white/30">{skill.category}</span>
+                              {skill.label}
+                            </button>
+                          ))
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               </div>
 
-              {/* Toggle active status */}
               <div className="flex items-center justify-between pt-2 border-t border-white/5">
                 <div>
                   <p className="text-white/60 text-[13px]">Agent Status</p>
@@ -660,7 +670,6 @@ export default function AgentDetailPage() {
                 </button>
               </div>
 
-              {/* Error / success */}
               <AnimatePresence>
                 {editError && (
                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-2.5">
@@ -676,7 +685,6 @@ export default function AgentDetailPage() {
                 )}
               </AnimatePresence>
 
-              {/* Save button */}
               <button
                 onClick={saveProfile}
                 disabled={editPending}
@@ -938,11 +946,11 @@ export default function AgentDetailPage() {
           </motion.div>
         )}
 
-        {/* On-chain data section */}
+        {/* On-chain data */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.1 }}
+          transition={{ duration: 0.3, delay: 0.12 }}
           className="rounded-2xl border border-white/10 bg-[#0d1525]/90 p-6"
         >
           <h2 className="text-[13px] font-medium text-white/50 uppercase tracking-wider mb-4">On-Chain Data (ERC-7857)</h2>
@@ -980,7 +988,7 @@ export default function AgentDetailPage() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: 0.15 }}
-            className="rounded-2xl border border-white/10 bg-[#0d1525]/90 p-5 mb-6"
+            className="rounded-2xl border border-white/10 bg-[#0d1525]/90 p-5"
           >
             <h2 className="text-[13px] font-medium text-white/50 uppercase tracking-wider mb-3">Notifications</h2>
             <ConnectTelegramButton />

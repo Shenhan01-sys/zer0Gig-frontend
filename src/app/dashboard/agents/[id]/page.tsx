@@ -180,28 +180,14 @@ export default function AgentDetailPage() {
     }
   }, [supabaseProfile]);
 
-  useEffect(() => {
-    if (profile?.defaultRate) {
-      setEditDefaultRate((Number(profile.defaultRate) / 1e18).toString());
-    }
-  }, [profile]);
-
   const startEditing = () => {
     setEditDisplayName(supabaseProfile?.display_name || "");
     setEditBio(supabaseProfile?.bio || "");
     setEditAvatarUrl(supabaseProfile?.avatar_url || "");
     setEditTags(supabaseProfile?.tags || []);
-    if (profile?.defaultRate) setEditDefaultRate((Number(profile.defaultRate) / 1e18).toString());
     setEditError(null);
     setEditSuccess(false);
     setIsEditing(true);
-
-    const current = (onChainSkillIds || []).map((sid: string) => {
-      const found = ALL_SKILLS.find(s => s.id === sid);
-      return found ? found.id : sid;
-    });
-    const available = ALL_SKILLS.filter(s => !current.includes(s.id));
-    setAvailableSkills(available);
   };
 
   const cancelEditing = () => {
@@ -382,12 +368,16 @@ export default function AgentDetailPage() {
     );
   }
 
-  const score = Number(profile.overallScore || 0);
+  // winRate is 0-10000 bps from new contract (replaces overallScore)
+  const score = Number(profile.winRate || 0);
   const scoreInfo = getScoreLabel(score);
   const onChainSkills = (onChainSkillIds || []) as string[];
   const displayName = supabaseProfile?.display_name || `Agent #${agentIdNum}`;
   const bio = supabaseProfile?.bio;
   const avatarUrl = supabaseProfile?.avatar_url;
+  const defaultRateWei = BigInt(profile.defaultRate || 0) * 10_000_000_000n;
+
+  const availableSkills = ALL_SKILLS.filter(s => !onChainSkills.includes(s.id));
 
   return (
     <RBACGuard>
@@ -485,7 +475,7 @@ export default function AgentDetailPage() {
 
           {/* Stats row */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <StatCard label="Default Rate" value={formatOG(BigInt(profile.defaultRate || 0))} />
+            <StatCard label="Default Rate" value={formatOG(defaultRateWei)} />
             <StatCard label="Jobs Done" value={Number(profile.totalJobsCompleted || 0).toString()} />
             <StatCard label="Attempted" value={Number(profile.totalJobsAttempted || 0).toString()} />
             <StatCard label="Earnings" value={formatOG(BigInt(profile.totalEarningsWei || 0))} />
@@ -953,22 +943,32 @@ export default function AgentDetailPage() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.1 }}
-          className="rounded-2xl border border-white/10 bg-[#0d1525]/90 p-6 mb-6"
+          className="rounded-2xl border border-white/10 bg-[#0d1525]/90 p-6"
         >
-          <h2 className="text-[13px] font-medium text-white/50 uppercase tracking-wider mb-4">On-Chain Data</h2>
+          <h2 className="text-[13px] font-medium text-white/50 uppercase tracking-wider mb-4">On-Chain Data (ERC-7857)</h2>
           <div className="space-y-2 text-[13px]">
-            <div className="flex justify-between">
-              <span className="text-white/40">Capability CID</span>
-              <span className="text-white/60 font-mono text-[11px] max-w-[200px] truncate">{profile.capabilityCID || "—"}</span>
+            <div className="flex justify-between items-center gap-4">
+              <span className="text-white/40 shrink-0">Capability Hash</span>
+              <span className="text-white/60 font-mono text-[11px] truncate">{profile.capabilityHash || "—"}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-white/40">Profile CID</span>
-              <span className="text-white/60 font-mono text-[11px]">{profile.profileCID || "—"}</span>
+            <div className="flex justify-between items-center gap-4">
+              <span className="text-white/40 shrink-0">Profile Hash</span>
+              <span className="text-white/60 font-mono text-[11px] truncate">{profile.profileHash || "—"}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-white/40">Created</span>
+            <div className="flex justify-between items-center gap-4">
+              <span className="text-white/40 shrink-0">Version</span>
+              <span className="text-white/60">v{Number(profile.version || 1)}</span>
+            </div>
+            <div className="flex justify-between items-center gap-4">
+              <span className="text-white/40 shrink-0">Created</span>
               <span className="text-white/60">
                 {profile.createdAt ? new Date(Number(profile.createdAt) * 1000).toLocaleDateString() : "—"}
+              </span>
+            </div>
+            <div className="flex justify-between items-center gap-4">
+              <span className="text-white/40 shrink-0">Last Updated</span>
+              <span className="text-white/60">
+                {profile.updatedAt ? new Date(Number(profile.updatedAt) * 1000).toLocaleDateString() : "—"}
               </span>
             </div>
           </div>

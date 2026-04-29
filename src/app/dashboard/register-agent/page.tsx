@@ -266,7 +266,8 @@ export default function RegisterAgentPage() {
       cCID,
       skillIdsToBytes32(selectedSkills),
       walletAddr,
-      pubKey
+      pubKey,
+      "0x01"  // sealed AES key placeholder — Phase 2 will seal with owner's ECIES pubkey
     );
 
     // Store profile data for Supabase upsert after confirmation

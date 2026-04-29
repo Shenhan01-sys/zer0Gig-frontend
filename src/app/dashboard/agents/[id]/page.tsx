@@ -100,25 +100,76 @@ export default function AgentDetailPage() {
 
   const { data: profileRaw, isLoading: onChainLoading } = useOnChainAgentProfile(agentId);
   const { profile: supabaseProfile } = useSupabaseAgentProfile(agentIdNum);
-  const { data: onChainSkillIds } = useAgentSkills(agentId);
-  const { addSkill, removeSkill, toggleActive, updateCapabilities, loading: onChainLoading2 } = useAgentManagement();
+  const { data: onChainSkillIds, refetch: refetchSkills } = useAgentSkills(agentId);
+  const { addSkill, removeSkill, toggleActive } = useAgentManagement();
   const { upsert: upsertProfile } = useUpsertAgentProfile();
+
+  // ERC-7857 hooks
+  const { updateCapability, loading: updCapLoading } = useUpdateCapability();
+  const { authorizeUsage, loading: authLoading } = useAuthorizeUsage();
+  const { revokeUsage, loading: revokeLoading } = useRevokeUsage();
+  const { iTransfer, loading: transferLoading } = useITransfer();
+  const { iClone, loading: cloneLoading } = useIClone();
+  const { data: authorizedUsers, refetch: refetchAuths } = useAuthorizedUsersOf(agentIdNum);
 
   const profile = profileRaw as any;
   const isOwner = connectedWallet === profile?.owner?.toLowerCase();
 
+  // ── edit panel ──────────────────────────────────────────────────────────────
   const [isEditing, setIsEditing] = useState(false);
   const [editDisplayName, setEditDisplayName] = useState("");
   const [editBio, setEditBio] = useState("");
   const [editAvatarUrl, setEditAvatarUrl] = useState("");
   const [editTags, setEditTags] = useState<string[]>([]);
-  const [editDefaultRate, setEditDefaultRate] = useState("");
   const [editError, setEditError] = useState<string | null>(null);
   const [editSuccess, setEditSuccess] = useState(false);
   const [editPending, setEditPending] = useState(false);
-
-  const [availableSkills, setAvailableSkills] = useState<typeof ALL_SKILLS>([]);
   const [showSkillDropdown, setShowSkillDropdown] = useState(false);
+
+  // ── erc-7857 action panels ──────────────────────────────────────────────────
+  const [activeAction, setActiveAction] = useState<ActionTab>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+
+  // updateCapability fields
+  const [newCapValue, setNewCapValue] = useState("");
+  const [newSealedKey, setNewSealedKey] = useState("0x01");
+
+  // authorize fields
+  const [execAddr, setExecAddr] = useState("");
+  const [durationHours, setDurationHours] = useState("24");
+  const [permissionsDesc, setPermissionsDesc] = useState("");
+
+  // transfer fields
+  const [transferTo, setTransferTo] = useState("");
+  const [transferCapValue, setTransferCapValue] = useState("");
+  const [transferSealedKey, setTransferSealedKey] = useState("0x01");
+  const [transferOracleSig, setTransferOracleSig] = useState("");
+
+  // clone fields
+  const [cloneTo, setCloneTo] = useState("");
+  const [cloneCapValue, setCloneCapValue] = useState("");
+  const [cloneSealedKey, setCloneSealedKey] = useState("0x01");
+  const [cloneOracleSig, setCloneOracleSig] = useState("");
+
+  // transfer digest read
+  const newTransferHash = transferCapValue ? hashString(transferCapValue) : `0x${"00".repeat(32)}` as `0x${string}`;
+  const { data: txDigest } = useTransferDigest(
+    agentIdNum,
+    Number(profile?.version || 1),
+    profile?.capabilityHash || `0x${"00".repeat(32)}`,
+    newTransferHash,
+    transferTo
+  );
+
+  const newCloneHash = cloneCapValue ? hashString(cloneCapValue) : `0x${"00".repeat(32)}` as `0x${string}`;
+  const { data: cloneDigest } = useTransferDigest(
+    agentIdNum,
+    Number(profile?.version || 1),
+    profile?.capabilityHash || `0x${"00".repeat(32)}`,
+    newCloneHash,
+    cloneTo
+  );
 
   useEffect(() => {
     if (supabaseProfile) {
@@ -186,6 +237,7 @@ export default function AgentDetailPage() {
     setEditError(null);
     try {
       await addSkill(agentIdNum, skillId);
+      refetchSkills();
     } catch (err: any) {
       setEditError(parseContractError(err));
     }
@@ -195,6 +247,7 @@ export default function AgentDetailPage() {
     setEditError(null);
     try {
       await removeSkill(agentIdNum, skillId);
+      refetchSkills();
     } catch (err: any) {
       setEditError(parseContractError(err));
     }
@@ -206,6 +259,92 @@ export default function AgentDetailPage() {
       await toggleActive(agentIdNum);
     } catch (err: any) {
       setEditError(parseContractError(err));
+    }
+  };
+
+  // ── erc-7857 action handlers ────────────────────────────────────────────────
+
+  const toggleAction = (id: ActionTab) => {
+    setActiveAction(prev => prev === id ? null : id);
+    setActionError(null);
+    setActionSuccess(null);
+  };
+
+  const handleUpdateCapability = async () => {
+    if (!newCapValue.trim()) return;
+    setActionError(null);
+    setActionSuccess(null);
+    try {
+      const hash = hashString(newCapValue);
+      const sealedKey = (newSealedKey.startsWith("0x") ? newSealedKey : `0x${newSealedKey}`) as `0x${string}`;
+      await updateCapability(agentIdNum, hash, sealedKey || "0x01");
+      setActionSuccess("Capability updated! New version sealed on-chain.");
+      setNewCapValue("");
+    } catch (err: any) {
+      setActionError(parseContractError(err));
+    }
+  };
+
+  const handleAuthorize = async () => {
+    if (!isValidAddress(execAddr)) { setActionError("Invalid executor address"); return; }
+    const hours = parseFloat(durationHours);
+    if (isNaN(hours) || hours <= 0) { setActionError("Invalid duration"); return; }
+    setActionError(null);
+    setActionSuccess(null);
+    try {
+      const permHash = hashString(permissionsDesc || "full");
+      const durationSec = Math.floor(hours * 3600);
+      await authorizeUsage(agentIdNum, execAddr as Address, durationSec, permHash);
+      setActionSuccess(`${execAddr.slice(0, 10)}... authorized for ${hours}h.`);
+      setExecAddr("");
+      setPermissionsDesc("");
+      refetchAuths();
+    } catch (err: any) {
+      setActionError(parseContractError(err));
+    }
+  };
+
+  const handleRevoke = async (addr: string) => {
+    setActionError(null);
+    try {
+      await revokeUsage(agentIdNum, addr as Address);
+      refetchAuths();
+    } catch (err: any) {
+      setActionError(parseContractError(err));
+    }
+  };
+
+  const handleTransfer = async () => {
+    if (!isValidAddress(transferTo)) { setActionError("Invalid recipient address"); return; }
+    if (!transferCapValue.trim()) { setActionError("New capability value is required"); return; }
+    if (!transferOracleSig.startsWith("0x")) { setActionError("Oracle signature must start with 0x"); return; }
+    setActionError(null);
+    setActionSuccess(null);
+    try {
+      const capHash = hashString(transferCapValue);
+      const sealed = (transferSealedKey.startsWith("0x") ? transferSealedKey : `0x${transferSealedKey}`) as `0x${string}`;
+      await iTransfer(agentIdNum, transferTo as Address, capHash, sealed || "0x01", transferOracleSig as `0x${string}`);
+      setActionSuccess("Transfer submitted! New owner can now read the sealed key from events.");
+    } catch (err: any) {
+      setActionError(parseContractError(err));
+    }
+  };
+
+  const handleClone = async () => {
+    if (!isValidAddress(cloneTo)) { setActionError("Invalid new owner address"); return; }
+    if (!cloneCapValue.trim()) { setActionError("New capability value is required"); return; }
+    if (!cloneOracleSig.startsWith("0x")) { setActionError("Oracle signature must start with 0x"); return; }
+    setActionError(null);
+    setActionSuccess(null);
+    try {
+      const capHash = hashString(cloneCapValue);
+      const sealed = (cloneSealedKey.startsWith("0x") ? cloneSealedKey : `0x${cloneSealedKey}`) as `0x${string}`;
+      await iClone(agentIdNum, cloneTo as Address, capHash, sealed || "0x01", cloneOracleSig as `0x${string}`);
+      setActionSuccess("Clone minted! New agent created with reset reputation.");
+      setCloneTo("");
+      setCloneCapValue("");
+    } catch (err: any) {
+      setActionError(parseContractError(err));
     }
   };
 

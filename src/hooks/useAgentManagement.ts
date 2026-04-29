@@ -195,39 +195,22 @@ export function useTotalAgents() {
 }
 
 export function useAgentSkills(agentId: bigint | string | undefined) {
-  const [skillIds, setSkillIds] = useState<string[]>([]);
-  const [loading, setLoading] = useState(false);
-  const publicClient = usePublicClient();
+  const enabled = !!agentId && agentId !== "0" && agentId !== 0n;
+  const id = agentId
+    ? (typeof agentId === "string" ? BigInt(agentId) : agentId)
+    : 0n;
 
-  const fetchSkills = useCallback(async () => {
-    if (!agentId || !publicClient) return;
-    setLoading(true);
-    try {
-      const id = typeof agentId === "string" ? BigInt(agentId) : agentId;
-      const count = await publicClient.readContract({
-        address: CONTRACT_CONFIG.AgentRegistry.address,
-        abi: CONTRACT_CONFIG.AgentRegistry.abi,
-        functionName: "agentSkillCount",
-        args: [id],
-      });
-      const countNum = Number(count);
-      const skills: string[] = [];
-      for (let i = 0; i < countNum; i++) {
-        const sid = await publicClient.readContract({
-          address: CONTRACT_CONFIG.AgentRegistry.address,
-          abi: CONTRACT_CONFIG.AgentRegistry.abi,
-          functionName: "agentSkillAtIndex",
-          args: [id, BigInt(i)],
-        });
-        skills.push(sid as string);
-      }
-      setSkillIds(skills);
-    } catch {
-      setSkillIds([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [agentId, publicClient]);
+  const { data, isLoading, refetch } = useReadContract({
+    address: CONTRACT_CONFIG.AgentRegistry.address,
+    abi: CONTRACT_CONFIG.AgentRegistry.abi,
+    functionName: "getAgentSkills",
+    args: [id],
+    query: { enabled },
+  });
 
-  return { data: skillIds, isLoading: loading, refetch: fetchSkills };
+  return {
+    data: (data as `0x${string}`[] | undefined) ?? [],
+    isLoading,
+    refetch,
+  };
 }

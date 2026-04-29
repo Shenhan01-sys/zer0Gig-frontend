@@ -60,11 +60,12 @@ export default function JobCard({ jobId, index }: JobCardProps) {
 
   const getStatusBadge = (status: number) => {
     const statusMap = {
-      0: { bg: "bg-white/10", text: "text-white/60", label: "Pending Setup" },
-      1: { bg: "bg-[#38bdf8]/10", text: "text-[#38bdf8]", label: "In Progress" },
-      2: { bg: "bg-emerald-500/10", text: "text-emerald-400", label: "Completed" },
-      3: { bg: "bg-red-500/10", text: "text-red-400", label: "Cancelled" },
-      4: { bg: "bg-yellow-500/10", text: "text-yellow-400", label: "Partial" },
+      0: { bg: "bg-[#38bdf8]/10", text: "text-[#38bdf8]", label: "Open" },
+      1: { bg: "bg-white/10", text: "text-white/60", label: "Pending Setup" },
+      2: { bg: "bg-yellow-500/10", text: "text-yellow-400", label: "In Progress" },
+      3: { bg: "bg-emerald-500/10", text: "text-emerald-400", label: "Completed" },
+      4: { bg: "bg-red-500/10", text: "text-red-400", label: "Cancelled" },
+      5: { bg: "bg-amber-500/10", text: "text-amber-400", label: "Partial" },
     };
     return statusMap[status as keyof typeof statusMap] || statusMap[0];
   };

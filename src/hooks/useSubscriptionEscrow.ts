@@ -1,6 +1,6 @@
 import { useReadContract, useWriteContract } from "wagmi";
 import { CONTRACT_CONFIG } from "@/lib/contracts";
-import { Address } from "viem";
+import { Address, keccak256, toBytes } from "viem";
 import { useTx } from "@/components/ui/TxToast";
 import { parseContractError } from "@/lib/utils";
 
@@ -58,12 +58,14 @@ export function useCreateSubscription() {
     value: bigint
   ): Promise<`0x${string}` | undefined> => {
     const toastId = tx.start(`Create subscription · Agent #${agentId}`);
+    const taskHash = taskDescription ? keccak256(toBytes(taskDescription)) : `0x${"00".repeat(32)}` as `0x${string}`;
+    const webhookHash = webhookUrl ? keccak256(toBytes(webhookUrl)) : `0x${"00".repeat(32)}` as `0x${string}`;
     try {
       const hash = await writeContractAsync({
         address: CONTRACT_CONFIG.SubscriptionEscrow.address as Address,
         abi: CONTRACT_CONFIG.SubscriptionEscrow.abi,
         functionName: "createSubscription",
-        args: [agentId, taskDescription, intervalSeconds, checkInRate, alertRate, gracePeriodSeconds, x402Enabled, x402VerificationMode, clientX402Sig, webhookUrl],
+        args: [agentId, taskHash, Number(intervalSeconds), checkInRate, alertRate, Number(gracePeriodSeconds), x402Enabled, x402VerificationMode, clientX402Sig, webhookHash],
         value,
       });
       tx.broadcast(toastId, hash);
@@ -127,11 +129,12 @@ export function useSetWebhookUrl() {
   const { writeContract, isPending, isSuccess, isError, data, error } = useWriteContract();
 
   const setWebhookUrl = (subscriptionId: bigint, webhookUrl: string) => {
+    const webhookHash = webhookUrl ? keccak256(toBytes(webhookUrl)) : `0x${"00".repeat(32)}` as `0x${string}`;
     writeContract({
       address: CONTRACT_CONFIG.SubscriptionEscrow.address as Address,
       abi: CONTRACT_CONFIG.SubscriptionEscrow.abi,
-      functionName: "setWebhookUrl",
-      args: [subscriptionId, webhookUrl],
+      functionName: "setWebhookHash",
+      args: [subscriptionId, webhookHash],
     });
   };
 

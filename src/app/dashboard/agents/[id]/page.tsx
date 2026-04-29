@@ -172,6 +172,8 @@ export default function AgentDetailPage() {
   const [cloneSealedKey, setCloneSealedKey] = useState("0x01");
   const [cloneOracleSig, setCloneOracleSig] = useState("");
 
+  const [oracleSigLoading, setOracleSigLoading] = useState(false);
+
   // transfer digest read
   const newTransferHash = transferCapValue ? hashString(transferCapValue) : `0x${"00".repeat(32)}` as `0x${string}`;
   const { data: txDigest } = useTransferDigest(
@@ -317,6 +319,25 @@ export default function AgentDetailPage() {
       refetchAuths();
     } catch (err: any) {
       setActionError(parseContractError(err));
+    }
+  };
+
+  const fetchOracleSig = async (digest: string, setter: (s: string) => void) => {
+    setOracleSigLoading(true);
+    setActionError(null);
+    try {
+      const res = await fetch("/api/oracle/sign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ digest }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Oracle signing failed");
+      setter(data.signature);
+    } catch (err: any) {
+      setActionError(err.message || "Failed to get oracle signature");
+    } finally {
+      setOracleSigLoading(false);
     }
   };
 
@@ -867,7 +888,13 @@ export default function AgentDetailPage() {
                                 <Copy className="w-3 h-3" />
                               </button>
                             </div>
-                            <p className="text-[10px] text-white/25">Sign with personal_sign (EIP-191) using the oracle address and paste below.</p>
+                            <button
+                              onClick={() => txDigest && fetchOracleSig(txDigest as string, setTransferOracleSig)}
+                              disabled={!txDigest || oracleSigLoading}
+                              className="mt-1 text-[10px] px-2 py-1 rounded bg-sky-500/10 border border-sky-500/20 text-sky-400 hover:bg-sky-500/15 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                            >
+                              {oracleSigLoading ? "Signing…" : "Get Oracle Signature"}
+                            </button>
                           </div>
                         )}
 
@@ -908,6 +935,13 @@ export default function AgentDetailPage() {
                                 <Copy className="w-3 h-3" />
                               </button>
                             </div>
+                            <button
+                              onClick={() => cloneDigest && fetchOracleSig(cloneDigest as string, setCloneOracleSig)}
+                              disabled={!cloneDigest || oracleSigLoading}
+                              className="text-[10px] px-2 py-1 rounded bg-sky-500/10 border border-sky-500/20 text-sky-400 hover:bg-sky-500/15 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                            >
+                              {oracleSigLoading ? "Signing…" : "Get Oracle Signature"}
+                            </button>
                           </div>
                         )}
 

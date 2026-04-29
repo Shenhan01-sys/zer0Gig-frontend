@@ -6,21 +6,35 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAgentProfile as useOnChainAgentProfile } from "@/hooks/useAgentRegistry";
 import { useAgentProfile as useSupabaseAgentProfile } from "@/hooks/useAgentProfile";
-import { useAgentSkills, ALL_SKILLS, SKILL_LABELS, skillIdsToBytes32 } from "@/hooks/useAgentManagement";
+import { useAgentSkills, ALL_SKILLS, SKILL_LABELS } from "@/hooks/useAgentManagement";
 import { useAgentManagement } from "@/hooks/useAgentManagement";
 import { useUpsertAgentProfile } from "@/hooks/useAgentProfile";
 import { useWalletClient } from "wagmi";
 import { formatOG, avatarGradient } from "@/lib/utils";
 import Image from "next/image";
 import { parseContractError } from "@/lib/utils";
-import { useReadContract, useWriteContract } from "wagmi";
-import { CONTRACT_CONFIG } from "@/lib/contracts";
 import { Address } from "viem";
-import { Settings, X, Plus, Check, ChevronDown } from "lucide-react";
+import {
+  Settings, X, Plus, Shield, RefreshCw, Copy, ArrowRightLeft, Layers,
+  ChevronDown, ChevronUp, CheckCircle2, Clock, AlertTriangle,
+} from "lucide-react";
 import RBACGuard from "@/components/RBACGuard";
 import ConnectTelegramButton from "@/components/ConnectTelegramButton";
 import CornerBrackets from "@/components/ui/CornerBrackets";
 import ReputationRadar from "@/components/agents/ReputationRadar";
+import {
+  useUpdateCapability,
+  useAuthorizeUsage,
+  useRevokeUsage,
+  useITransfer,
+  useIClone,
+  useTransferDigest,
+  useAuthorizedUsersOf,
+  hashString,
+  isValidAddress,
+} from "@/hooks/useAgentERC7857";
+
+// ─── helpers ─────────────────────────────────────────────────────────────────
 
 function getScoreLabel(score: number): { label: string; color: string } {
   if (score >= 9500) return { label: "S", color: "text-amber-400" };
@@ -43,6 +57,39 @@ function StatCard({ label, value }: { label: string; value: string }) {
     </motion.div>
   );
 }
+
+// ─── action tab types ─────────────────────────────────────────────────────────
+
+type ActionTab = "updateCapability" | "authorize" | "transfer" | "clone" | null;
+
+const ACTION_TABS: { id: ActionTab; label: string; icon: React.ReactNode; desc: string }[] = [
+  {
+    id: "updateCapability",
+    label: "Update Capability",
+    icon: <RefreshCw className="w-3.5 h-3.5" />,
+    desc: "Rotate encrypted capability hash and AES key",
+  },
+  {
+    id: "authorize",
+    label: "Authorize Usage",
+    icon: <Shield className="w-3.5 h-3.5" />,
+    desc: "Grant time-bounded access to an executor",
+  },
+  {
+    id: "transfer",
+    label: "Transfer Agent",
+    icon: <ArrowRightLeft className="w-3.5 h-3.5" />,
+    desc: "Transfer ownership with oracle-verified re-seal",
+  },
+  {
+    id: "clone",
+    label: "Clone Agent",
+    icon: <Layers className="w-3.5 h-3.5" />,
+    desc: "Mint a copy for a new owner (reputation resets)",
+  },
+];
+
+// ─── main page ────────────────────────────────────────────────────────────────
 
 export default function AgentDetailPage() {
   const params = useParams();

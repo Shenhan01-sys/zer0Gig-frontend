@@ -374,13 +374,27 @@ export function usePostJob() {
     setIsConfirmed(false);
     setError(null);
 
+    // Contract takes bytes32 jobDataHash, but the brief content is stored off-chain in Supabase.
+    // We POST the brief to /api/job-brief which inserts into public.jobs keyed by keccak256(brief),
+    // then we send that hash on-chain.
     const toastId = tx.start("Post new job");
     try {
+      const briefRes = await fetch("/api/job-brief", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cid, skillId: skillBytes32 }),
+      });
+      if (!briefRes.ok) {
+        const errText = await briefRes.text();
+        throw new Error(`Failed to store brief: ${errText}`);
+      }
+      const { jobDataHash } = await briefRes.json();
+
       const hash = await writeContractAsync({
         address: CONTRACT_CONFIG.ProgressiveEscrow.address,
         abi: CONTRACT_CONFIG.ProgressiveEscrow.abi,
         functionName: "postJob",
-        args: [cid, skillBytes32],
+        args: [jobDataHash as `0x${string}`, skillBytes32],
       });
       tx.broadcast(toastId, hash);
       setTxHash(hash);

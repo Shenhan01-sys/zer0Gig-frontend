@@ -24,3 +24,6 @@ Thumbs.db
 .vscode/
 .idea/
 .vercel
+
+.dev-log.txt
+

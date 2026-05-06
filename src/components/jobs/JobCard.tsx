@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useJobDetails, type JobData } from "@/hooks/useProgressiveEscrow";
 import { useAgentProfile } from "@/hooks/useAgentProfile";
 import Link from "next/link";
@@ -13,21 +14,22 @@ interface JobCardProps {
   index: number;
 }
 
-function decodeJobTitle(cid: string | undefined): string | null {
-  if (!cid?.startsWith("txt:")) return null;
-  try {
-    const json = JSON.parse(decodeURIComponent(escape(atob(cid.slice(4)))));
-    return json.title || null;
-  } catch {
-    return null;
-  }
-}
-
 export default function JobCard({ jobId, index }: JobCardProps) {
   const { data: jobRaw, isLoading, isError } = useJobDetails(jobId);
   const agentIdNum = (jobRaw as any)?.agentId ? Number((jobRaw as any).agentId) : 0;
   const { profile } = useAgentProfile(agentIdNum > 0 ? agentIdNum : undefined);
   const displayName = profile?.display_name || "";
+
+  // Fetch off-chain brief by jobDataHash. Contract only stores keccak256(brief).
+  const [briefTitle, setBriefTitle] = useState<string | null>(null);
+  useEffect(() => {
+    const hash = (jobRaw as any)?.jobDataHash;
+    if (!hash || hash === "0x" + "0".repeat(64)) return;
+    fetch(`/api/job-brief?hash=${hash}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(j => { if (j?.data?.title) setBriefTitle(j.data.title); })
+      .catch(() => {});
+  }, [jobRaw]);
 
   // DEMO MODE: Fall back to mock data when real job doesn't exist on-chain
   const mockJob = MOCK_JOBS.find(j => j.jobId === jobId);
@@ -44,9 +46,7 @@ export default function JobCard({ jobId, index }: JobCardProps) {
     status: mockJob.status,
   } as unknown as JobData : undefined);
 
-  // Decode title from jobDataCID (format: "txt:<base64(JSON{title,description})>")
-  const decodedTitle = decodeJobTitle((jobRaw as any)?.jobDataCID);
-  const displayTitle = decodedTitle || mockJob?.title || `Job #${jobId}`;
+  const displayTitle = briefTitle || mockJob?.title || `Job #${jobId}`;
 
   if (isLoading) {
     return (

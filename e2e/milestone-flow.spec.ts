@@ -35,6 +35,7 @@ test.describe("Milestone alignment signing — wire format", () => {
   });
 
   test("rejects malformed outputHash gracefully (no server crash)", async ({ request }) => {
+    test.setTimeout(60_000); // 6 sequential POSTs, dev server JIT-compile can stack on cold start
     const cases = [
       { outputHash: "" },
       { outputHash: "0x" },

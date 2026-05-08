@@ -368,13 +368,58 @@ export default function RegisterAgentPage() {
                 <div className="space-y-2">
                   <div>
                     <p className="text-white/30 text-[10px] uppercase tracking-wider mb-1">Agent Wallet Address</p>
-                    <p className="text-white text-[11px] font-mono break-all bg-[#050810]/80 rounded-lg px-3 py-2">{generatedWallet.address}</p>
+                    <div className="flex gap-2 items-stretch">
+                      <p className="flex-1 text-white text-[11px] font-mono break-all bg-[#050810]/80 rounded-lg px-3 py-2">{generatedWallet.address}</p>
+                      <button
+                        onClick={() => navigator.clipboard.writeText(generatedWallet.address)}
+                        className="px-3 rounded-lg bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 text-white/70 text-[11px] font-medium transition-colors"
+                      >
+                        Copy
+                      </button>
+                    </div>
                   </div>
                   <div>
                     <p className="text-white/30 text-[10px] uppercase tracking-wider mb-1">Private Key</p>
-                    <p className="text-amber-300 text-[11px] font-mono break-all bg-[#050810]/80 rounded-lg px-3 py-2">{generatedWallet.privateKey}</p>
+                    <div className="flex gap-2 items-stretch">
+                      <p className="flex-1 text-amber-300 text-[11px] font-mono break-all bg-[#050810]/80 rounded-lg px-3 py-2">{generatedWallet.privateKey}</p>
+                      <button
+                        onClick={() => navigator.clipboard.writeText(generatedWallet.privateKey)}
+                        className="px-3 rounded-lg bg-amber-400/10 hover:bg-amber-400/20 border border-amber-400/30 text-amber-300 text-[11px] font-medium transition-colors"
+                      >
+                        Copy
+                      </button>
+                    </div>
                   </div>
                 </div>
+
+                {/* Runtime setup instructions — different for self-hosted vs platform */}
+                {runtimeType === "self_hosted" ? (
+                  <div className="mt-4 rounded-lg bg-[#050810]/80 border border-white/10 p-3">
+                    <p className="text-white/60 text-[11px] uppercase tracking-wider mb-2 font-semibold">Self-Hosted setup</p>
+                    <p className="text-white/50 text-[11px] leading-relaxed">
+                      Add to your runtime <code className="bg-white/5 px-1 rounded text-amber-300">.env</code>:
+                    </p>
+                    <pre className="mt-2 bg-black/40 rounded px-2 py-1.5 text-[10px] text-white/70 font-mono overflow-x-auto">
+{`AGENT_PRIVATE_KEY=${generatedWallet.privateKey.replace(/^0x/, "")}`}
+                    </pre>
+                    <p className="text-white/40 text-[10px] mt-2">
+                      Then run <code className="bg-white/5 px-1 rounded text-amber-300">npm run dev</code> to start your agent.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="mt-4 rounded-lg bg-[#050810]/80 border border-purple-500/20 p-3">
+                    <p className="text-purple-300 text-[11px] uppercase tracking-wider mb-2 font-semibold">Platform Managed</p>
+                    <p className="text-white/50 text-[11px] leading-relaxed">
+                      The platform runtime needs this key to release milestone payments to your wallet. Send it to the platform operator (or paste into the runtime env if you operate it):
+                    </p>
+                    <pre className="mt-2 bg-black/40 rounded px-2 py-1.5 text-[10px] text-white/70 font-mono overflow-x-auto">
+{`AGENT_WALLET_KEYS=<agentId>:${generatedWallet.privateKey.replace(/^0x/, "")}`}
+                    </pre>
+                    <p className="text-white/40 text-[10px] mt-2">
+                      Without this, the platform cannot call <code className="bg-white/5 px-1 rounded">releaseMilestone</code> on your behalf.
+                    </p>
+                  </div>
+                )}
               </div>
             )}
             <div className="flex gap-3 justify-center mt-4">

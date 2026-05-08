@@ -18,6 +18,7 @@ export interface JobData {
   agentWallet?: Address;
   jobDataCID?: string;
   skillId?: string;
+  createdAt?: bigint;
 }
 
 export interface ProposalData {
@@ -53,10 +54,11 @@ export function useJobDetails(jobId: number) {
       status: (data as any).status,
       totalBudgetWei: (data as any).totalBudgetWei,
       releasedWei: (data as any).releasedWei,
-      milestoneCount: (data as any).milestones?.length ?? 0,
+      milestoneCount: (data as any).milestones?.length ?? (data as any).milestoneCount ?? 0,
       agentWallet: (data as any).agentWallet,
       jobDataCID: (data as any).jobDataCID,
       skillId: (data as any).skillId,
+      createdAt: (data as any).createdAt,
     };
   }, [data]);
 
@@ -243,7 +245,7 @@ export function useReleaseMilestone() {
   const releaseMilestone = async (params: {
     jobId: bigint;
     milestoneIndex: number;
-    outputCID: string;
+    outputHash: `0x${string}`;   // keccak256 of output content — bytes32 on-chain
     alignmentScore: bigint;
     signature: `0x${string}`;
   }) => {
@@ -261,7 +263,7 @@ export function useReleaseMilestone() {
         args: [
           params.jobId,
           BigInt(params.milestoneIndex),
-          params.outputCID,
+          params.outputHash,
           params.alignmentScore,
           params.signature,
         ],
@@ -287,6 +289,65 @@ export function useReleaseMilestone() {
     error,
   };
 }
+
+/**
+ * Cancel a stale IN_PROGRESS job. Reverts unless STALE_JOB_TIMEOUT (7 days)
+ * has elapsed since the agent's last on-chain activity. Refunds the
+ * unreleased portion of the budget to the client.
+ */
+export function useCancelStaleJob() {
+  const { writeContractAsync, isPending: isWritePending } = useWriteContract();
+  const tx = useTx();
+  const [isPending, setIsPending] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  const cancelStaleJob = async (jobId: bigint) => {
+    setIsPending(true);
+    setError(null);
+
+    const toastId = tx.start(`Reclaim stale Job #${jobId}`);
+    try {
+      const hash = await writeContractAsync({
+        address: CONTRACT_CONFIG.ProgressiveEscrow.address,
+        abi: CONTRACT_CONFIG.ProgressiveEscrow.abi,
+        functionName: "cancelStaleJob",
+        args: [jobId],
+      });
+      tx.broadcast(toastId, hash);
+      setIsPending(false);
+      return hash;
+    } catch (err) {
+      tx.fail(toastId, parseContractError(err));
+      setError(err as Error);
+      setIsPending(false);
+      throw err;
+    }
+  };
+
+  return { cancelStaleJob, isPending: isPending || isWritePending, error };
+}
+
+/**
+ * Read the lastActivityAt timestamp for a job. Used by the UI to show how
+ * long until cancelStaleJob becomes callable.
+ */
+export function useJobLastActivity(jobId: bigint | undefined) {
+  const { data, isLoading, refetch } = useReadContract({
+    address: CONTRACT_CONFIG.ProgressiveEscrow.address,
+    abi: CONTRACT_CONFIG.ProgressiveEscrow.abi,
+    functionName: "jobLastActivityAt",
+    args: jobId !== undefined ? [jobId] : undefined,
+    query: { enabled: jobId !== undefined },
+  });
+
+  return {
+    lastActivityAt: data ? Number(data) : 0,
+    isLoading,
+    refetch,
+  };
+}
+
+export const STALE_JOB_TIMEOUT_SECONDS = 7 * 24 * 60 * 60;
 
 export function useOpenJobs() {
   const { data: openJobIds, isLoading, refetch } = useReadContract({

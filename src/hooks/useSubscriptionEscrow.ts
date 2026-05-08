@@ -61,6 +61,16 @@ export function useCreateSubscription() {
     const taskHash = taskDescription ? keccak256(toBytes(taskDescription)) : `0x${"00".repeat(32)}` as `0x${string}`;
     const webhookHash = webhookUrl ? keccak256(toBytes(webhookUrl)) : `0x${"00".repeat(32)}` as `0x${string}`;
     try {
+      // Persist task description off-chain so the runtime can fetch it by hash.
+      // Same pattern as job-brief: contract stores keccak256, content lives in Supabase.
+      if (taskDescription) {
+        await fetch("/api/subscription-task", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ taskDescription, webhookUrl }),
+        }).catch(() => {/* non-fatal — runtime falls back to the on-chain hash */});
+      }
+
       const hash = await writeContractAsync({
         address: CONTRACT_CONFIG.SubscriptionEscrow.address as Address,
         abi: CONTRACT_CONFIG.SubscriptionEscrow.abi,

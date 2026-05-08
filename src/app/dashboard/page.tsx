@@ -17,8 +17,9 @@ import { useAgentProfiles } from "@/hooks/useAgentProfile";
 import JobCard from "@/components/jobs/JobCard";
 import SubscriptionCard from "@/components/subscriptions/SubscriptionCard";
 import { MOCK_JOBS, MOCK_SUBSCRIPTIONS } from "@/lib/mockData";
-import { Hand, Lightbulb, Zap, Rocket } from "lucide-react";
+import { Hand, Lightbulb, Zap } from "lucide-react";
 import CornerBrackets from "@/components/ui/CornerBrackets";
+import NetworkActivityFeed from "@/components/dashboard/NetworkActivityFeed";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -432,6 +433,9 @@ function ClientOverview({ jobs, subs, jobsLoading, subsLoading, displayName }: {
               </div>
             </div>
           )}
+
+          {/* Live Network Activity */}
+          <NetworkActivityFeed />
         </div>
         {/* Right: Sidebar (1/3) */}
         <div className="space-y-4">
@@ -496,6 +500,23 @@ function AgentOwnerOverview({ agents, subs, agentsLoading, displayName }: {
   agents: bigint[]; subs: bigint[]; agentsLoading: boolean; displayName: string;
 }) {
   const { profiles: ownerProfiles } = useAgentProfiles(agents.map(id => Number(id)));
+  const { agents: allAgents } = useAllAgents();
+
+  // Compute total on-chain earnings across owned agents
+  const totalEarnedOG = (() => {
+    const ownedIds = new Set(agents.map(id => Number(id)));
+    const total = allAgents
+      .filter(a => ownedIds.has(a.agentId))
+      .reduce((acc, a) => acc + a.totalEarningsWei, 0n);
+    return (Number(total) / 1e18).toFixed(4);
+  })();
+
+  // Total jobs completed across owned agents
+  const totalJobsDone = (() => {
+    const ownedIds = new Set(agents.map(id => Number(id)));
+    return allAgents.filter(a => ownedIds.has(a.agentId)).reduce((acc, a) => acc + a.totalJobsCompleted, 0);
+  })();
+
   return (
     <div className="space-y-6">
       {/* Welcome banner */}
@@ -555,15 +576,15 @@ function AgentOwnerOverview({ agents, subs, agentsLoading, displayName }: {
           color="bg-[#38bdf8]/10 text-[#38bdf8]"
           icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>}
         />
-        <StatCard label="Network Status" value="Live"
-          sub="0G Newton Testnet"
+        <StatCard label="Total Earned" value={agentsLoading ? "—" : `${totalEarnedOG}`}
+          sub="OG across all agents"
           color="bg-emerald-500/10 text-emerald-400"
-          icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>}
+          icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
         />
-        <StatCard label="Alignment Nodes" value="175K+"
-          sub="Quality verifiers"
+        <StatCard label="Jobs Completed" value={agentsLoading ? "—" : totalJobsDone}
+          sub="On-chain deliveries"
           color="bg-amber-500/10 text-amber-400"
-          icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>}
+          icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
         />
       </div>
       {/* Two-column layout */}
@@ -626,6 +647,9 @@ function AgentOwnerOverview({ agents, subs, agentsLoading, displayName }: {
               })}
             </div>
           )}
+
+          {/* Live Network Activity */}
+          <NetworkActivityFeed />
         </div>
         {/* Right: Sidebar */}
         <div className="space-y-4">
@@ -641,6 +665,11 @@ function AgentOwnerOverview({ agents, subs, agentsLoading, displayName }: {
                 label="View Marketplace" desc="See how agents compete"
                 accent="border-white/10 hover:border-[#38bdf8]/30"
                 icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>}
+              />
+              <QuickAction href="/dashboard/my-proposals"
+                label="My Proposals" desc="Track submitted proposals"
+                accent="border-white/10 hover:border-cyan-500/30"
+                icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}
               />
               <QuickAction href="/dashboard?tab=subscriptions"
                 label="Subscriptions" desc="View recurring contracts"

@@ -4,14 +4,17 @@ import { useState } from "react";
 import { Globe, Plug } from "lucide-react";
 
 export type ToolType = "http" | "mcp";
+export type McpTransport = "url" | "package";
 
 export interface ToolConfig {
   id: string;
   type: ToolType;
   name: string;
   description: string;
-  endpoint: string;
+  endpoint: string;        // HTTP endpoint URL or MCP server URL (when mcpTransport = "url")
   apiKey: string;
+  mcpTransport?: McpTransport; // only relevant when type = "mcp"
+  npmPackage?: string;         // npm package name when mcpTransport = "package"
 }
 
 interface CustomToolModalProps {
@@ -98,14 +101,20 @@ export default function CustomToolModal({
   onClose,
 }: CustomToolModalProps) {
   const [toolType, setToolType] = useState<ToolType>(initialTool?.type ?? "http");
+  const [mcpTransport, setMcpTransport] = useState<McpTransport>(initialTool?.mcpTransport ?? "url");
   const [name, setName] = useState(initialTool?.name ?? "");
   const [endpoint, setEndpoint] = useState(initialTool?.endpoint ?? "");
+  const [npmPackage, setNpmPackage] = useState(initialTool?.npmPackage ?? "");
   const [description, setDescription] = useState(initialTool?.description ?? "");
   const [headers, setHeaders] = useState("");
   const [apiKey, setApiKey] = useState(initialTool?.apiKey ?? "");
   const [selectedCatalog, setSelectedCatalog] = useState<string | null>(null);
 
-  const isValid = name.trim() && endpoint.trim();
+  const isValid = name.trim() && (
+    toolType === "http"
+      ? endpoint.trim()
+      : mcpTransport === "package" ? npmPackage.trim() : endpoint.trim()
+  );
 
   function applyPreset(item: typeof MCP_CATALOG[number]) {
     const type: ToolType = ("type" in item ? item.type : "mcp") as ToolType;
@@ -136,6 +145,8 @@ export default function CustomToolModal({
       description: description.trim(),
       endpoint: endpoint.trim(),
       apiKey: apiKey.trim(),
+      ...(toolType === "mcp" ? { mcpTransport } : {}),
+      ...(toolType === "mcp" && mcpTransport === "package" ? { npmPackage: npmPackage.trim() } : {}),
     });
   }
 
@@ -238,6 +249,29 @@ export default function CustomToolModal({
           ))}
         </div>
 
+        {/* MCP Transport sub-toggle (only when MCP selected) */}
+        {toolType === "mcp" && (
+          <div className="flex rounded-xl border border-white/[0.07] overflow-hidden mb-5 bg-[#050810]/60">
+            {(["url", "package"] as McpTransport[]).map(t => (
+              <button
+                key={t}
+                onClick={() => setMcpTransport(t)}
+                className={`flex-1 py-2 text-[11px] font-semibold uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 ${
+                  mcpTransport === t
+                    ? "bg-[#38bdf8]/15 text-[#38bdf8]"
+                    : "text-white/30 hover:text-white/50"
+                }`}
+              >
+                {t === "url" ? (
+                  <><Globe size={13} /> Remote URL</>
+                ) : (
+                  <><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg> npm Package</>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* Form fields */}
         <div className="space-y-4">
           {/* Tool Name */}
@@ -252,7 +286,8 @@ export default function CustomToolModal({
             />
           </div>
 
-          {/* Endpoint URL */}
+          {/* Endpoint URL — shown for HTTP or MCP+url */}
+          {(toolType === "http" || (toolType === "mcp" && mcpTransport === "url")) && (
           <div>
             <label className="block text-[12px] text-white/50 mb-1.5">
               {toolType === "http" ? "Endpoint URL" : "MCP Server URL"}
@@ -261,10 +296,28 @@ export default function CustomToolModal({
               type="text"
               value={endpoint}
               onChange={e => setEndpoint(e.target.value)}
-              placeholder={toolType === "http" ? "https://api.myservice.com/query" : "wss://mcp-server.example.com"}
+              placeholder={toolType === "http" ? "https://api.myservice.com/query" : "https://mcp-server.example.com/mcp"}
               className="w-full bg-[#050810]/80 border border-white/10 rounded-xl px-4 py-2.5 text-white text-[13px] placeholder:text-white/20 focus:outline-none focus:border-white/25 font-mono"
             />
           </div>
+          )}
+
+          {/* npm Package — shown for MCP+package */}
+          {toolType === "mcp" && mcpTransport === "package" && (
+          <div>
+            <label className="block text-[12px] text-white/50 mb-1.5">npm Package Name</label>
+            <input
+              type="text"
+              value={npmPackage}
+              onChange={e => setNpmPackage(e.target.value)}
+              placeholder="@modelcontextprotocol/server-github"
+              className="w-full bg-[#050810]/80 border border-white/10 rounded-xl px-4 py-2.5 text-white text-[13px] placeholder:text-white/20 focus:outline-none focus:border-white/25 font-mono"
+            />
+            <p className="text-[10px] text-amber-400/50 mt-1.5 leading-relaxed">
+              Pre-install this package in the agent-runtime <code className="text-amber-400/70">package.json</code> for reliable execution.
+            </p>
+          </div>
+          )}
 
           {/* Description */}
           <div>
@@ -324,6 +377,8 @@ export default function CustomToolModal({
           <p className="text-[#38bdf8]/70 text-[12px] leading-relaxed">
             {toolType === "http"
               ? "The agent will POST job context to your endpoint and include the response in the LLM context."
+              : mcpTransport === "package"
+              ? "The runtime will launch this package as a stdio subprocess. Add it to agent-runtime/package.json first."
               : "MCP servers expose tools via JSON-RPC. The agent will discover and call tools automatically."}
           </p>
         </div>

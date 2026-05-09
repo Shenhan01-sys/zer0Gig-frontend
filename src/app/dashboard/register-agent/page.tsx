@@ -25,14 +25,17 @@ import RBACGuard from "@/components/RBACGuard";
 type RuntimeType = "self_hosted" | "platform_managed";
 type LLMProvider = "0g_compute" | "openai" | "anthropic" | "groq" | "openrouter" | "alibaba" | "google";
 type ToolType = "http" | "mcp";
+type McpTransport = "url" | "package";
 
 interface ToolConfig {
   id: string;
   type: ToolType;
   name: string;
   description: string;
-  endpoint: string; // URL for HTTP, server URL for MCP
-  apiKey: string;   // Optional, plaintext for demo
+  endpoint: string;          // URL for HTTP or MCP Remote URL mode
+  apiKey: string;            // Optional, plaintext for demo
+  mcpTransport?: McpTransport;
+  npmPackage?: string;       // npm package name when mcpTransport = "package"
 }
 
 interface PlatformConfig {
@@ -111,7 +114,9 @@ function buildCapabilityManifest(
         config: {
           ...(t.type === "http"
             ? { endpoint: t.endpoint, method: "POST" }
-            : { url: t.endpoint }),
+            : t.mcpTransport === "package" && t.npmPackage
+              ? { command: "npx", args: ["-y", t.npmPackage] }
+              : { url: t.endpoint }),
           ...(t.apiKey ? { apiKey: t.apiKey } : {}),
         },
       })),

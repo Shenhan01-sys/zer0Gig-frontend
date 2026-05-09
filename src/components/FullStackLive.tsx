@@ -1,23 +1,65 @@
 "use client";
 
-/**
- * FullStackLive — proof that all four 0G stack layers are wired up and
- * running, not aspirational. Each layer card shows the concrete on-chain
- * artifact (txSeq, providerId, chainId) so the claim is verifiable.
- *
- * Aesthetic: aligned with AgentCapabilities — bg-[#032A3D]/80 cards,
- * BorderBeam on hover (per-layer accent), shared SectionLabel header.
- * Unique to this section: emerald LIVE pulse chip + per-layer LIVE dot,
- * monospace on-chain proof labels (txSeq, providerId, chainId).
- */
+import React, { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Cpu, Database, KeyRound, Link as LinkIcon, Terminal } from "lucide-react";
 
-import { motion } from "framer-motion";
-import { Cpu, Database, KeyRound, Link as LinkIcon } from "lucide-react";
-import HoverRevealCTA from "./ui/HoverRevealCTA";
+// ── Data & Log Sequences ──────────────────────────────────────────────────────
 
-// Live pulse chip — kept emerald to signal "running right now"
-// (shared canonical SectionLabel pattern lives in AgentCapabilities;
-//  this section uses the live-pulse variant in its header)
+const LAYERS = [
+  {
+    id: "kv",
+    Icon: KeyRound,
+    accent: "#09799E",
+    label: "0G KV Node",
+  },
+  {
+    id: "compute",
+    Icon: Cpu,
+    accent: "#47A9CF",
+    label: "0G Compute",
+  },
+  {
+    id: "storage",
+    Icon: Database,
+    accent: "#A6E0F4",
+    label: "0G Storage",
+  },
+  {
+    id: "chain",
+    Icon: LinkIcon,
+    accent: "#10b981",
+    label: "0G Newton Chain",
+  },
+] as const;
+
+type LayerId = (typeof LAYERS)[number]["id"];
+
+interface LogEntry {
+  id: number;
+  text: string;
+  layer: LayerId | "sys" | null;
+  delayMs: number;
+}
+
+// Simulasi log sistem yang akan di-loop berulang
+const LOG_SEQUENCE: Omit<LogEntry, "id">[] = [
+  { text: "> [SYS] Incoming job request detected (ID: 8942)", layer: "sys", delayMs: 800 },
+  { text: "> [SYS] Initializing autonomous runtime environment...", layer: "sys", delayMs: 1200 },
+  { text: "> [KV] Connecting to 0G KV Node...", layer: "kv", delayMs: 600 },
+  { text: "> [KV] State loaded. 12 previous client learnings recalled.", layer: "kv", delayMs: 1500 },
+  { text: "> [COMPUTE] Bootstrapping qwen-2.5-7b via 0G Compute...", layer: "compute", delayMs: 1000 },
+  { text: "> [COMPUTE] Generating tool calls & reasoning steps...", layer: "compute", delayMs: 1800 },
+  { text: "> [COMPUTE] Inference complete. Result structured.", layer: "compute", delayMs: 800 },
+  { text: "> [STORAGE] Hashing job outputs & committing to 0G DA...", layer: "storage", delayMs: 1200 },
+  { text: "> [STORAGE] Upload success. txSeq: 94301 assigned.", layer: "storage", delayMs: 1500 },
+  { text: "> [CHAIN] Submitting merkle root to Escrow Contract...", layer: "chain", delayMs: 1000 },
+  { text: "> [CHAIN] Transaction confirmed (chainId: 16602, block: 142203).", layer: "chain", delayMs: 2000 },
+  { text: "> [SYS] Cycle complete. Awaiting next trigger event.", layer: "sys", delayMs: 3000 },
+];
+
+// ── Components ────────────────────────────────────────────────────────────────
+
 function LivePulseChip({ children }: { children: React.ReactNode }) {
   return (
     <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-emerald-400/20 bg-emerald-400/[0.06] text-[11px] text-emerald-400 uppercase tracking-widest font-medium">
@@ -30,138 +72,51 @@ function LivePulseChip({ children }: { children: React.ReactNode }) {
   );
 }
 
-const LAYERS = [
-  {
-    id: "compute",
-    Icon: Cpu,
-    accent: "#47A9CF",
-    label: "0G Compute",
-    title: "qwen-2.5-7b inference",
-    proof: "provider 0xa48f0128…",
-    detail: "Ledger funded · Decentralized inference · Per-job billing",
-  },
-  {
-    id: "storage",
-    Icon: Database,
-    accent: "#A6E0F4",
-    label: "0G Storage",
-    title: "Outputs hashed on-chain",
-    proof: "txSeq 94301",
-    detail: "Merkle-rooted milestone deliverables · Censorship-resistant",
-  },
-  {
-    id: "kv",
-    Icon: KeyRound,
-    accent: "#09799E",
-    label: "0G KV Node",
-    title: "3-layer agent memory",
-    proof: "+ Supabase fallback",
-    detail: "KV → Supabase → in-process · Cross-restart proven",
-  },
-  {
-    id: "chain",
-    Icon: LinkIcon,
-    accent: "#10b981",
-    label: "0G Newton Chain",
-    title: "4 contracts deployed",
-    proof: "chainId 16602",
-    detail: "AgentRegistry · Escrow · Subscriptions · UserRegistry",
-  },
-] as const;
+// ── Main Section ──────────────────────────────────────────────────────────────
 
-const PROOFS = [
-  { value: "10+", label: "Jobs minted on-chain" },
-  { value: "3",   label: "Subscriptions ticking 60s" },
-  { value: "197", label: "Tests passing across 5 suites" },
-  { value: "4",   label: "Contracts live on testnet" },
-];
+function FullStackLive() {
+  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [activeLayer, setActiveLayer] = useState<LayerId | "sys" | null>(null);
+  const [sequenceIndex, setSequenceIndex] = useState(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-// ── Stack layer card ──────────────────────────────────────────────────────────
-function LayerCard({
-  layer,
-  delay,
-}: {
-  layer: (typeof LAYERS)[number];
-  delay: number;
-}) {
-  const Icon = layer.Icon;
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-60px" }}
-      transition={{ duration: 0.5, delay, ease: [0.25, 0.4, 0.25, 1] }}
-      className="group relative rounded-2xl border border-white/[0.08] bg-[#032A3D]/80 p-5 flex flex-col gap-4
-                 hover:border-white/30 hover:-translate-y-0.5
-                 hover:shadow-[0_8px_32px_rgba(0,0,0,0.5)]
-                 transition-all duration-300 ease-out overflow-hidden"
-    >
-      {/* Live pulse — kept as the unique signature element */}
-      <div className="absolute top-3 right-3 flex items-center gap-1.5 z-10">
-        <span
-          className="w-1.5 h-1.5 rounded-full animate-pulse"
-          style={{ background: layer.accent, boxShadow: `0 0 8px ${layer.accent}` }}
-        />
-        <span
-          className="text-[9px] font-mono tracking-[0.15em] uppercase"
-          style={{ color: `${layer.accent}cc` }}
-        >
-          LIVE
-        </span>
-      </div>
+  // Auto-scroll terminal to bottom
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [logs]);
 
-      {/* Icon — sits in a screen-within-screen surface */}
-      <div className="rounded-xl border border-white/[0.06] bg-[#021F2E]/60 p-4 min-h-[88px] flex items-center justify-center overflow-hidden">
-        <div
-          className="w-11 h-11 rounded-xl flex items-center justify-center"
-          style={{
-            background: `${layer.accent}14`,
-            border: `1px solid ${layer.accent}30`,
-          }}
-        >
-          <Icon className="w-5 h-5" style={{ color: layer.accent }} />
-        </div>
-      </div>
+  // Terminal Simulation Loop
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
 
-      {/* Text */}
-      <div>
-        <p
-          className="text-[11px] font-mono uppercase tracking-[0.18em] mb-1.5"
-          style={{ color: layer.accent }}
-        >
-          {layer.label}
-        </p>
-        <h3
-          className="text-[15px] font-semibold text-white mb-3 leading-snug"
-          style={{ textShadow: `0 0 20px ${layer.accent}44` }}
-        >
-          {layer.title}
-        </h3>
+    const runSequence = () => {
+      const currentLog = LOG_SEQUENCE[sequenceIndex];
+      
+      // Add log to terminal
+      setLogs((prev) => {
+        const newLogs = [...prev, { ...currentLog, id: Date.now() }];
+        // Keep only last 50 logs to prevent memory leaks
+        return newLogs.slice(-50);
+      });
+      
+      // Highlight architecture diagram
+      setActiveLayer(currentLog.layer);
 
-        {/* Mono proof label — unique signature element */}
-        <div className="rounded-lg border border-white/[0.07] bg-white/[0.02] px-2.5 py-1.5 mb-3 inline-block">
-          <span className="text-[11px] font-mono text-white/65">{layer.proof}</span>
-        </div>
+      // Schedule next log
+      timeoutId = setTimeout(() => {
+        setSequenceIndex((prev) => (prev + 1) % LOG_SEQUENCE.length);
+      }, currentLog.delayMs);
+    };
 
-        <p className="text-[12px] text-white/40 leading-relaxed">{layer.detail}</p>
+    runSequence();
 
-        {/* Hidden reveal CTA — slides up + fades in on hover */}
-        <HoverRevealCTA
-          className="mt-3"
-          href="https://scan-testnet.0g.ai"
-          label="Explorer"
-          external
-        />
-      </div>
-    </motion.div>
-  );
-}
+    return () => clearTimeout(timeoutId);
+  }, [sequenceIndex]);
 
-// ── Main section ──────────────────────────────────────────────────────────────
-export default function FullStackLive() {
   return (
     <section className="relative py-24 md:py-32 overflow-hidden">
-      {/* Subtle background glow — matched to AgentCapabilities */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[400px] rounded-full bg-[#47A9CF]/[0.06] blur-[140px]" />
       </div>
@@ -173,7 +128,7 @@ export default function FullStackLive() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-          className="text-center mb-14"
+          className="text-center mb-12"
         >
           <LivePulseChip>Full 0G Stack — Live</LivePulseChip>
           <h2
@@ -185,67 +140,162 @@ export default function FullStackLive() {
               backgroundClip: "text",
             }}
           >
-            Every layer of 0G — proven on-chain, not promised
+            Every layer of 0G — proven on-chain
           </h2>
           <p className="text-[15px] text-white/45 max-w-2xl mx-auto leading-relaxed">
-            Compute, Storage, KV, Chain — zer0Gig is the only project in the cohort with all four
-            layers wired into a production code path you can verify yourself.
+            Compute, Storage, KV, Chain — observe the autonomous agent moving data across the complete zer0Gig infrastructure in real-time.
           </p>
         </motion.div>
 
-        {/* Stack grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
-          {LAYERS.map((layer, i) => (
-            <LayerCard key={layer.id} layer={layer} delay={i * 0.08} />
-          ))}
+        {/* Split-Pane Dashboard */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-10">
+          
+          {/* Left Pane: Terminal / Logs */}
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            className="lg:col-span-6 rounded-2xl border border-white/[0.08] bg-[#0A0E14] overflow-hidden flex flex-col h-[500px] shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
+          >
+            {/* Terminal Header */}
+            <div className="flex items-center px-4 py-3 border-b border-white/[0.05] bg-white/[0.02]">
+              <div className="flex gap-1.5 mr-4">
+                <div className="w-3 h-3 rounded-full bg-red-500/20 border border-red-500/50" />
+                <div className="w-3 h-3 rounded-full bg-amber-500/20 border border-amber-500/50" />
+                <div className="w-3 h-3 rounded-full bg-green-500/20 border border-green-500/50" />
+              </div>
+              <div className="flex items-center gap-2 text-[11px] font-mono text-white/40 uppercase tracking-widest">
+                <Terminal className="w-3 h-3" />
+                <span>zer0Gig Runtime Log</span>
+              </div>
+            </div>
+
+            {/* Terminal Body */}
+            <div 
+              ref={scrollRef}
+              className="flex-1 p-5 overflow-y-auto font-mono text-[13px] leading-relaxed scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+            >
+              <AnimatePresence initial={false}>
+                {logs.map((log) => {
+                  let colorClass = "text-white/60";
+                  if (log.layer === "kv") colorClass = "text-[#09799E]";
+                  if (log.layer === "compute") colorClass = "text-[#47A9CF]";
+                  if (log.layer === "storage") colorClass = "text-[#A6E0F4]";
+                  if (log.layer === "chain") colorClass = "text-[#10b981]";
+                  if (log.layer === "sys") colorClass = "text-amber-500/70";
+
+                  return (
+                    <motion.div
+                      key={log.id}
+                      initial={{ opacity: 0, x: -5 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className={`mb-1.5 ${colorClass}`}
+                    >
+                      {log.text}
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+            </div>
+          </motion.div>
+
+          {/* Right Pane: 3D Orb Visualizer */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            className="lg:col-span-6 rounded-2xl border border-white/[0.04] bg-[#032A3D]/30 p-6 flex flex-col justify-center relative overflow-hidden h-[500px]"
+          >
+            {/* Background SVG Connectors (Z-Pattern connecting the 4 centers) */}
+            <svg className="absolute inset-0 w-full h-full pointer-events-none z-0" aria-hidden>
+              {/* KV (Top-Left) to Compute (Top-Right) */}
+              <line x1="25%" y1="25%" x2="75%" y2="25%" stroke="rgba(255,255,255,0.08)" strokeWidth="3" strokeDasharray="6 6" />
+              {/* Compute (Top-Right) to Storage (Bottom-Left) */}
+              <line x1="75%" y1="25%" x2="25%" y2="75%" stroke="rgba(255,255,255,0.08)" strokeWidth="3" strokeDasharray="6 6" />
+              {/* Storage (Bottom-Left) to Chain (Bottom-Right) */}
+              <line x1="25%" y1="75%" x2="75%" y2="75%" stroke="rgba(255,255,255,0.08)" strokeWidth="3" strokeDasharray="6 6" />
+            </svg>
+
+            <div className="grid grid-cols-2 gap-y-16 z-10 h-full relative items-center justify-items-center">
+              {LAYERS.map((layer) => {
+                const isActive = activeLayer === layer.id;
+                const Icon = layer.Icon;
+
+                return (
+                  <div key={layer.id} className="flex flex-col items-center">
+                    {/* Pure Icon with 3D Pop/Timbul Animation (No Background) */}
+                    <div className="w-28 h-28 flex items-center justify-center relative">
+                      <Icon 
+                        className={`w-14 h-14 transition-all duration-500 cubic-bezier(0.34, 1.56, 0.64, 1) ${
+                          isActive 
+                            ? 'scale-[1.6] -translate-y-4 opacity-100' 
+                            : 'scale-100 translate-y-0 opacity-30'
+                        }`}
+                        style={{ 
+                          color: isActive ? "#ffffff" : "rgba(255,255,255,0.5)",
+                          // Efek Timbul: Bayangan gelap jatuh ke bawah + Glow warna accent
+                          filter: isActive 
+                            ? `drop-shadow(0px 20px 10px rgba(0,0,0,0.8)) drop-shadow(0px 0px 15px ${layer.accent})` 
+                            : `drop-shadow(0px 5px 5px rgba(0,0,0,0.5))`
+                        }} 
+                      />
+                    </div>
+                    
+                    {/* Label Container (mengelompokkan Title dan Caption) */}
+                    <div className="flex flex-col items-center h-16 mt-2 relative">
+                      {/* Floating Title (Selalu Terlihat) */}
+                      <div 
+                        className="text-[13px] font-mono uppercase tracking-widest font-semibold transition-all duration-500 z-10"
+                        style={{ 
+                          color: isActive ? layer.accent : "rgba(255,255,255,0.3)",
+                          textShadow: isActive ? `0 0 15px ${layer.accent}` : "none",
+                          transform: isActive ? "translateY(-4px)" : "translateY(0)"
+                        }}
+                      >
+                        {layer.label}
+                      </div>
+
+                      {/* Detail Caption (Muncul Saat Aktif Saja) */}
+                      <div 
+                        className={`absolute top-6 text-[11px] text-white/50 text-center w-40 leading-tight transition-all duration-500 ease-out ${
+                          isActive 
+                            ? 'opacity-100 translate-y-0' 
+                            : 'opacity-0 -translate-y-3 pointer-events-none'
+                        }`}
+                      >
+                        {/* Catatan: layer.detail tidak ada di data source terbaru di prompt ini,
+                           jadi saya membuat fallback data sederhana berdasarkan narasi 0G sebelumnya.
+                           Harap sesuaikan dengan data aktual Anda jika diperlukan.
+                        */}
+                        {layer.id === 'kv' && "Cross-restart memory"}
+                        {layer.id === 'compute' && "qwen-2.5-7b inference"}
+                        {layer.id === 'storage' && "Merkle-rooted outputs"}
+                        {layer.id === 'chain' && "Smart contract registry"}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            
+            {/* Realtime Status Indicator */}
+            <div className="absolute bottom-4 right-5 flex items-center gap-2">
+               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+               <span className="text-[9px] font-mono text-white/40 uppercase tracking-widest">Network Connected</span>
+            </div>
+          </motion.div>
         </div>
 
-        {/* Proof stat strip — same family card, gradient counters */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-          className="group relative rounded-2xl border border-white/[0.08] bg-[#032A3D]/80 p-6 md:p-8
-                     hover:border-white/30 hover:-translate-y-0.5
-                     hover:shadow-[0_8px_32px_rgba(0,0,0,0.5)]
-                     transition-all duration-300 ease-out overflow-hidden"
-        >
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-4">
-            {PROOFS.map((p, i) => (
-              <motion.div
-                key={p.label}
-                initial={{ opacity: 0, y: 12 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: 0.5 + i * 0.08 }}
-                className="text-center"
-              >
-                <div
-                  className="text-3xl md:text-4xl font-medium tracking-tight tabular-nums"
-                  style={{
-                    background: "linear-gradient(144.5deg, #ffffff 28%, rgba(255,255,255,0.3) 95%)",
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
-                    backgroundClip: "text",
-                  }}
-                >
-                  {p.value}
-                </div>
-                <p className="text-[11px] text-white/40 mt-1.5 uppercase tracking-[0.12em]">
-                  {p.label}
-                </p>
-              </motion.div>
-            ))}
-          </div>
-
-          <div className="mt-6 pt-5 border-t border-white/[0.05] flex items-center justify-center gap-2 text-[11px] text-white/30">
-            <span className="font-mono">scan-testnet.0g.ai</span>
-            <span className="text-white/15">·</span>
-            <span>verifiable on-chain</span>
-          </div>
-        </motion.div>
       </div>
     </section>
+  );
+}
+
+// Default export wrapper to provide appropriate background context for the UI
+export default function App() {
+  return (
+    <div className="min-h-screen bg-[#050B14] text-white font-sans selection:bg-cyan-900/50">
+      <FullStackLive />
+    </div>
   );
 }

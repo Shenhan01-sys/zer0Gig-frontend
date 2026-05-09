@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useSubscription } from "@/hooks/useSubscriptionEscrow";
@@ -44,6 +45,28 @@ export default function SubscriptionCard({ subscriptionId, index }: Subscription
   // Get agent name for display (call before any early returns to keep hook order stable)
   const agentIdNum = sub && (sub as any)?.agentId ? Number((sub as any).agentId) : 0;
   const { profile: agentProfile } = useAgentProfile(agentIdNum > 0 ? agentIdNum : undefined);
+
+  // Quick Telegram access — if the client has wired a bot for this sub, surface
+  // its @username on the row so they can jump straight to the chat.
+  const [botUsername, setBotUsername] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const cfgRes = await fetch(`/api/client-bot-config?subscription_id=${subscriptionId}`);
+        const { data } = await cfgRes.json();
+        const token = data?.bot_token;
+        if (!token) return;
+        const tgRes = await fetch(`https://api.telegram.org/bot${token}/getMe`, {
+          signal: AbortSignal.timeout(6000),
+        });
+        if (!tgRes.ok) return;
+        const j = await tgRes.json();
+        if (!cancelled && j?.ok && j?.result?.username) setBotUsername(j.result.username);
+      } catch { /* silent — row falls back to no quick-access button */ }
+    })();
+    return () => { cancelled = true; };
+  }, [subscriptionId]);
 
   // DEMO MODE: Fall back to mock data when real subscription doesn't exist on-chain.
   // Check for `agentId` which exists in the new struct (subscriptionId was removed).
@@ -170,6 +193,23 @@ export default function SubscriptionCard({ subscriptionId, index }: Subscription
           <p className="text-white text-[13px]">{formatOG(balance)}</p>
           <p className="text-white/40 text-[11px]">balance</p>
         </div>
+
+        {/* Quick Telegram access — only if a bot is wired for this subscription */}
+        {botUsername && (
+          <a
+            href={`https://t.me/${botUsername}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            title={`Chat with @${botUsername} on Telegram`}
+            className="relative z-30 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-[#38bdf8]/25 bg-[#38bdf8]/10 text-[#38bdf8] hover:bg-[#38bdf8]/20 hover:border-[#38bdf8]/40 transition-colors flex-shrink-0"
+          >
+            <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.833.941z"/>
+            </svg>
+            <span className="text-[11px] font-medium">Telegram</span>
+          </a>
+        )}
 
         {/* Arrow */}
         <svg

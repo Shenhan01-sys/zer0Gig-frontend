@@ -39,11 +39,15 @@ export default function DrainHistory({ subscriptionId }: DrainHistoryProps) {
           ? currentBlock - BigInt(50000)
           : 0n;
 
+        // ABI must match the deployed SubscriptionEscrow exactly:
+        //   event CheckInDrained(uint256 indexed subscriptionId, uint256 indexed agentId, uint96 amount, uint64 timestamp);
+        //   event AlertFired(uint256 indexed subscriptionId, uint256 indexed agentId, uint64 timestamp, bytes alertData, uint96 amountDrained);
+        // Without `indexed` viem can't filter by topic and `args.subscriptionId` is silently dropped.
         const [checkInLogs, alertLogs] = await Promise.all([
           publicClient.getLogs({
             address: CONTRACT_ADDRESSES.SubscriptionEscrow as `0x${string}`,
             event: parseAbiItem(
-              "event CheckInDrained(uint256 subscriptionId, uint256 agentId, uint256 amount, uint256 timestamp)"
+              "event CheckInDrained(uint256 indexed subscriptionId, uint256 indexed agentId, uint96 amount, uint64 timestamp)"
             ),
             args: { subscriptionId },
             fromBlock,
@@ -51,7 +55,7 @@ export default function DrainHistory({ subscriptionId }: DrainHistoryProps) {
           publicClient.getLogs({
             address: CONTRACT_ADDRESSES.SubscriptionEscrow as `0x${string}`,
             event: parseAbiItem(
-              "event AlertFired(uint256 subscriptionId, uint256 agentId, uint256 timestamp, bytes alertData, uint256 amountDrained)"
+              "event AlertFired(uint256 indexed subscriptionId, uint256 indexed agentId, uint64 timestamp, bytes alertData, uint96 amountDrained)"
             ),
             args: { subscriptionId },
             fromBlock,

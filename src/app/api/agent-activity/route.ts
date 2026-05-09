@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@supabase/supabase-js";
+
+// Service-role client — runtime writes are server-to-server, no RLS gate needed.
+// Falls back to anon key only if service key is missing in env.
+const SB_URL  = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const SB_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabase = createClient(SB_URL, SB_KEY);
 
 /**
  * POST /api/agent-activity

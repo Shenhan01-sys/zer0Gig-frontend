@@ -17,6 +17,7 @@ export interface AgentProfile {
   featured:     boolean;
   created_at:   string;
   updated_at:   string;
+  metadata:     Record<string, unknown> | null;
 }
 
 export interface JobEvent {

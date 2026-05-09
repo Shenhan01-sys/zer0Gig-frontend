@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import RBACGuard from "@/components/RBACGuard";
 import ConnectTelegramButton from "@/components/ConnectTelegramButton";
+import CustomToolModal, { type ToolConfig } from "@/components/CustomToolModal";
 import CornerBrackets from "@/components/ui/CornerBrackets";
 import ReputationRadar from "@/components/agents/ReputationRadar";
 import JobOrbitCarousel from "@/components/agents/JobOrbitCarousel";
@@ -151,6 +152,11 @@ export default function AgentDetailPage() {
   const [editPending, setEditPending] = useState(false);
   const [showSkillDropdown, setShowSkillDropdown] = useState(false);
 
+  // ── custom tools edit ──────────────────────────────────────────────────────
+  const [editTools, setEditTools] = useState<ToolConfig[]>([]);
+  const [toolModal, setToolModal] = useState<{ mode: "add" | "edit"; tool?: ToolConfig } | null>(null);
+  const [toolsSaving, setToolsSaving] = useState(false);
+
   // ── erc-7857 action panels ──────────────────────────────────────────────────
   const [activeAction, setActiveAction] = useState<ActionTab>(null);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -204,6 +210,23 @@ export default function AgentDetailPage() {
       setEditBio(supabaseProfile.bio || "");
       setEditAvatarUrl(supabaseProfile.avatar_url || "");
       setEditTags(supabaseProfile.tags || []);
+
+      // Seed tools from metadata.tools (runtime format → ToolConfig)
+      const runtimeTools: unknown[] = (supabaseProfile.metadata as Record<string, unknown>)?.tools as unknown[] || [];
+      setEditTools(runtimeTools.map((t: any, i) => ({
+        id: `existing-${i}`,
+        type: (t.type === "mcp" ? "mcp" : "http") as "http" | "mcp",
+        name: t.name || "",
+        description: t.description || "",
+        endpoint: t.config?.endpoint || t.config?.url || "",
+        apiKey: t.config?.apiKey || "",
+        ...(t.type === "mcp" ? {
+          mcpTransport: (t.config?.command ? "package" : "url") as "url" | "package",
+          ...(t.config?.command === "npx" && t.config?.args?.[1]
+            ? { npmPackage: t.config.args[1] }
+            : {}),
+        } : {}),
+      })));
     }
   }, [supabaseProfile]);
 
@@ -243,6 +266,41 @@ export default function AgentDetailPage() {
       setEditError(parseContractError(err));
     } finally {
       setEditPending(false);
+    }
+  };
+
+  const saveTools = async () => {
+    setToolsSaving(true);
+    setEditError(null);
+    try {
+      // Convert ToolConfig[] → runtime format for Supabase metadata.tools
+      const runtimeTools = editTools.map(t => ({
+        type: t.type,
+        name: t.name,
+        description: t.description,
+        config: {
+          ...(t.type === "http"
+            ? { endpoint: t.endpoint, method: "POST" }
+            : t.mcpTransport === "package" && t.npmPackage
+              ? { command: "npx", args: ["-y", t.npmPackage] }
+              : { url: t.endpoint }),
+          ...(t.apiKey ? { apiKey: t.apiKey } : {}),
+        },
+      }));
+
+      const res = await fetch("/api/agent-profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ agent_id: agentIdNum, tools: runtimeTools }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to save tools");
+      setEditSuccess(true);
+      setTimeout(() => setEditSuccess(false), 2000);
+    } catch (err: any) {
+      setEditError(err.message || "Failed to save tools");
+    } finally {
+      setToolsSaving(false);
     }
   };
 
@@ -679,6 +737,55 @@ export default function AgentDetailPage() {
                 </div>
               </div>
 
+              {/* Custom Tools section */}
+              <div className="space-y-3 pt-2 border-t border-white/5">
+                <div className="flex items-center justify-between">
+                  <p className="text-[11px] text-white/30 uppercase tracking-wider">Custom Tools (MCP / HTTP)</p>
+                  <button
+                    onClick={() => setToolModal({ mode: "add" })}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#a855f7]/30 bg-[#a855f7]/5 text-[#a855f7] text-[11px] hover:bg-[#a855f7]/10 transition-all"
+                  >
+                    <Plus className="w-3 h-3" /> Add Tool
+                  </button>
+                </div>
+
+                {editTools.length === 0 && (
+                  <p className="text-[12px] text-white/20 italic">No custom tools configured.</p>
+                )}
+
+                {editTools.map(t => (
+                  <div key={t.id} className="flex items-center gap-3 rounded-xl border border-white/[0.07] bg-[#050810]/60 px-3 py-2.5">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[12px] text-white/70 font-medium truncate">{t.name || "(unnamed)"}</p>
+                      <p className="text-[10px] text-white/30 mt-0.5">
+                        {t.type === "mcp"
+                          ? (t.mcpTransport === "package" ? `npm: ${t.npmPackage}` : `MCP: ${t.endpoint}`)
+                          : `HTTP: ${t.endpoint}`}
+                      </p>
+                    </div>
+                    <span className={`text-[9px] px-1.5 py-0.5 rounded-full border font-semibold uppercase tracking-wider ${
+                      t.type === "mcp" ? "text-[#a855f7] border-[#a855f7]/30 bg-[#a855f7]/10" : "text-[#38bdf8] border-[#38bdf8]/30 bg-[#38bdf8]/10"
+                    }`}>{t.type}</span>
+                    <button onClick={() => setToolModal({ mode: "edit", tool: t })} className="text-white/30 hover:text-white/60 transition-colors">
+                      <Settings className="w-3.5 h-3.5" />
+                    </button>
+                    <button onClick={() => setEditTools(prev => prev.filter(x => x.id !== t.id))} className="text-white/30 hover:text-red-400 transition-colors">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+
+                {editTools.length > 0 && (
+                  <button
+                    onClick={saveTools}
+                    disabled={toolsSaving}
+                    className="w-full py-2 rounded-lg bg-[#a855f7]/10 border border-[#a855f7]/25 text-[#a855f7] text-[12px] font-medium hover:bg-[#a855f7]/15 disabled:opacity-40 transition-all"
+                  >
+                    {toolsSaving ? "Saving…" : "Save Tools"}
+                  </button>
+                )}
+              </div>
+
               <div className="flex items-center justify-between pt-2 border-t border-white/5">
                 <div>
                   <p className="text-white/60 text-[13px]">Agent Status</p>
@@ -1053,6 +1160,23 @@ export default function AgentDetailPage() {
           <JobOrbitCarousel jobs={agentJobs} isLoading={jobsLoading} />
         </motion.div>
       </div>
+
+      {/* Custom Tool Modal */}
+      {toolModal && (
+        <CustomToolModal
+          mode={toolModal.mode}
+          initialTool={toolModal.tool}
+          onSave={tool => {
+            if (toolModal.mode === "add") {
+              setEditTools(prev => [...prev, tool]);
+            } else {
+              setEditTools(prev => prev.map(t => t.id === tool.id ? tool : t));
+            }
+            setToolModal(null);
+          }}
+          onClose={() => setToolModal(null)}
+        />
+      )}
     </RBACGuard>
   );
 }

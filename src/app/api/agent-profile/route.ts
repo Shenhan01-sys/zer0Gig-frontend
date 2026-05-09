@@ -131,3 +131,60 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+/**
+ * PATCH /api/agent-profile
+ * Merges specific metadata fields without overwriting the whole metadata blob.
+ * Currently supports: { agent_id, tools }
+ *
+ * Body: {
+ *   agent_id: number,
+ *   tools?: Array<{ type, name, description, config }>   // runtime tool format
+ * }
+ */
+export async function PATCH(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { agent_id, tools } = body;
+
+    if (agent_id === undefined) {
+      return NextResponse.json({ error: "Missing agent_id" }, { status: 400 });
+    }
+
+    const admin = getAdminClient();
+
+    // Read current metadata so we can merge (not overwrite)
+    const { data: current, error: readErr } = await admin
+      .from("agent_profiles")
+      .select("metadata")
+      .eq("agent_id", Number(agent_id))
+      .maybeSingle();
+
+    if (readErr) {
+      return NextResponse.json({ error: readErr.message }, { status: 500 });
+    }
+
+    const existingMeta: Record<string, unknown> = (current?.metadata as Record<string, unknown>) || {};
+
+    // Merge only the provided fields
+    const mergedMeta: Record<string, unknown> = { ...existingMeta };
+    if (tools !== undefined) mergedMeta.tools = tools;
+
+    const { error: updateErr } = await admin
+      .from("agent_profiles")
+      .update({ metadata: mergedMeta, updated_at: new Date().toISOString() })
+      .eq("agent_id", Number(agent_id));
+
+    if (updateErr) {
+      return NextResponse.json({ error: updateErr.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, agent_id });
+  } catch (err) {
+    console.error("[agent-profile PATCH] unexpected error:", err);
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : String(err) },
+      { status: 500 }
+    );
+  }
+}

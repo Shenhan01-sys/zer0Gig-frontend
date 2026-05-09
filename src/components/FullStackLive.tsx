@@ -116,7 +116,7 @@ function FullStackLive() {
   }, [sequenceIndex]);
 
   return (
-    <section className="relative py-24 md:py-32 overflow-hidden">
+    <section className="relative py-24 md:py-32 overflow-hidden bg-black">
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[400px] rounded-full bg-[#47A9CF]/[0.06] blur-[140px]" />
       </div>
@@ -294,7 +294,7 @@ function FullStackLive() {
 // Default export wrapper to provide appropriate background context for the UI
 export default function App() {
   return (
-    <div className="min-h-screen bg-[#050B14] text-white font-sans selection:bg-cyan-900/50">
+    <div className="min-h-screen bg-black text-white font-sans selection:bg-cyan-900/50">
       <FullStackLive />
     </div>
   );

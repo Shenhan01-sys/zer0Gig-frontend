@@ -17,8 +17,9 @@ import { useAgentProfiles } from "@/hooks/useAgentProfile";
 import JobCard from "@/components/jobs/JobCard";
 import SubscriptionCard from "@/components/subscriptions/SubscriptionCard";
 import { MOCK_JOBS, MOCK_SUBSCRIPTIONS } from "@/lib/mockData";
-import { Hand, Lightbulb, Zap, Rocket } from "lucide-react";
+import { Hand, Lightbulb, Zap } from "lucide-react";
 import CornerBrackets from "@/components/ui/CornerBrackets";
+import NetworkActivityFeed from "@/components/dashboard/NetworkActivityFeed";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -61,21 +62,111 @@ function StatCard({ label, value, sub, icon, color }: {
   );
 }
 
-function EmptyState({ icon, title, desc, href, cta }: {
-  icon: React.ReactNode; title: string; desc: string; href: string; cta: string;
+type EmptyStateVariant = "cyan" | "emerald" | "violet";
+
+const EMPTY_STATE_THEMES: Record<EmptyStateVariant, { accent: string; ring: string; glow: string; chip: string; rgb: string }> = {
+  cyan:    { accent: "#38bdf8", ring: "border-[#38bdf8]/30", glow: "rgba(56,189,248,0.15)",  chip: "bg-[#38bdf8]/10 text-[#38bdf8]",   rgb: "56,189,248" },
+  emerald: { accent: "#10b981", ring: "border-emerald-500/30", glow: "rgba(16,185,129,0.15)", chip: "bg-emerald-500/10 text-emerald-400", rgb: "16,185,129" },
+  violet:  { accent: "#a855f7", ring: "border-violet-500/30",  glow: "rgba(168,85,247,0.15)", chip: "bg-violet-500/10 text-violet-400",  rgb: "168,85,247" },
+};
+
+function EmptyState({ icon, title, desc, href, cta, variant = "cyan", steps, secondary }: {
+  icon: React.ReactNode;
+  title: string;
+  desc: string;
+  href: string;
+  cta: string;
+  variant?: EmptyStateVariant;
+  steps?: { num: string; label: string; hint: string }[];
+  secondary?: { href: string; label: string };
 }) {
+  const theme = EMPTY_STATE_THEMES[variant];
   return (
-    <div className="flex flex-col items-center justify-center py-14 text-center">
-      <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-4 text-white/20">
-        {icon}
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+      className={`relative overflow-hidden rounded-2xl border ${theme.ring} bg-gradient-to-b from-[#0d1525]/95 to-[#050810]/95 px-8 py-14 md:px-12 md:py-16`}
+    >
+      {/* Ambient glow */}
+      <div
+        className="absolute -top-24 left-1/2 -translate-x-1/2 w-[480px] h-[240px] pointer-events-none opacity-60"
+        style={{ background: `radial-gradient(ellipse at center, ${theme.glow} 0%, transparent 60%)` }}
+        aria-hidden
+      />
+      {/* Faint grid background */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-[0.04]"
+        style={{
+          backgroundImage:
+            `linear-gradient(to right, rgba(${theme.rgb},1) 1px, transparent 1px), linear-gradient(to bottom, rgba(${theme.rgb},1) 1px, transparent 1px)`,
+          backgroundSize: "48px 48px",
+        }}
+        aria-hidden
+      />
+      {/* Terminal corner brackets */}
+      <CornerBrackets size="md" weight="hair" accent={`rgba(${theme.rgb},0.55)`} inset={14} className="absolute inset-0" />
+
+      <div className="relative flex flex-col items-center text-center">
+        {/* Icon with pulsing halo */}
+        <div className="relative mb-6">
+          <span
+            className="absolute inset-0 rounded-2xl animate-pulse"
+            style={{ background: `radial-gradient(circle, ${theme.glow} 0%, transparent 70%)`, transform: "scale(1.6)" }}
+            aria-hidden
+          />
+          <div
+            className={`relative w-20 h-20 rounded-2xl border ${theme.ring} bg-[#050810]/80 flex items-center justify-center`}
+            style={{ color: theme.accent, boxShadow: `0 0 24px ${theme.glow}` }}
+          >
+            {icon}
+          </div>
+        </div>
+
+        <h3 className="text-[20px] font-medium text-white mb-2">{title}</h3>
+        <p className="text-white/45 text-[14px] max-w-md leading-relaxed mb-7">{desc}</p>
+
+        {/* How-it-works mini-flow */}
+        {steps && steps.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 w-full max-w-2xl mb-7">
+            {steps.map((s, i) => (
+              <div
+                key={i}
+                className="flex items-start gap-3 rounded-xl border border-white/[0.08] bg-[#050810]/60 px-4 py-3 text-left"
+              >
+                <span
+                  className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-mono font-semibold ${theme.chip}`}
+                >
+                  {s.num}
+                </span>
+                <div className="min-w-0">
+                  <p className="text-white text-[12px] font-medium leading-tight">{s.label}</p>
+                  <p className="text-white/35 text-[11px] mt-0.5 leading-snug">{s.hint}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* CTAs */}
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          <Link
+            href={href}
+            className="px-6 py-2.5 bg-white text-black text-[13px] font-medium rounded-full hover:bg-white/90 transition-colors"
+          >
+            {cta}
+          </Link>
+          {secondary && (
+            <Link
+              href={secondary.href}
+              className="px-6 py-2.5 bg-transparent border border-white/15 text-white/70 text-[13px] font-medium rounded-full hover:border-white/30 hover:text-white transition-colors"
+            >
+              {secondary.label}
+            </Link>
+          )}
+        </div>
       </div>
-      <p className="text-white/60 text-[15px] font-medium mb-1">{title}</p>
-      <p className="text-white/30 text-[13px] mb-5 max-w-xs">{desc}</p>
-      <Link href={href}
-        className="px-5 py-2.5 bg-white text-black text-[13px] font-medium rounded-full hover:bg-white/90 transition-colors">
-        {cta}
-      </Link>
-    </div>
+    </motion.div>
   );
 }
 
@@ -151,11 +242,18 @@ function JobsTab({ jobs, jobsLoading }: { jobs: bigint[]; jobsLoading: boolean }
         <div className="space-y-3">{[1,2,3].map(i => <div key={i} className="h-20 bg-white/5 rounded-2xl animate-pulse" />)}</div>
       ) : jobs.length === 0 ? (
         <EmptyState
-          icon={<svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>}
+          variant="cyan"
+          icon={<svg className="w-9 h-9" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>}
           title="No jobs posted yet"
-          desc="Post your first job and let AI agents compete to complete it autonomously."
+          desc="Post your first job, lock the budget into escrow, and let AI agents compete to complete it autonomously."
           href="/dashboard/create-job"
           cta="Post a Job"
+          steps={[
+            { num: "01", label: "Define your task",   hint: "Title, description, budget — stored on-chain" },
+            { num: "02", label: "Receive proposals",  hint: "Active agents bid with their rate" },
+            { num: "03", label: "Auto-release pay",   hint: "Per milestone, oracle-attested" },
+          ]}
+          secondary={{ href: "/marketplace", label: "Browse Agents" }}
         />
       ) : (
         <div className="space-y-3">
@@ -200,11 +298,18 @@ function AgentsTab({ agents, agentsLoading }: { agents: bigint[]; agentsLoading:
         <div className="space-y-3">{[1,2,3].map(i => <div key={i} className="h-20 bg-white/5 rounded-2xl animate-pulse" />)}</div>
       ) : agents.length === 0 ? (
         <EmptyState
-          icon={<svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v10a2 2 0 01-2 2h-2" /></svg>}
+          variant="violet"
+          icon={<svg className="w-9 h-9" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v10a2 2 0 01-2 2h-2" /></svg>}
           title="No agents registered yet"
-          desc="Register your first AI agent, set your rates, and start earning autonomously on-chain."
+          desc="Mint your first AI agent as an ERC-7857 NFT — set your rates, choose tools, and start earning on every job completed."
           href="/dashboard/register-agent"
           cta="Register Your First Agent"
+          steps={[
+            { num: "01", label: "Mint as iNFT",       hint: "ERC-7857 with capability hash" },
+            { num: "02", label: "Wire tools + LLM",   hint: "MCP servers, skills, 0G Compute" },
+            { num: "03", label: "Earn autonomously",  hint: "Self-evaluating, on-chain reputation" },
+          ]}
+          secondary={{ href: "/marketplace", label: "See Other Agents" }}
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -288,11 +393,18 @@ function SubscriptionsTab({ subs, subsLoading }: { subs: bigint[]; subsLoading: 
         <div className="space-y-3">{[1,2,3].map(i => <div key={i} className="h-20 bg-white/5 rounded-2xl animate-pulse" />)}</div>
       ) : subs.length === 0 ? (
         <EmptyState
-          icon={<svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>}
+          variant="emerald"
+          icon={<svg className="w-9 h-9" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>}
           title="No subscriptions yet"
-          desc="Set up recurring AI agent subscriptions — pay automatically, get work done continuously."
+          desc="Deposit a budget once, let an agent monitor data continuously and trigger payments per check-in. Cancel anytime, refund the rest."
           href="/dashboard/create-subscription"
           cta="Create a Subscription"
+          steps={[
+            { num: "01", label: "Pick agent + task",  hint: "URL to monitor, alert thresholds" },
+            { num: "02", label: "Deposit budget",     hint: "Held in escrow, drained per tick" },
+            { num: "03", label: "Agent works 24/7",   hint: "Tools + LLM decide every interval" },
+          ]}
+          secondary={{ href: "/marketplace", label: "Browse Agents" }}
         />
       ) : (
         <div className="space-y-3">
@@ -432,6 +544,9 @@ function ClientOverview({ jobs, subs, jobsLoading, subsLoading, displayName }: {
               </div>
             </div>
           )}
+
+          {/* Live Network Activity */}
+          <NetworkActivityFeed />
         </div>
         {/* Right: Sidebar (1/3) */}
         <div className="space-y-4">
@@ -496,6 +611,23 @@ function AgentOwnerOverview({ agents, subs, agentsLoading, displayName }: {
   agents: bigint[]; subs: bigint[]; agentsLoading: boolean; displayName: string;
 }) {
   const { profiles: ownerProfiles } = useAgentProfiles(agents.map(id => Number(id)));
+  const { agents: allAgents } = useAllAgents();
+
+  // Compute total on-chain earnings across owned agents
+  const totalEarnedOG = (() => {
+    const ownedIds = new Set(agents.map(id => Number(id)));
+    const total = allAgents
+      .filter(a => ownedIds.has(a.agentId))
+      .reduce((acc, a) => acc + a.totalEarningsWei, 0n);
+    return (Number(total) / 1e18).toFixed(4);
+  })();
+
+  // Total jobs completed across owned agents
+  const totalJobsDone = (() => {
+    const ownedIds = new Set(agents.map(id => Number(id)));
+    return allAgents.filter(a => ownedIds.has(a.agentId)).reduce((acc, a) => acc + a.totalJobsCompleted, 0);
+  })();
+
   return (
     <div className="space-y-6">
       {/* Welcome banner */}
@@ -555,15 +687,15 @@ function AgentOwnerOverview({ agents, subs, agentsLoading, displayName }: {
           color="bg-[#38bdf8]/10 text-[#38bdf8]"
           icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>}
         />
-        <StatCard label="Network Status" value="Live"
-          sub="0G Newton Testnet"
+        <StatCard label="Total Earned" value={agentsLoading ? "—" : `${totalEarnedOG}`}
+          sub="OG across all agents"
           color="bg-emerald-500/10 text-emerald-400"
-          icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>}
+          icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
         />
-        <StatCard label="Alignment Nodes" value="175K+"
-          sub="Quality verifiers"
+        <StatCard label="Jobs Completed" value={agentsLoading ? "—" : totalJobsDone}
+          sub="On-chain deliveries"
           color="bg-amber-500/10 text-amber-400"
-          icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>}
+          icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
         />
       </div>
       {/* Two-column layout */}
@@ -626,6 +758,9 @@ function AgentOwnerOverview({ agents, subs, agentsLoading, displayName }: {
               })}
             </div>
           )}
+
+          {/* Live Network Activity */}
+          <NetworkActivityFeed />
         </div>
         {/* Right: Sidebar */}
         <div className="space-y-4">
@@ -641,6 +776,11 @@ function AgentOwnerOverview({ agents, subs, agentsLoading, displayName }: {
                 label="View Marketplace" desc="See how agents compete"
                 accent="border-white/10 hover:border-[#38bdf8]/30"
                 icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>}
+              />
+              <QuickAction href="/dashboard/my-proposals"
+                label="My Proposals" desc="Track submitted proposals"
+                accent="border-white/10 hover:border-cyan-500/30"
+                icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}
               />
               <QuickAction href="/dashboard?tab=subscriptions"
                 label="Subscriptions" desc="View recurring contracts"

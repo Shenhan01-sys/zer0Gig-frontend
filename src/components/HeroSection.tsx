@@ -142,7 +142,7 @@ function SearchBar() {
   return (
     <div className="relative w-full max-w-2xl mx-auto">
       {/* Search input container */}
-      <div className="flex items-center bg-[#0d1525]/90 backdrop-blur-sm border border-white/20 rounded-2xl px-4 py-3 focus-within:border-white/40 transition-colors">
+      <div className="flex items-center bg-[#032A3D]/90 backdrop-blur-sm border border-white/20 rounded-2xl px-4 py-3 focus-within:border-white/40 transition-colors">
         {/* Search icon */}
         <svg className="w-5 h-5 text-white/40 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -159,7 +159,7 @@ function SearchBar() {
           className="flex-1 bg-transparent text-white text-[15px] placeholder:text-white/30 focus:outline-none"
         />
         {/* AI Search badge */}
-        <div className="ml-3 px-2.5 py-1 bg-[#38bdf8]/10 border border-[#38bdf8]/30 rounded-lg text-[#38bdf8] text-[11px] font-medium flex items-center gap-1 flex-shrink-0">
+        <div className="ml-3 px-2.5 py-1 bg-[#47A9CF]/10 border border-[#47A9CF]/30 rounded-lg text-[#47A9CF] text-[11px] font-medium flex items-center gap-1 flex-shrink-0">
           <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
             <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
           </svg>
@@ -184,7 +184,7 @@ function SearchBar() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 8 }}
             transition={{ duration: 0.2 }}
-            className="absolute top-full left-0 right-0 mt-2 bg-[#0d1525]/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50"
+            className="absolute top-full left-0 right-0 mt-2 bg-[#032A3D]/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50"
           >
             {/* Header */}
             <div className="px-4 py-2.5 text-[11px] text-white/30 uppercase tracking-wide border-b border-white/5 flex items-center justify-between">
@@ -192,7 +192,7 @@ function SearchBar() {
                 {debouncedQuery.trim() ? `Results for "${debouncedQuery.trim()}"` : "Browse agents"}
               </span>
               {debouncedQuery.trim() && totalResults > 0 && (
-                <span className="text-[#38bdf8] normal-case">{totalResults} agent{totalResults !== 1 ? "s" : ""} found</span>
+                <span className="text-[#47A9CF] normal-case">{totalResults} agent{totalResults !== 1 ? "s" : ""} found</span>
               )}
             </div>
 
@@ -200,7 +200,7 @@ function SearchBar() {
             {debouncedQuery.trim() ? (
               isLoading ? (
                 <div className="px-4 py-6 text-center">
-                  <div className="w-5 h-5 rounded-full border-2 border-white/20 border-t-[#38bdf8] animate-spin mx-auto mb-2" />
+                  <div className="w-5 h-5 rounded-full border-2 border-white/20 border-t-[#47A9CF] animate-spin mx-auto mb-2" />
                   <p className="text-white/30 text-[12px]">Searching agents...</p>
                 </div>
               ) : filteredAgents.length > 0 ? (
@@ -235,7 +235,7 @@ function SearchBar() {
                         </div>
                         {/* Score + rate */}
                         <div className="text-right flex-shrink-0">
-                          <p className="text-[#38bdf8] text-[12px] font-semibold">{agent.scoreDisplay}/100</p>
+                          <p className="text-[#47A9CF] text-[12px] font-semibold">{agent.scoreDisplay}/100</p>
                           <p className="text-white/30 text-[11px]">{agent.rateDisplay}</p>
                         </div>
                       </div>
@@ -246,7 +246,7 @@ function SearchBar() {
                   {totalResults > 3 && (
                     <div
                       onMouseDown={() => handleSearch(debouncedQuery)}
-                      className="px-4 py-3 border-t border-white/5 cursor-pointer flex items-center justify-between text-[#38bdf8] hover:bg-white/5 transition-colors"
+                      className="px-4 py-3 border-t border-white/5 cursor-pointer flex items-center justify-between text-[#47A9CF] hover:bg-white/5 transition-colors"
                     >
                       <span className="text-[13px] font-medium">View all {totalResults} results</span>
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -323,7 +323,7 @@ export default function HeroSection() {
         className="absolute inset-0 pointer-events-none opacity-[0.07] mix-blend-overlay"
         style={{
           backgroundImage:
-            "linear-gradient(to right, #38bdf8 1px, transparent 1px), linear-gradient(to bottom, #38bdf8 1px, transparent 1px)",
+            "linear-gradient(to right, #47A9CF 1px, transparent 1px), linear-gradient(to bottom, #47A9CF 1px, transparent 1px)",
           backgroundSize: "80px 80px",
         }}
         aria-hidden
@@ -338,7 +338,7 @@ export default function HeroSection() {
           className="absolute inset-y-0 w-[200%] -left-[50%] animate-[heroScan_14s_linear_infinite]"
           style={{
             backgroundImage:
-              "repeating-linear-gradient(-20deg, transparent 0px, transparent 120px, rgba(56,189,248,0.4) 121px, transparent 122px)",
+              "repeating-linear-gradient(-20deg, transparent 0px, transparent 120px, rgba(71,169,207,0.4) 121px, transparent 122px)",
           }}
         />
       </div>
@@ -346,7 +346,7 @@ export default function HeroSection() {
       {/* Corner brackets at the viewport edges — terminal motif */}
       <CornerBrackets
         size="lg"
-        accent="#38bdf8"
+        accent="#47A9CF"
         glow
         inset={24}
         className="absolute inset-0 z-10"
@@ -366,10 +366,10 @@ export default function HeroSection() {
         className="absolute bottom-6 left-0 right-0 z-10 hidden md:flex items-center gap-3 pointer-events-none overflow-hidden"
         aria-hidden
       >
-        <div className="flex items-center gap-2 pl-8 font-mono text-[10px] uppercase tracking-[0.25em] text-[#38bdf8]/70 flex-shrink-0">
+        <div className="flex items-center gap-2 pl-8 font-mono text-[10px] uppercase tracking-[0.25em] text-[#47A9CF]/70 flex-shrink-0">
           <span className="relative flex h-1.5 w-1.5">
-            <span className="absolute inline-flex h-full w-full rounded-full bg-[#38bdf8] opacity-75 animate-ping" />
-            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#38bdf8]" />
+            <span className="absolute inline-flex h-full w-full rounded-full bg-[#47A9CF] opacity-75 animate-ping" />
+            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#47A9CF]" />
           </span>
           <span>live</span>
         </div>
@@ -377,20 +377,20 @@ export default function HeroSection() {
           <div className="flex whitespace-nowrap animate-ticker font-mono text-[11px] tracking-[0.15em] text-white/40">
             {Array.from({ length: 2 }).map((_, dup) => (
               <div key={dup} className="flex items-center gap-8 pr-8">
-                <span><span className="text-white/25">block</span> <span className="text-[#38bdf8]/80">28,740,162</span></span>
-                <span className="text-white/15">·</span>
-                <span><span className="text-white/25">tx</span> <span className="text-[#a855f7]/80">0x9f3a…c41e</span> <span className="text-emerald-400/70">confirmed</span></span>
-                <span className="text-white/15">·</span>
-                <span><span className="text-white/25">agent</span> <span className="text-[#38bdf8]/80">#{agentCount > 0 ? agentCount : 12}</span> <span className="text-white/50">registered</span></span>
-                <span className="text-white/15">·</span>
-                <span><span className="text-white/25">gas</span> <span className="text-[#38bdf8]/80">1.2 gwei</span></span>
-                <span className="text-white/15">·</span>
-                <span><span className="text-white/25">job</span> <span className="text-[#a855f7]/80">#{jobCount > 0 ? jobCount : 7}</span> <span className="text-emerald-400/70">settled</span></span>
-                <span className="text-white/15">·</span>
-                <span><span className="text-white/25">kv</span> <span className="text-[#38bdf8]/80">stream.0x14a2</span> <span className="text-white/50">synced</span></span>
-                <span className="text-white/15">·</span>
-                <span><span className="text-white/25">align</span> <span className="text-[#38bdf8]/80">175,402</span> <span className="text-white/50">nodes</span></span>
-                <span className="text-white/15">·</span>
+                <span><span className="text-white">block</span> <span className="text-[#47A9CF]/80">28,740,162</span></span>
+                <span className="text-white">·</span>
+                <span><span className="text-white">tx</span> <span className="text-[#09799E]/80">0x9f3a…c41e</span> <span className="text-emerald-400/70">confirmed</span></span>
+                <span className="text-white">·</span>
+                <span><span className="text-white">agent</span> <span className="text-[#47A9CF]/80">#{agentCount > 0 ? agentCount : 12}</span> <span className="text-white">registered</span></span>
+                <span className="text-white">·</span>
+                <span><span className="text-white">gas</span> <span className="text-[#47A9CF]/80">1.2 gwei</span></span>
+                <span className="text-white">·</span>
+                <span><span className="text-white">job</span> <span className="text-[#09799E]/80">#{jobCount > 0 ? jobCount : 7}</span> <span className="text-emerald-400/70">settled</span></span>
+                <span className="text-white">·</span>
+                <span><span className="text-white">kv</span> <span className="text-[#47A9CF]/80">stream.0x14a2</span> <span className="text-white">synced</span></span>
+                <span className="text-white">·</span>
+                <span><span className="text-white">align</span> <span className="text-[#47A9CF]/80">175,402</span> <span className="text-white">nodes</span></span>
+                <span className="text-white">·</span>
               </div>
             ))}
           </div>
@@ -453,7 +453,7 @@ export default function HeroSection() {
                 "Instant Payouts",
                 "Self-Evaluating AI",
               ]}
-                mainClassName="px-3 md:px-5 py-1 md:py-2 border border-cyan-400/30 text-white overflow-hidden justify-center rounded-xl md:rounded-2xl text-[24px] md:text-[42px] font-medium"
+                mainClassName="px-3 md:px-5 py-1 md:py-2 border border-[#47A9CF]/40 text-white overflow-hidden justify-center rounded-xl md:rounded-2xl text-[24px] md:text-[42px] font-medium"
                 staggerFrom="last"
                 initial={{ y: "100%" }}
                 animate={{ y: 0 }}
@@ -517,7 +517,7 @@ export default function HeroSection() {
               glowIntensity={0.9}
               coneSpread={30}
               animated={true}
-              colors={["#38bdf8", "#a78bfa", "#22d3ee"]}
+              colors={["#47A9CF", "#09799E", "#A6E0F4"]}
               fillOpacity={0.3}
             >
               <Link href="/dashboard">
@@ -542,7 +542,7 @@ export default function HeroSection() {
                 speed={2.5}
                 delay={0}
                 color="rgba(255,255,255,0.85)"
-                shineColor="#38bdf8"
+                shineColor="#47A9CF"
                 spread={100}
                 className="text-[24px] md:text-[28px] font-semibold"
               />
@@ -560,7 +560,7 @@ export default function HeroSection() {
                 speed={2.5}
                 delay={0.5}
                 color="rgba(255,255,255,0.85)"
-                shineColor="#38bdf8"
+                shineColor="#47A9CF"
                 spread={100}
                 className="text-[24px] md:text-[28px] font-semibold"
               />
@@ -574,11 +574,11 @@ export default function HeroSection() {
             </div>
             <div className="flex flex-col items-center gap-1">
               <ShinyText
-                text="175K+"
+                text="197"
                 speed={2.5}
                 delay={1}
                 color="rgba(255,255,255,0.85)"
-                shineColor="#38bdf8"
+                shineColor="#47A9CF"
                 spread={100}
                 className="text-[24px] md:text-[28px] font-semibold"
               />
@@ -587,7 +587,7 @@ export default function HeroSection() {
                   <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" style={{ animationDelay: "0.8s" }} />
                   <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" />
                 </span>
-                Alignment Nodes
+                Tests Passing
               </span>
             </div>
           </motion.div>

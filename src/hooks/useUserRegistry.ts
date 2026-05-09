@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useReadContract, useWriteContract } from "wagmi";
+import { useReadContract, useWriteContract, usePublicClient } from "wagmi";
 import { CONTRACT_CONFIG } from "@/lib/contracts";
 import { Address } from "viem";
 
@@ -41,19 +41,29 @@ export function useUserRegistry() {
 }
 
 export function useRegisterUser() {
+  const { writeContractAsync } = useWriteContract();
+  const publicClient = usePublicClient();
   const [isPending, setIsPending] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<any>(null);
 
-  const register = async (...args: any[]) => {
+  const register = async (role: 1 | 2) => {
     setIsPending(true);
+    setError(null);
     try {
-      console.log("Registering user:", args);
-      setIsSuccess(true);
+      const hash = await writeContractAsync({
+        address: CONTRACT_CONFIG.UserRegistry.address as `0x${string}`,
+        abi: CONTRACT_CONFIG.UserRegistry.abi,
+        functionName: "registerUser",
+        args: [role],
+      });
+      setIsPending(false);
       setIsConfirming(true);
+      await publicClient?.waitForTransactionReceipt({ hash });
       setIsConfirmed(true);
+      setIsSuccess(true);
     } catch (err) {
       setError(err);
     } finally {

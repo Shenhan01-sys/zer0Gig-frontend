@@ -9,12 +9,12 @@ function MintIcon() {
   return (
     <svg width="64" height="64" viewBox="0 0 64 64" fill="none" className="flex-shrink-0">
       {/* Isometric cube */}
-      <polygon points="32,8 52,20 52,44 32,56 12,44 12,20" fill="#0e2a3a" stroke="#22d3ee" strokeWidth="1.5" opacity="0.8" />
-      <polygon points="32,8 52,20 32,32 12,20" fill="#22d3ee" opacity="0.3" />
-      <polygon points="32,32 52,20 52,44 32,56" fill="#22d3ee" opacity="0.15" />
+      <polygon points="32,8 52,20 52,44 32,56 12,44 12,20" fill="#032A3D" stroke="#A6E0F4" strokeWidth="1.5" opacity="0.8" />
+      <polygon points="32,8 52,20 32,32 12,20" fill="#A6E0F4" opacity="0.3" />
+      <polygon points="32,32 52,20 52,44 32,56" fill="#A6E0F4" opacity="0.15" />
       {/* NFT badge */}
-      <motion.circle cx="32" cy="32" r="8" fill="none" stroke="#22d3ee" strokeWidth="1.5" animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 2, repeat: Infinity }} />
-      <circle cx="32" cy="32" r="3" fill="#22d3ee" opacity="0.8" />
+      <motion.circle cx="32" cy="32" r="8" fill="none" stroke="#A6E0F4" strokeWidth="1.5" animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 2, repeat: Infinity }} />
+      <circle cx="32" cy="32" r="3" fill="#A6E0F4" opacity="0.8" />
     </svg>
   );
 }
@@ -82,9 +82,9 @@ const STEPS = [
   {
     Icon: MintIcon,
     title: "Mint Agent Identity",
-    desc: "Register your AI as an ERC-721 NFT with on-chain skills, rate, and capability manifest. Your agent gets its own autonomous wallet.",
-    accent: "text-cyan-400",
-    bg: "from-cyan-500/5 to-transparent",
+    desc: "Register your AI as an ERC-7857 iNFT with encrypted capability data, on-chain skills and rate. Your agent gets its own autonomous wallet — and you can iClone or authorizeUsage to license without selling.",
+    accent: "text-[#47A9CF]",
+    bg: "from-[#47A9CF]/[0.07] to-transparent",
   },
   {
     Icon: ReputationIcon,
@@ -104,11 +104,9 @@ const STEPS = [
 
 export default function ForAgentOwners() {
   return (
-    <section className="relative py-24 md:py-32 overflow-hidden">
-      {/* Background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#050810] via-[#0a0e1a] to-[#050810]" />
-      <div className="absolute top-0 left-1/3 w-[600px] h-[600px] rounded-full bg-purple-500/[0.04] blur-[200px] pointer-events-none" />
-      <div className="absolute bottom-0 right-1/3 w-[500px] h-[500px] rounded-full bg-cyan-500/[0.04] blur-[150px] pointer-events-none" />
+    <section className="relative py-24 md:py-32 overflow-hidden bg-black">
+      <div className="absolute top-0 left-1/3 w-[600px] h-[600px] rounded-full bg-[#09799E]/[0.06] blur-[200px] pointer-events-none" />
+      <div className="absolute bottom-0 right-1/3 w-[500px] h-[500px] rounded-full bg-[#47A9CF]/[0.06] blur-[150px] pointer-events-none" />
 
       <div className="relative z-10 max-w-6xl mx-auto px-6">
         {/* Section header */}
@@ -119,7 +117,7 @@ export default function ForAgentOwners() {
           transition={{ duration: 0.5 }}
           className="text-center mb-14"
         >
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-[12px] text-purple-400 mb-4">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#09799E]/15 border border-[#09799E]/30 text-[12px] text-[#47A9CF] mb-4">
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
@@ -153,7 +151,7 @@ export default function ForAgentOwners() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.4, delay: i * 0.1 }}
-                className="relative rounded-2xl border border-white/10 bg-[#0d1525]/90 p-6 hover:border-white/20 transition-all duration-300 group"
+                className="relative rounded-2xl border border-white/10 bg-[#032A3D]/90 p-6 hover:border-white/20 transition-all duration-300 group"
               >
                 {/* Gradient overlay */}
                 <div className={`absolute inset-0 bg-gradient-to-br ${step.bg} opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl`} />
@@ -180,7 +178,7 @@ export default function ForAgentOwners() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5, delay: 0.3 }}
-          className="rounded-2xl border border-white/10 bg-[#0d1525]/90 p-6 max-w-2xl mx-auto mb-8"
+          className="rounded-2xl border border-white/10 bg-[#032A3D]/90 p-6 max-w-2xl mx-auto mb-8"
         >
           <div className="flex items-start gap-4">
             <div className="flex-shrink-0">
@@ -206,7 +204,7 @@ export default function ForAgentOwners() {
         >
           <Link
             href="/dashboard/register-agent"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-purple-500/10 border border-purple-500/30 text-purple-400 text-[14px] font-medium rounded-full hover:bg-purple-500/20 transition-colors"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-[#09799E]/15 border border-[#09799E]/40 text-[#47A9CF] text-[14px] font-medium rounded-full hover:bg-[#09799E]/25 transition-colors"
           >
             Register Your Agent
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

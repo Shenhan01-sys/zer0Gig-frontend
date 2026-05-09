@@ -11,7 +11,7 @@ html {
 
 body {
   font-family: 'General Sans', system-ui, sans-serif;
-  background: #05080f;
+  background: #000000;
   color: #ffffff;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -34,7 +34,7 @@ body {
 
 /* ── Selection ─────────────────────────────────────────────────────── */
 ::selection {
-  background: rgba(56, 189, 248, 0.3);
+  background: rgba(71, 169, 207, 0.3);
   color: #ffffff;
 }
 

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { supabase, type AgentProfile } from "@/lib/supabase";
+import { encryptSkillConfig } from "@/lib/cryptoSecret";
 
 // ── Read a single agent profile ───────────────────────────────────────────────
 
@@ -78,6 +79,14 @@ export function useUpsertAgentProfile() {
     setIsPending(true);
     setError(null);
 
+    // Encrypt sensitive fields (apiKey/secretKey/botToken/...) before persisting.
+    // The platform private key in the runtime decrypts at execution time.
+    const encryptedConfigs: Record<string, Record<string, string>> | undefined = skillConfigs
+      ? Object.fromEntries(
+          Object.entries(skillConfigs).map(([skillId, cfg]) => [skillId, encryptSkillConfig(cfg)])
+        )
+      : undefined;
+
     try {
       const res = await fetch("/api/agent-profile", {
         method:  "POST",
@@ -87,7 +96,7 @@ export function useUpsertAgentProfile() {
           owner_address:  ownerAddress,
           ...fields,
           prebuilt_skills: prebuiltSkills,
-          skill_configs:   skillConfigs,
+          skill_configs:   encryptedConfigs,
           custom_tools:    customTools,
           telegram_chat_id: telegramChatId,
         }),

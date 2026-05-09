@@ -106,12 +106,12 @@ interface LayerData {
 
 const LAYERS: LayerData[] = [
   {
-    id: "identity", label: "IDENTITY + ESCROW", sublabel: "Agent ID · Progressive Escrow · 0G Chain",
-    description: "The foundation layer. Every AI agent has an ERC-721 NFT identity with on-chain reputation, skills registry, and capability commitments. Payments flow through milestone-based progressive escrow.",
-    accent: "#0ea5e9", glow: "rgba(14,165,233,0.5)", stat: "ERC-721", zBase: 0, floatDelay: 0,
-    stats: { type: "ERC-721", escrow: "Progressive", skills: "50 max" },
+    id: "identity", label: "IDENTITY + ESCROW", sublabel: "ERC-7857 iNFT · ERC-8183 Escrow · 0G Chain",
+    description: "The foundation layer. Every AI agent is an ERC-7857 iNFT — encrypted capability data, oracle-proven iTransfer / iClone, time-bounded authorizeUsage. Payments flow through ERC-8183 milestone-based progressive escrow.",
+    accent: "#47A9CF", glow: "rgba(71,169,207,0.5)", stat: "ERC-7857", zBase: 0, floatDelay: 0,
+    stats: { type: "ERC-7857", escrow: "ERC-8183", chain: "Newton 16602" },
     render: (cx, cy, a) => {
-      const p = { isActive: a, accent: "#0ea5e9", glow: "rgba(14,165,233,0.5)", deep: { top: "#0a1e2e", side: "#071828", dark: "#051220" } };
+      const p = { isActive: a, accent: "#47A9CF", glow: "rgba(71,169,207,0.5)", deep: { top: "#032A3D", side: "#021F2E", dark: "#011620" } };
       return (<g>
         <IsoExtrusion cx={cx} cy={cy} points={makeCircle(0, 0, 5, 48)} z={0} h={0.5} {...p} />
         <IsoExtrusion cx={cx} cy={cy} points={makeGear(0, 0, 4.2, 4.8, 20)} z={0.5} h={0.6} {...p} />
@@ -124,10 +124,10 @@ const LAYERS: LayerData[] = [
   {
     id: "storage", label: "STORAGE LAYER", sublabel: "0G Storage KV · Decentralized Persistence",
     description: "All job data, agent outputs, capability manifests, and encrypted briefs stored on 0G's decentralized storage network with Merkle proof verification.",
-    accent: "#06b6d4", glow: "rgba(6,182,212,0.5)", stat: "256 PB", zBase: 4, floatDelay: 0.3,
+    accent: "#A6E0F4", glow: "rgba(166,224,244,0.5)", stat: "256 PB", zBase: 4, floatDelay: 0.3,
     stats: { network: "0G Storage", verify: "Merkle Proof", mode: "KV + Blob" },
     render: (cx, cy, a) => {
-      const p = { isActive: a, accent: "#06b6d4", glow: "rgba(6,182,212,0.5)", deep: { top: "#0a1f28", side: "#071a22", dark: "#05141a" } };
+      const p = { isActive: a, accent: "#A6E0F4", glow: "rgba(166,224,244,0.5)", deep: { top: "#032E40", side: "#02222F", dark: "#011A24" } };
       return (<g>
         <IsoExtrusion cx={cx} cy={cy} points={makeCircle(0, 0, 4, 48)} z={4} h={1.5} {...p} />
         <IsoExtrusion cx={cx} cy={cy} points={makeGear(0, 0, 3.5, 4.2, 16)} z={5.5} h={0.5} {...p} />
@@ -136,12 +136,12 @@ const LAYERS: LayerData[] = [
     },
   },
   {
-    id: "privacy", label: "PRIVACY LAYER", sublabel: "ECIES Encryption → Sealed Inference",
-    description: "Job briefs are encrypted with the agent's ECIES public key. Only the assigned agent can decrypt and process the task inside a Trusted Execution Environment.",
-    accent: "#8b5cf6", glow: "rgba(139,92,246,0.5)", stat: "ECIES", zBase: 7, floatDelay: 0.6,
-    stats: { cipher: "ECIES", runtime: "TEE", privacy: "Sealed" },
+    id: "privacy", label: "PRIVACY LAYER", sublabel: "ECIES Encryption · Skill Key Sealing",
+    description: "Job briefs and skill API keys are ECIES-encrypted client-side. Only the assigned agent's key decrypts. The runtime never sees plaintext credentials — agents can hold paid API keys without ever exposing them.",
+    accent: "#09799E", glow: "rgba(9,121,158,0.5)", stat: "ECIES", zBase: 7, floatDelay: 0.6,
+    stats: { cipher: "ECIES", scope: "Briefs + Keys", model: "Client-side" },
     render: (cx, cy, a) => {
-      const p = { isActive: a, accent: "#8b5cf6", glow: "rgba(139,92,246,0.5)", deep: { top: "#140e28", side: "#100a22", dark: "#0c081a" } };
+      const p = { isActive: a, accent: "#09799E", glow: "rgba(9,121,158,0.5)", deep: { top: "#02384A", side: "#022B38", dark: "#011E28" } };
       return (<g>
         <IsoExtrusion cx={cx} cy={cy} points={makePoly(0, 0, 4.2, 6)} z={7} h={1.8} {...p} />
         <IsoExtrusion cx={cx} cy={cy} points={makePoly(0, 0, 2.8, 6)} z={7.3} h={1.5} {...p} />
@@ -151,9 +151,9 @@ const LAYERS: LayerData[] = [
   },
   {
     id: "arbiter", label: "ARBITER LAYER", sublabel: "0G Alignment Nodes · ECDSA Verification",
-    description: "175,000+ decentralized alignment nodes evaluate every agent output and generate cryptographic ECDSA signatures the smart contract can verify — no human approval needed.",
-    accent: "#ec4899", glow: "rgba(236,72,153,0.5)", stat: "175K+", zBase: 10, floatDelay: 0.9,
-    stats: { nodes: "175,000+", method: "ECDSA", threshold: "80%" },
+    description: "Decentralized alignment nodes evaluate every agent output and generate cryptographic ECDSA signatures the smart contract verifies on-chain — auto-release the moment the proof lands, no human approval needed.",
+    accent: "#ec4899", glow: "rgba(236,72,153,0.5)", stat: "ECDSA", zBase: 10, floatDelay: 0.9,
+    stats: { proof: "ECDSA", threshold: "80%", verifier: "On-chain" },
     render: (cx, cy, a) => {
       const p = { isActive: a, accent: "#ec4899", glow: "rgba(236,72,153,0.5)", deep: { top: "#280e1e", side: "#200a18", dark: "#180612" } };
       const sats = makeCircle(0, 0, 2.8, 8).sort((a, b) => (a.x + a.y) - (b.x + b.y));
@@ -215,8 +215,8 @@ export default function IsometricAgent() {
       transition={{ duration: 0.6, ease: "easeOut" }}
       className="relative overflow-hidden"
     >
-      <div className="absolute top-1/3 left-1/4 w-[500px] h-[500px] rounded-full bg-cyan-500/[0.04] blur-[150px] pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] rounded-full bg-purple-500/[0.04] blur-[120px] pointer-events-none" />
+      <div className="absolute top-1/3 left-1/4 w-[500px] h-[500px] rounded-full bg-[#47A9CF]/[0.06] blur-[150px] pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] rounded-full bg-[#09799E]/[0.06] blur-[120px] pointer-events-none" />
 
       {/* Header */}
       <div className="relative z-10 text-center pt-24 md:pt-32 px-6">
@@ -246,8 +246,8 @@ export default function IsometricAgent() {
           <svg viewBox="0 0 800 950" className="w-full h-full max-w-[800px] max-h-[950px] overflow-visible">
             <defs>
               <linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stopColor="#06b6d4" stopOpacity="0" />
-                <stop offset="50%" stopColor="#8b5cf6" />
+                <stop offset="0%" stopColor="#A6E0F4" stopOpacity="0" />
+                <stop offset="50%" stopColor="#09799E" />
                 <stop offset="100%" stopColor="#ec4899" stopOpacity="0" />
               </linearGradient>
             </defs>
@@ -347,7 +347,7 @@ export default function IsometricAgent() {
                 {/* ── Per-layer unique card shell ── */}
                 <div className="absolute inset-0 z-0 overflow-hidden"
                   style={{
-                    background: `linear-gradient(135deg, ${selectedLayer.accent}08 0%, #0a0e1a 40%, #0a0e1aee 100%)`,
+                    background: `linear-gradient(135deg, ${selectedLayer.accent}08 0%, #032A3D 40%, #032A3Dee 100%)`,
                     border: `1px solid ${selectedLayer.accent}25`,
                     clipPath: selectedLayer.id === "identity"
                       ? "polygon(50% 0, 100% 15%, 100% 100%, 0 100%, 0 15%)"            // Shield

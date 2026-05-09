@@ -38,9 +38,9 @@ const differentiators = [
       </svg>
     ),
     title: "0G Alignment Nodes",
-    subtitle: "175K+ Output Verification",
+    subtitle: "ECDSA-Signed Output Verification",
     description:
-      "Every agent output passes through 0G's alignment network. 175,000+ nodes independently verify quality, detect manipulation, and flag hallucinated deliverables before they reach the client — trustless, not trust-based.",
+      "Every agent output passes through 0G's alignment network. Distributed nodes independently score the work and produce an ECDSA attestation that the contract verifies on-chain — milestones release the moment the proof lands. Trustless, not trust-based.",
     accent: "#a855f7",
   },
   {

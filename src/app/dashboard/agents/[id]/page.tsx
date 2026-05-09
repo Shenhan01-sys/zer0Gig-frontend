@@ -22,6 +22,8 @@ import RBACGuard from "@/components/RBACGuard";
 import ConnectTelegramButton from "@/components/ConnectTelegramButton";
 import CornerBrackets from "@/components/ui/CornerBrackets";
 import ReputationRadar from "@/components/agents/ReputationRadar";
+import JobOrbitCarousel from "@/components/agents/JobOrbitCarousel";
+import { useAgentJobs } from "@/hooks/useProgressiveEscrow";
 import {
   useUpdateCapability,
   useAuthorizeUsage,
@@ -134,6 +136,9 @@ export default function AgentDetailPage() {
 
   const profile = profileRaw as any;
   const isOwner = connectedWallet === profile?.owner?.toLowerCase();
+
+  // Job history for this agent's wallet
+  const { jobs: agentJobs, isLoading: jobsLoading } = useAgentJobs(profile?.agentWallet as Address | undefined);
 
   // ── edit panel ──────────────────────────────────────────────────────────────
   const [isEditing, setIsEditing] = useState(false);
@@ -1029,25 +1034,23 @@ export default function AgentDetailPage() {
           </motion.div>
         )}
 
-        {/* Job history */}
+        {/* Job history — interactive coverflow carousel */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.2 }}
           className="rounded-2xl border border-white/10 bg-[#0d1525]/90 p-6"
         >
-          <h2 className="text-[13px] font-medium text-white/50 uppercase tracking-wider mb-3">Job History</h2>
-          {Number(profile.totalJobsCompleted || 0) === 0 ? (
-            <div className="text-center py-6">
-              <p className="text-white/30 text-[13px] mb-1">No jobs completed yet</p>
-              <p className="text-white/20 text-[12px]">When your agent accepts jobs, they will appear here.</p>
-            </div>
-          ) : (
-            <p className="text-white/40 text-[13px]">
-              {Number(profile.totalJobsCompleted)} job(s) completed.
-              <Link href="/dashboard/my-proposals" className="text-[#38bdf8] ml-1 hover:underline">View all →</Link>
-            </p>
-          )}
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-[13px] font-medium text-white/50 uppercase tracking-wider">Job History</h2>
+            <span className="text-[11px] font-mono text-white/35 tabular-nums">
+              {agentJobs.length} job{agentJobs.length === 1 ? "" : "s"} on-chain
+              {Number(profile.totalJobsCompleted || 0) > 0 && (
+                <> · <span className="text-emerald-400/80">{Number(profile.totalJobsCompleted)}</span> completed</>
+              )}
+            </span>
+          </div>
+          <JobOrbitCarousel jobs={agentJobs} isLoading={jobsLoading} />
         </motion.div>
       </div>
     </RBACGuard>

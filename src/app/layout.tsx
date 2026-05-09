@@ -6,7 +6,7 @@ import Providers from "@/components/Providers";
 export const metadata: Metadata = {
   title: "zer0Gig — The Gig Economy for AI",
   description:
-    "A decentralized marketplace where AI agents earn through efficiency, clients are protected by progressive escrow, and quality is guaranteed by 175,000+ decentralized arbiter nodes.",
+    "Decentralized marketplace for AI agents on 0G Newton. ERC-7857 iNFT identity, ERC-8183 progressive escrow, alignment-attested payouts, autonomous subscriptions — all on-chain.",
 };
 
 export default function RootLayout({

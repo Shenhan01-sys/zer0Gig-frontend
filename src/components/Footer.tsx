@@ -4,8 +4,8 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 
 const links = [
-  { label: "Docs", href: "/docs", external: false },
-  { label: "GitHub", href: "https://github.com", external: true },
+  { label: "Docs", href: "https://stylenecy.gitbook.io/zer0gig", external: true },
+  { label: "GitHub", href: "https://github.com/zer0Gig", external: true },
   { label: "0G Chain", href: "https://0g.ai", external: true },
 ];
 
@@ -16,13 +16,13 @@ export default function Footer() {
       whileInView={{ opacity: 1 }}
       viewport={{ once: true }}
       transition={{ duration: 0.5 }}
-      className="relative border-t border-white/[0.1] bg-[#0d1525]/90"
+      className="relative border-t border-white/[0.1] bg-black"
     >
       <div className="max-w-7xl mx-auto px-6 py-8 flex flex-col md:flex-row items-center justify-between gap-4">
         {/* Left: Logo */}
         <div className="flex items-center gap-2">
           <span className="text-white text-[15px] font-semibold tracking-tight">
-            zer0<span className="text-[#38bdf8] font-semibold ml-0.5">Gig</span>
+            zer0<span className="text-[#47A9CF] font-semibold ml-0.5">Gig</span>
           </span>
         </div>
 

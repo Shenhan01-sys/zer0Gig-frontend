@@ -12,20 +12,20 @@ const steps = [
     title: "Post Your Task",
     description:
       "Define what you need and set your budget. Funds are locked in a Progressive Escrow smart contract — fully visible on-chain, fully protected. If the agent fails, you get a refund.",
-    accentHex: "#22d3ee",
-    accentClass: "text-cyan-400",
-    progressClass: "bg-cyan-400",
-    glowBg: "radial-gradient(circle at 25% 40%, rgba(6,182,212,0.12) 0%, transparent 65%)",
+    accentHex: "#A6E0F4",
+    accentClass: "text-[#A6E0F4]",
+    progressClass: "bg-[#A6E0F4]",
+    glowBg: "radial-gradient(circle at 25% 40%, rgba(166,224,244,0.12) 0%, transparent 65%)",
   },
   {
     number: "02",
     title: "Agent Gets to Work",
     description:
       "An AI agent picks up your task autonomously. It runs pre-built skills (web search, code exec, GitHub) to gather context, processes the work on 0G Compute Network, then self-evaluates its own output — retrying until quality exceeds 80%. Every preference from past jobs is injected from memory.",
-    accentHex: "#a855f7",
-    accentClass: "text-purple-400",
-    progressClass: "bg-purple-400",
-    glowBg: "radial-gradient(circle at 25% 40%, rgba(168,85,247,0.12) 0%, transparent 65%)",
+    accentHex: "#09799E",
+    accentClass: "text-[#09799E]",
+    progressClass: "bg-[#09799E]",
+    glowBg: "radial-gradient(circle at 25% 40%, rgba(9,121,158,0.18) 0%, transparent 65%)",
   },
   {
     number: "03",
@@ -53,7 +53,7 @@ const steps = [
 function EscrowVisual() {
   return (
     <div className="space-y-4">
-      <div className="rounded-xl bg-[#0d1525]/90 border border-white/[0.22] p-5 space-y-4">
+      <div className="rounded-xl bg-[#032A3D]/90 border border-white/[0.22] p-5 space-y-4">
         <div className="flex items-center justify-between text-[12px] text-white/30">
           <span className="font-mono">ProgressiveEscrow.sol</span>
           <span className="text-emerald-400/70 flex items-center gap-1.5">
@@ -68,7 +68,7 @@ function EscrowVisual() {
           </div>
           <div className="h-2 rounded-full bg-white/[0.06] overflow-hidden">
             <motion.div
-              className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-500"
+              className="h-full rounded-full bg-gradient-to-r from-[#A6E0F4] to-[#47A9CF]"
               initial={{ width: "0%" }}
               animate={{ width: "100%" }}
               transition={{ duration: 1.4, delay: 0.3, ease: "easeOut" }}
@@ -77,9 +77,9 @@ function EscrowVisual() {
         </div>
         <div className="flex gap-2">
           {[
-            { pct: "40%", label: "M1", cls: "bg-cyan-500/20 text-cyan-400 border-cyan-500/20" },
-            { pct: "30%", label: "M2", cls: "bg-blue-500/20 text-blue-400 border-blue-500/20" },
-            { pct: "30%", label: "M3", cls: "bg-purple-500/20 text-purple-400 border-purple-500/20" },
+            { pct: "40%", label: "M1", cls: "bg-[#A6E0F4]/15 text-[#A6E0F4] border-[#A6E0F4]/25" },
+            { pct: "30%", label: "M2", cls: "bg-[#47A9CF]/15 text-[#47A9CF] border-[#47A9CF]/25" },
+            { pct: "30%", label: "M3", cls: "bg-[#09799E]/20 text-[#47A9CF] border-[#09799E]/30" },
           ].map((m, i) => (
             <motion.div
               key={m.label}
@@ -112,23 +112,23 @@ function AgentVisual() {
       <div className="flex items-center gap-3 mb-5">
         <div className="relative w-10 h-10 flex-shrink-0">
           <motion.div
-            className="absolute inset-0 rounded-full border border-purple-500/30"
+            className="absolute inset-0 rounded-full border border-[#09799E]/40"
             animate={{ scale: [1, 1.7], opacity: [0.5, 0] }}
             transition={{ duration: 1.8, repeat: Infinity, ease: "easeOut" }}
           />
           <motion.div
-            className="absolute inset-0 rounded-full border border-purple-500/20"
+            className="absolute inset-0 rounded-full border border-[#09799E]/30"
             animate={{ scale: [1, 1.7], opacity: [0.5, 0] }}
             transition={{ duration: 1.8, repeat: Infinity, ease: "easeOut", delay: 0.7 }}
           />
-          <div className="absolute inset-0 rounded-full bg-purple-500/20 flex items-center justify-center">
-            <div className="w-2.5 h-2.5 rounded-full bg-purple-400" />
+          <div className="absolute inset-0 rounded-full bg-[#09799E]/25 flex items-center justify-center">
+            <div className="w-2.5 h-2.5 rounded-full bg-[#47A9CF]" />
           </div>
         </div>
         <div>
           <div className="text-[13px] text-white/70 font-medium">Agent #007 — CodeBot-v3</div>
           <motion.div
-            className="text-[12px] text-purple-400/60"
+            className="text-[12px] text-[#47A9CF]/70"
             animate={{ opacity: [0.5, 1, 0.5] }}
             transition={{ duration: 2, repeat: Infinity }}
           >
@@ -154,8 +154,8 @@ function AgentVisual() {
               className="w-5 h-5 rounded-full border flex items-center justify-center flex-shrink-0"
               initial={{ borderColor: "rgba(255,255,255,0.1)", backgroundColor: "transparent" }}
               animate={{
-                borderColor: "rgb(168,85,247)",
-                backgroundColor: "rgba(168,85,247,0.2)",
+                borderColor: "rgb(9,121,158)",
+                backgroundColor: "rgba(9,121,158,0.25)",
               }}
               transition={{ delay: 0.6 + i * 0.4 }}
             >
@@ -170,7 +170,7 @@ function AgentVisual() {
               >
                 <path
                   d="M2 5l2 2 4-4"
-                  stroke="#a855f7"
+                  stroke="#09799E"
                   strokeWidth="1.5"
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -209,7 +209,7 @@ function VerifyVisual() {
             className="w-2.5 h-2.5 rounded-full bg-pink-500/50"
           />
         ))}
-        <span className="text-[11px] text-white/25 ml-1">+174,985 nodes</span>
+        <span className="text-[11px] text-white/25 ml-1">distributed alignment network</span>
       </div>
       {/* Score bar */}
       <div>
@@ -227,7 +227,7 @@ function VerifyVisual() {
         <div className="h-2.5 rounded-full bg-white/[0.06] overflow-hidden">
           <motion.div
             className="h-full rounded-full"
-            style={{ background: "linear-gradient(to right, #f472b6, #a855f7, #22c55e)" }}
+            style={{ background: "linear-gradient(to right, #f472b6, #09799E, #22c55e)" }}
             initial={{ width: "0%" }}
             animate={{ width: "85%" }}
             transition={{ duration: 1.6, delay: 0.5, ease: "easeOut" }}
@@ -368,8 +368,8 @@ export default function HowItWorks() {
       className="relative py-24 md:py-32 overflow-hidden"
     >
       {/* Background glows */}
-      <div className="absolute top-0 left-1/4 w-[500px] h-[500px] rounded-full bg-cyan-500/[0.04] blur-[150px] pointer-events-none" />
-      <div className="absolute bottom-0 right-1/4 w-[450px] h-[450px] rounded-full bg-purple-500/[0.04] blur-[150px] pointer-events-none" />
+      <div className="absolute top-0 left-1/4 w-[500px] h-[500px] rounded-full bg-[#47A9CF]/[0.05] blur-[150px] pointer-events-none" />
+      <div className="absolute bottom-0 right-1/4 w-[450px] h-[450px] rounded-full bg-[#09799E]/[0.05] blur-[150px] pointer-events-none" />
 
       <div className="relative z-10 max-w-6xl mx-auto px-6">
         {/* Badge */}
@@ -459,7 +459,7 @@ export default function HowItWorks() {
                         ? step.accentHex
                         : "rgba(255,255,255,0.05)",
                       backgroundColor: isActive
-                        ? "rgba(13,21,37,0.85)"
+                        ? "rgba(3,42,61,0.85)"
                         : "transparent",
                     }}
                   >
@@ -524,7 +524,7 @@ export default function HowItWorks() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -16 }}
                 transition={{ duration: 0.4, ease: [0.25, 0.4, 0.25, 1] }}
-                className="relative rounded-2xl border border-white/[0.15] overflow-hidden min-h-[380px] bg-[#0d1525]/95"
+                className="relative rounded-2xl border border-white/[0.15] overflow-hidden min-h-[380px] bg-[#032A3D]/95"
                 style={{ backgroundImage: activeStep.glowBg }}
               >
                 {/* Large watermark step number */}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useReadContract, useWriteContract, useWaitForTransactionReceipt, useAccount } from "wagmi";
+import { useReadContract, useReadContracts, useWriteContract, useWaitForTransactionReceipt, useAccount } from "wagmi";
 import { useState, useMemo } from "react";
 import { CONTRACT_CONFIG } from "@/lib/contracts";
 import { Address } from "viem";
@@ -18,6 +18,7 @@ export interface JobData {
   agentWallet?: Address;
   jobDataCID?: string;
   skillId?: string;
+  createdAt?: bigint;
 }
 
 export interface ProposalData {
@@ -46,19 +47,22 @@ export function useJobDetails(jobId: number) {
 
   const jobData = useMemo<JobData | null>(() => {
     if (!data) return null;
+    // Contract `getJob` returns the Job struct WITHOUT jobId — repopulate from input.
+    // jobDataHash is the renamed jobDataCID after the ERC-8183 migration.
     return {
-      jobId: (data as any).jobId,
+      jobId: BigInt(jobId),
       client: (data as any).client,
       agentId: (data as any).agentId,
       status: (data as any).status,
-      totalBudgetWei: (data as any).totalBudgetWei,
-      releasedWei: (data as any).releasedWei,
-      milestoneCount: (data as any).milestones?.length ?? 0,
+      totalBudgetWei: (data as any).totalBudgetWei ?? 0n,
+      releasedWei: (data as any).releasedWei ?? 0n,
+      milestoneCount: (data as any).milestoneCount ?? 0,
       agentWallet: (data as any).agentWallet,
-      jobDataCID: (data as any).jobDataCID,
+      jobDataCID: (data as any).jobDataHash ?? (data as any).jobDataCID,
       skillId: (data as any).skillId,
+      createdAt: (data as any).createdAt,
     };
-  }, [data]);
+  }, [data, jobId]);
 
   return {
     data: jobData,
@@ -243,7 +247,7 @@ export function useReleaseMilestone() {
   const releaseMilestone = async (params: {
     jobId: bigint;
     milestoneIndex: number;
-    outputCID: string;
+    outputHash: `0x${string}`;   // keccak256 of output content — bytes32 on-chain
     alignmentScore: bigint;
     signature: `0x${string}`;
   }) => {
@@ -261,7 +265,7 @@ export function useReleaseMilestone() {
         args: [
           params.jobId,
           BigInt(params.milestoneIndex),
-          params.outputCID,
+          params.outputHash,
           params.alignmentScore,
           params.signature,
         ],
@@ -287,6 +291,65 @@ export function useReleaseMilestone() {
     error,
   };
 }
+
+/**
+ * Cancel a stale IN_PROGRESS job. Reverts unless STALE_JOB_TIMEOUT (7 days)
+ * has elapsed since the agent's last on-chain activity. Refunds the
+ * unreleased portion of the budget to the client.
+ */
+export function useCancelStaleJob() {
+  const { writeContractAsync, isPending: isWritePending } = useWriteContract();
+  const tx = useTx();
+  const [isPending, setIsPending] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  const cancelStaleJob = async (jobId: bigint) => {
+    setIsPending(true);
+    setError(null);
+
+    const toastId = tx.start(`Reclaim stale Job #${jobId}`);
+    try {
+      const hash = await writeContractAsync({
+        address: CONTRACT_CONFIG.ProgressiveEscrow.address,
+        abi: CONTRACT_CONFIG.ProgressiveEscrow.abi,
+        functionName: "cancelStaleJob",
+        args: [jobId],
+      });
+      tx.broadcast(toastId, hash);
+      setIsPending(false);
+      return hash;
+    } catch (err) {
+      tx.fail(toastId, parseContractError(err));
+      setError(err as Error);
+      setIsPending(false);
+      throw err;
+    }
+  };
+
+  return { cancelStaleJob, isPending: isPending || isWritePending, error };
+}
+
+/**
+ * Read the lastActivityAt timestamp for a job. Used by the UI to show how
+ * long until cancelStaleJob becomes callable.
+ */
+export function useJobLastActivity(jobId: bigint | undefined) {
+  const { data, isLoading, refetch } = useReadContract({
+    address: CONTRACT_CONFIG.ProgressiveEscrow.address,
+    abi: CONTRACT_CONFIG.ProgressiveEscrow.abi,
+    functionName: "jobLastActivityAt",
+    args: jobId !== undefined ? [jobId] : undefined,
+    query: { enabled: jobId !== undefined },
+  });
+
+  return {
+    lastActivityAt: data ? Number(data) : 0,
+    isLoading,
+    refetch,
+  };
+}
+
+export const STALE_JOB_TIMEOUT_SECONDS = 7 * 24 * 60 * 60;
 
 export function useOpenJobs() {
   const { data: openJobIds, isLoading, refetch } = useReadContract({
@@ -326,6 +389,66 @@ export function useClientJobs(address?: Address | null) {
   return {
     data: clientJobIds as bigint[] | undefined,
     isLoading,
+    refetch,
+  };
+}
+
+/**
+ * Fetch the agent's job history via getAgentJobs(wallet) → batch getJob(jobId).
+ * Returns full JobData for each, so the UI can render rich cards without
+ * extra hooks per job.
+ */
+export function useAgentJobs(agentWallet?: Address | null) {
+  const { data: jobIdsRaw, isLoading: idsLoading, refetch } = useReadContract({
+    address: CONTRACT_CONFIG.ProgressiveEscrow.address,
+    abi: CONTRACT_CONFIG.ProgressiveEscrow.abi,
+    functionName: "getAgentJobs",
+    args: agentWallet ? [agentWallet] : undefined,
+    query: { enabled: !!agentWallet },
+  });
+
+  const jobIds = useMemo(() => (jobIdsRaw as bigint[] | undefined) ?? [], [jobIdsRaw]);
+
+  const { data: jobsData, isLoading: jobsLoading } = useReadContracts({
+    contracts: jobIds.map((id) => ({
+      address: CONTRACT_CONFIG.ProgressiveEscrow.address,
+      abi: CONTRACT_CONFIG.ProgressiveEscrow.abi,
+      functionName: "getJob",
+      args: [id],
+    })),
+    query: { enabled: jobIds.length > 0 },
+  });
+
+  const jobs = useMemo<JobData[]>(() => {
+    if (!jobsData) return [];
+    return jobsData
+      .map((res, i): JobData | null => {
+        if (res.status !== "success" || !res.result) return null;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const data = res.result as any;
+        return {
+          jobId:          jobIds[i],
+          client:         data.client,
+          agentId:        data.agentId,
+          status:         Number(data.status),
+          totalBudgetWei: data.totalBudgetWei ?? 0n,
+          releasedWei:    data.releasedWei ?? 0n,
+          milestoneCount: Number(data.milestoneCount ?? 0),
+          agentWallet:    data.agentWallet,
+          jobDataCID:     data.jobDataHash ?? data.jobDataCID,
+          skillId:        data.skillId,
+          createdAt:      data.createdAt,
+        };
+      })
+      .filter((j): j is JobData => j !== null)
+      // Newest first by createdAt
+      .sort((a, b) => Number((b.createdAt ?? 0n) - (a.createdAt ?? 0n)));
+  }, [jobsData, jobIds]);
+
+  return {
+    jobs,
+    jobIds,
+    isLoading: idsLoading || (jobIds.length > 0 && jobsLoading),
     refetch,
   };
 }
@@ -374,13 +497,27 @@ export function usePostJob() {
     setIsConfirmed(false);
     setError(null);
 
+    // Contract takes bytes32 jobDataHash, but the brief content is stored off-chain in Supabase.
+    // We POST the brief to /api/job-brief which inserts into public.jobs keyed by keccak256(brief),
+    // then we send that hash on-chain.
     const toastId = tx.start("Post new job");
     try {
+      const briefRes = await fetch("/api/job-brief", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cid, skillId: skillBytes32 }),
+      });
+      if (!briefRes.ok) {
+        const errText = await briefRes.text();
+        throw new Error(`Failed to store brief: ${errText}`);
+      }
+      const { jobDataHash } = await briefRes.json();
+
       const hash = await writeContractAsync({
         address: CONTRACT_CONFIG.ProgressiveEscrow.address,
         abi: CONTRACT_CONFIG.ProgressiveEscrow.abi,
         functionName: "postJob",
-        args: [cid, skillBytes32],
+        args: [jobDataHash as `0x${string}`, skillBytes32],
       });
       tx.broadcast(toastId, hash);
       setTxHash(hash);

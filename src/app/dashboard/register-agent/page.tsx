@@ -150,7 +150,7 @@ export default function RegisterAgentPage() {
   // Runtime type
   const [runtimeType, setRuntimeType] = useState<RuntimeType>("self_hosted");
 
-  // Generated agent wallet (for platform_managed)
+  // Generated agent wallet (for both modes — agentWallet must != msg.sender per contract)
   const [generatedWallet, setGeneratedWallet] = useState<{ address: string; privateKey: string } | null>(null);
 
   // Supabase profile fields
@@ -222,20 +222,15 @@ export default function RegisterAgentPage() {
     if (!defaultRateOG) return;
 
     let walletAddr: `0x${string}`;
-    if (runtimeType === "platform_managed") {
-      // Generate a fresh wallet for this agent.
-      // Address goes on-chain as agentWallet (earns funds).
-      // Private key is shown to user ONCE — they save it to withdraw earnings.
+    if (runtimeType === "platform_managed" || useOwnWallet) {
+      // Contract requires agentWallet != msg.sender — always generate a fresh keypair.
+      // Private key is shown to user ONCE so they can import it to withdraw earnings.
       const privateKey = generatePrivateKey();
       const account = privateKeyToAccount(privateKey);
       setGeneratedWallet({ address: account.address, privateKey });
       walletAddr = account.address;
     } else {
-      walletAddr = (
-        useOwnWallet && walletClient
-          ? walletClient.account.address
-          : agentWallet
-      ) as `0x${string}`;
+      walletAddr = agentWallet as `0x${string}`;
     }
 
     if (!walletAddr) return;
@@ -340,7 +335,7 @@ export default function RegisterAgentPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isConfirmed]);
 
-  const canSubmit = !!defaultRateOG && (useOwnWallet || !!agentWallet) && !isPending;
+  const canSubmit = !!defaultRateOG && (useOwnWallet || !!agentWallet) && !isPending && !isConfirmed;
   const selectedProvider = LLM_PROVIDERS.find(p => p.value === platformConfig.llm.provider)!;
 
   // ── Success state ──────────────────────────────────────────────────────────
@@ -364,7 +359,7 @@ export default function RegisterAgentPage() {
                 {runtimeType === "platform_managed" ? "Platform Managed" : "Self-Hosted"}
               </span>
             </p>
-            {runtimeType === "platform_managed" && generatedWallet && (
+            {generatedWallet && (
               <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-left mb-4">
                 <p className="text-amber-400 text-[12px] font-semibold mb-2">Save your agent wallet private key — shown only once!</p>
                 <p className="text-white/50 text-[11px] mb-3">
@@ -373,13 +368,58 @@ export default function RegisterAgentPage() {
                 <div className="space-y-2">
                   <div>
                     <p className="text-white/30 text-[10px] uppercase tracking-wider mb-1">Agent Wallet Address</p>
-                    <p className="text-white text-[11px] font-mono break-all bg-[#050810]/80 rounded-lg px-3 py-2">{generatedWallet.address}</p>
+                    <div className="flex gap-2 items-stretch">
+                      <p className="flex-1 text-white text-[11px] font-mono break-all bg-[#050810]/80 rounded-lg px-3 py-2">{generatedWallet.address}</p>
+                      <button
+                        onClick={() => navigator.clipboard.writeText(generatedWallet.address)}
+                        className="px-3 rounded-lg bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 text-white/70 text-[11px] font-medium transition-colors"
+                      >
+                        Copy
+                      </button>
+                    </div>
                   </div>
                   <div>
                     <p className="text-white/30 text-[10px] uppercase tracking-wider mb-1">Private Key</p>
-                    <p className="text-amber-300 text-[11px] font-mono break-all bg-[#050810]/80 rounded-lg px-3 py-2">{generatedWallet.privateKey}</p>
+                    <div className="flex gap-2 items-stretch">
+                      <p className="flex-1 text-amber-300 text-[11px] font-mono break-all bg-[#050810]/80 rounded-lg px-3 py-2">{generatedWallet.privateKey}</p>
+                      <button
+                        onClick={() => navigator.clipboard.writeText(generatedWallet.privateKey)}
+                        className="px-3 rounded-lg bg-amber-400/10 hover:bg-amber-400/20 border border-amber-400/30 text-amber-300 text-[11px] font-medium transition-colors"
+                      >
+                        Copy
+                      </button>
+                    </div>
                   </div>
                 </div>
+
+                {/* Runtime setup instructions — different for self-hosted vs platform */}
+                {runtimeType === "self_hosted" ? (
+                  <div className="mt-4 rounded-lg bg-[#050810]/80 border border-white/10 p-3">
+                    <p className="text-white/60 text-[11px] uppercase tracking-wider mb-2 font-semibold">Self-Hosted setup</p>
+                    <p className="text-white/50 text-[11px] leading-relaxed">
+                      Add to your runtime <code className="bg-white/5 px-1 rounded text-amber-300">.env</code>:
+                    </p>
+                    <pre className="mt-2 bg-black/40 rounded px-2 py-1.5 text-[10px] text-white/70 font-mono overflow-x-auto">
+{`AGENT_PRIVATE_KEY=${generatedWallet.privateKey.replace(/^0x/, "")}`}
+                    </pre>
+                    <p className="text-white/40 text-[10px] mt-2">
+                      Then run <code className="bg-white/5 px-1 rounded text-amber-300">npm run dev</code> to start your agent.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="mt-4 rounded-lg bg-[#050810]/80 border border-purple-500/20 p-3">
+                    <p className="text-purple-300 text-[11px] uppercase tracking-wider mb-2 font-semibold">Platform Managed</p>
+                    <p className="text-white/50 text-[11px] leading-relaxed">
+                      The platform runtime needs this key to release milestone payments to your wallet. Send it to the platform operator (or paste into the runtime env if you operate it):
+                    </p>
+                    <pre className="mt-2 bg-black/40 rounded px-2 py-1.5 text-[10px] text-white/70 font-mono overflow-x-auto">
+{`AGENT_WALLET_KEYS=<agentId>:${generatedWallet.privateKey.replace(/^0x/, "")}`}
+                    </pre>
+                    <p className="text-white/40 text-[10px] mt-2">
+                      Without this, the platform cannot call <code className="bg-white/5 px-1 rounded">releaseMilestone</code> on your behalf.
+                    </p>
+                  </div>
+                )}
               </div>
             )}
             <div className="flex gap-3 justify-center mt-4">
@@ -713,41 +753,38 @@ export default function RegisterAgentPage() {
             {/* Agent Wallet */}
             <div>
               <label className="block text-[13px] text-white/50 mb-2">Agent Wallet</label>
-              {runtimeType === "platform_managed" ? (
-                <div className="rounded-xl border border-[#a855f7]/20 bg-[#a855f7]/5 px-4 py-3">
-                  <p className="text-[11px] text-[#a855f7]/70 mb-1">A new wallet will be generated for your agent on submit</p>
-                  <p className="text-[11px] text-white/30">You'll receive the private key to withdraw earnings directly.</p>
+              {runtimeType === "platform_managed" || useOwnWallet ? (
+                <div className="rounded-xl border border-[#38bdf8]/20 bg-[#38bdf8]/5 px-4 py-3">
+                  <p className="text-[11px] text-[#38bdf8]/70 mb-1">A fresh agent wallet will be generated on submit</p>
+                  <p className="text-[11px] text-white/30">The private key is shown once after confirmation — import it to withdraw earnings.</p>
+                  <button
+                    type="button"
+                    onClick={() => setUseOwnWallet(false)}
+                    className="mt-2 text-[11px] text-white/30 hover:text-white/60 underline underline-offset-2 transition-colors"
+                  >
+                    Use a custom address instead
+                  </button>
                 </div>
               ) : (
                 <>
                   <div className="flex gap-2 mb-2">
-                    {[true, false].map(own => (
-                      <button
-                        key={String(own)}
-                        onClick={() => setUseOwnWallet(own)}
-                        className={`px-3 py-1.5 rounded-lg text-[12px] font-medium transition-all border ${
-                          useOwnWallet === own
-                            ? "border-[#38bdf8]/40 bg-[#38bdf8]/10 text-[#38bdf8]"
-                            : "border-white/10 text-white/40 hover:border-white/20"
-                        }`}
-                      >
-                        {own ? "Use Connected Wallet" : "Custom Address"}
-                      </button>
-                    ))}
+                    <button
+                      onClick={() => setUseOwnWallet(true)}
+                      className="px-3 py-1.5 rounded-lg text-[12px] font-medium transition-all border border-white/10 text-white/40 hover:border-white/20"
+                    >
+                      ← Auto-generate
+                    </button>
                   </div>
-                  {!useOwnWallet ? (
-                    <input
-                      type="text"
-                      value={agentWallet}
-                      onChange={e => setAgentWallet(e.target.value)}
-                      placeholder="0x..."
-                      className="w-full bg-[#050810]/80 border border-white/10 rounded-xl px-4 py-3 text-white text-[14px] placeholder:text-white/30 focus:outline-none focus:border-white/30 font-mono"
-                    />
-                  ) : walletClient && (
-                    <p className="text-[12px] text-white/30 font-mono">
-                      {walletClient.account.address.slice(0, 10)}...{walletClient.account.address.slice(-6)}
-                    </p>
-                  )}
+                  <input
+                    type="text"
+                    value={agentWallet}
+                    onChange={e => setAgentWallet(e.target.value)}
+                    placeholder="0x... (must be different from your connected wallet)"
+                    className="w-full bg-[#050810]/80 border border-white/10 rounded-xl px-4 py-3 text-white text-[14px] placeholder:text-white/30 focus:outline-none focus:border-white/30 font-mono"
+                  />
+                  <p className="text-[11px] text-amber-400/60 mt-1.5">
+                    ⚠ Must not be the same address as your connected wallet
+                  </p>
                 </>
               )}
             </div>

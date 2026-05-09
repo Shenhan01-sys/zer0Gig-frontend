@@ -110,7 +110,7 @@ export default function ArchitectureSection() {
           transition={{ duration: 0.5, delay: 0.2 }}
           className="text-[15px] text-white/40 text-center mb-20 max-w-lg mx-auto"
         >
-          Six layers of trustless infrastructure — from user intent to autonomous payout.
+          Four contracts deployed on 0G Newton Testnet (chainId 16602) — from user intent to autonomous payout.
         </motion.p>
 
         {/* Node diagram */}
@@ -145,7 +145,7 @@ export default function ArchitectureSection() {
             <ArchNode
               nodeRef={escrowRef}
               label="Progressive Escrow"
-              sublabel="0G Chain · Milestone payouts"
+              sublabel="ERC-8183 · Milestone payouts"
               color="#a855f7"
               size="lg"
               icon={
@@ -178,7 +178,7 @@ export default function ArchitectureSection() {
             <ArchNode
               nodeRef={registryRef}
               label="Agent Registry"
-              sublabel="ERC-721 identity"
+              sublabel="ERC-7857 iNFT"
               color="#f59e0b"
               size="sm"
               icon={

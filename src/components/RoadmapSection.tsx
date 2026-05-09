@@ -16,19 +16,19 @@ const CARDS = [
     badge: "ERC-7857",
     badgeBy: "0G Labs",
     title: "Intelligent NFT (iNFT)",
-    subtitle: "Self-Verifying Agent Identity",
+    subtitle: "Self-Verifying Agent Identity — Live",
     description:
-      "Upgrade AgentRegistry from ERC-721 to ERC-7857 — the AI agent NFT standard proposed by 0G Labs. Agent capability data becomes encrypted and cryptographically verifiable on transfer.",
-    currentLabel: "Current: ERC-721",
-    currentNote: "Already aligned — capabilityHash + eciesPublicKey mirror ERC-7857's IntelligentData model.",
+      "AgentRegistry implements ERC-7857 — the AI agent NFT standard proposed by 0G Labs. Capability data is encrypted, transfers are oracle-proven, and agents pack into 5 storage slots (down from 13).",
+    currentLabel: "Status: Deployed",
+    currentNote: "Live on 0G Newton Testnet — iTransfer / iClone with ECDSA proof, time-bounded authorizeUsage permissions, all production code paths.",
     gains: [
       { icon: "🔐", label: "Encrypted capability data", sub: "Model weights & skills never exposed on-chain" },
-      { icon: "🔄", label: "Proof-gated transfers", sub: "TEE/ZKP re-encryption on ownership change" },
-      { icon: "📋", label: "Usage authorization", sub: "License agents to multiple clients without transferring ownership" },
-      { icon: "🧬", label: "Agent cloning", sub: "iClone() — mint a verified copy for a new owner" },
+      { icon: "🔄", label: "Oracle-proven iTransfer", sub: "ECDSA signature gates every ownership change" },
+      { icon: "📋", label: "authorizeUsage()", sub: "Time-bounded licensing to multiple clients without transfer" },
+      { icon: "🧬", label: "iClone()", sub: "Mint a verified copy for a new owner with proof of provenance" },
     ],
     eipUrl: "https://eips.ethereum.org/EIPS/eip-7857",
-    eipStatus: "Draft · Jan 2025",
+    eipStatus: "Draft · Shipped",
   },
   {
     phase: "Phase 2",
@@ -39,19 +39,19 @@ const CARDS = [
     badge: "ERC-8183",
     badgeBy: "Virtuals Protocol + Ethereum Foundation dAI",
     title: "Agentic Commerce Protocol",
-    subtitle: "Standardized Job Escrow for Agent-to-Agent Hiring",
+    subtitle: "Standardized Job Escrow — Live",
     description:
-      "Align ProgressiveEscrow with ERC-8183 — the on-chain job primitive that enables any AI agent to hire another autonomously with cryptographic payment guarantees.",
-    currentLabel: "Current: Custom Escrow",
-    currentNote: "Already aligned — our 6-state job lifecycle mirrors ERC-8183's fund → submit → complete flow.",
+      "ProgressiveEscrow implements ERC-8183 — the on-chain job primitive that lets any AI agent hire another autonomously with cryptographic payment guarantees.",
+    currentLabel: "Status: Deployed",
+    currentNote: "postJob → submitProposal → acceptProposal → defineMilestones → releaseMilestone, plus the new cancelStaleJob() 7-day reclaim path. All on-chain.",
     gains: [
       { icon: "🤖", label: "Agent-to-agent hiring", sub: "Client can itself be an AI agent, no human needed" },
-      { icon: "🔌", label: "IACPHook composability", sub: "Before/after hooks on every job state transition" },
-      { icon: "⚖️", label: "Pluggable evaluator", sub: "AI judge, ZK verifier, DAO, or multisig as quality oracle" },
-      { icon: "🌐", label: "Cross-platform jobs", sub: "Interoperable with any ERC-8183 compliant marketplace" },
+      { icon: "🔌", label: "Milestone hook flow", sub: "Alignment attestation gates every fund release" },
+      { icon: "⚖️", label: "Pluggable evaluator", sub: "Alignment Node ECDSA proof verified on-chain" },
+      { icon: "🌐", label: "7-day stale reclaim", sub: "cancelStaleJob() returns escrow if an agent goes silent" },
     ],
     eipUrl: "https://eips.ethereum.org/EIPS/eip-8183",
-    eipStatus: "Draft · Feb 2026",
+    eipStatus: "Draft · Shipped",
   },
 ];
 
@@ -98,12 +98,12 @@ export default function RoadmapSection() {
           className="text-center mb-14"
         >
           {/* Pulse badge */}
-          <div className="inline-flex items-center gap-2 rounded-full border border-[#38bdf8]/30 bg-[#38bdf8]/8 px-3 py-1.5 text-[11px] font-bold text-[#38bdf8] uppercase tracking-widest backdrop-blur-md mb-5">
+          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-400/[0.08] px-3 py-1.5 text-[11px] font-bold text-emerald-400 uppercase tracking-widest backdrop-blur-md mb-5">
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#38bdf8] opacity-60" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#38bdf8]" />
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
             </span>
-            Post-Hackathon Roadmap
+            Standards Shipped
           </div>
 
           <h2
@@ -115,7 +115,7 @@ export default function RoadmapSection() {
             }}
           >
             <ShinyText
-              text="The Next Evolution of zer0Gig"
+              text="Built on the Latest Agent Standards"
               speed={3}
               color="rgba(255,255,255,0.85)"
               shineColor="#22d3ee"
@@ -125,8 +125,8 @@ export default function RoadmapSection() {
             />
           </h2>
           <p className="text-white/50 text-[15px] max-w-2xl mx-auto leading-relaxed">
-            After submission, we&apos;re upgrading to the latest Ethereum standards for AI agent commerce —
-            purpose-built for the agentic economy zer0Gig is building toward.
+            zer0Gig isn&apos;t aiming for the agentic economy — it&apos;s already running it.
+            Both ERC-7857 and ERC-8183 are deployed, tested, and minting on 0G Newton Testnet today.
           </p>
         </motion.div>
 
@@ -239,8 +239,8 @@ export default function RoadmapSection() {
           className="mt-10 text-center"
         >
           <p className="text-white/25 text-[12px] max-w-xl mx-auto leading-relaxed">
-            Both standards are currently in <span className="text-white/45">Draft</span> status on the Ethereum Improvement Process.
-            zer0Gig&apos;s current architecture is intentionally designed to align with them — the migration is additive, not a rewrite.
+            Both EIPs sit in <span className="text-white/45">Draft</span> status — and zer0Gig is already running them in production code paths.
+            That&apos;s not a roadmap claim; it&apos;s in the contract bytecode on chainId 16602.
           </p>
         </motion.div>
 

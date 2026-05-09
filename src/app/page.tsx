@@ -1,23 +1,23 @@
 import dynamic from "next/dynamic";
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
-import AgentLiveDemo from "@/components/AgentLiveDemo";
-import AgentCategories from "@/components/AgentCategories";
 import HowItWorks from "@/components/HowItWorks";
 import FeaturesGrid from "@/components/FeaturesGrid";
 // StatsBar removed: its hardcoded values (142 agents, 2400 jobs, 38K OG)
 // conflicted with HeroSection's live on-chain data. Hero now carries the
 // only canonical stats row.
+//
+// Sections retained in /components but unwired from page.tsx (kept for
+// possible reintroduction): AgentLiveDemo, AgentCategories, GameTheory,
+// AgentShowcase, ArchitectureSection, RoadmapSection.
 
 // Below-fold sections — lazily loaded to reduce initial bundle parse time
+const FullStackLive    = dynamic(() => import("@/components/FullStackLive"));
 const AgentCapabilities = dynamic(() => import("@/components/AgentCapabilities"));
-const GameTheory        = dynamic(() => import("@/components/GameTheory"));
 const ForAgentOwners   = dynamic(() => import("@/components/ForAgentOwners"));
-const AgentShowcase    = dynamic(() => import("@/components/AgentShowcase"),    { ssr: false });
 const IsometricAgent   = dynamic(() => import("@/components/IsometricAgent"),   { ssr: false });
-const ArchitectureSection = dynamic(() => import("@/components/ArchitectureSection"), { ssr: false });
+const AutonomousProof  = dynamic(() => import("@/components/AutonomousProof"));
 const FAQSection       = dynamic(() => import("@/components/FAQSection"));
-const RoadmapSection   = dynamic(() => import("@/components/RoadmapSection"));
 const CTASection       = dynamic(() => import("@/components/CTASection"));
 const Footer           = dynamic(() => import("@/components/Footer"));
 
@@ -26,18 +26,14 @@ export default function Home() {
     <main className="min-h-screen">
       <Navbar />
       <HeroSection />
-      <AgentLiveDemo />
-      <AgentCategories />
       <HowItWorks />
       <FeaturesGrid />
+      <FullStackLive />
       <AgentCapabilities />
-      <GameTheory />
+      <AutonomousProof />
       <ForAgentOwners />
-      <AgentShowcase />
       <IsometricAgent />
-      <ArchitectureSection />
       <FAQSection />
-      <RoadmapSection />
       <CTASection />
       <Footer />
     </main>

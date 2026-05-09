@@ -34,6 +34,7 @@ import { AgentStatsCard } from "@/components/subscriptions/AgentStatsCard";
 import AgentActivityByWallet from "@/components/jobs/AgentActivityByWallet";
 import JobChat from "@/components/jobs/JobChat";
 import MilestoneSubmitPanel from "@/components/jobs/MilestoneSubmitPanel";
+import StaleJobReclaimPanel from "@/components/jobs/StaleJobReclaimPanel";
 
 // ─── Status helpers ───────────────────────────────────────────────────────────
 // Job status enum: 0=OPEN, 1=PENDING_MILESTONES, 2=IN_PROGRESS, 3=COMPLETED, 4=CANCELLED, 5=PARTIALLY_DONE
@@ -875,6 +876,16 @@ function JobDetailInner({ jobId }: { jobId: number }) {
             </div>
           )}
         </>
+      )}
+
+      {/* ── Stale-job reclaim panel (client only, IN_PROGRESS, after grace) ── */}
+      {job.status === JOB_STATUS.IN_PROGRESS && job.client && (
+        <StaleJobReclaimPanel
+          jobId={BigInt(jobId)}
+          jobStatus={Number(job.status)}
+          client={job.client as `0x${string}`}
+          jobCreatedAt={job.createdAt ? Number(job.createdAt) : 0}
+        />
       )}
 
       {/* ── IN_PROGRESS / COMPLETED / PARTIALLY_DONE: milestone timeline ── */}

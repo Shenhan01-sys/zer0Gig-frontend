@@ -15,8 +15,9 @@ import BorderGlow from "./BorderGlow/BorderGlow";
 const NAV_LINKS = [
   { label: "Home",         href: "/"              },
   { label: "Marketplace",  href: "/marketplace"   },
+  { label: "Leaderboard",  href: "/leaderboard"   },
   { label: "How It Works", href: "/#how-it-works" },
-  { label: "Docs",         href: "/docs"          },
+  { label: "Docs",         href: "https://stylenecy.gitbook.io/zer0gig", external: true },
 ];
 
 // ── LandingNavbar ─────────────────────────────────────────────────────────────
@@ -128,7 +129,7 @@ export default function Navbar() {
       {/* ── Pill ──────────────────────────────────────────────────────────── */}
       <div
         ref={pillRef}
-        className="pointer-events-auto flex items-center gap-1.5 px-4 py-3 rounded-full border border-white/[0.09] bg-[#0d1525]/90 backdrop-blur-2xl shadow-[0_10px_48px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.06)]"
+        className="pointer-events-auto flex items-center gap-1.5 px-4 py-3 rounded-full border border-white/[0.09] bg-[#032A3D]/90 backdrop-blur-2xl shadow-[0_10px_48px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.06)]"
         style={{ opacity: 0 }}
       >
         {/* Logo */}
@@ -139,7 +140,7 @@ export default function Navbar() {
           className="mr-3 px-1 py-0.5 flex items-center select-none"
         >
           <span className="text-white text-[17px] font-semibold tracking-tight">
-            zer0<span className="text-[#38bdf8]">Gig</span>
+            zer0<span className="text-[#47A9CF]">Gig</span>
           </span>
         </Link>
 
@@ -152,20 +153,39 @@ export default function Navbar() {
             className="absolute top-1/2 -translate-y-1/2 h-[34px] rounded-full bg-white/[0.07] border border-white/[0.09] pointer-events-none"
             style={{ opacity: 0, left: 0, width: 70 }}
           />
-          {NAV_LINKS.map((link, i) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              ref={(el) => { linkRefs.current[i] = el; }}
-              onMouseEnter={() => setHoveredIdx(i)}
-              onMouseLeave={() => setHoveredIdx(null)}
-              className={`relative z-10 px-3.5 py-2 text-[14px] font-medium rounded-full whitespace-nowrap transition-colors duration-150 ${
-                i === activeIdx ? "text-white" : "text-white/45 hover:text-white/80"
-              }`}
-            >
-              {link.label}
-            </Link>
-          ))}
+          {NAV_LINKS.map((link, i) => {
+            const className = `relative z-10 px-3.5 py-2 text-[14px] font-medium rounded-full whitespace-nowrap transition-colors duration-150 ${
+              i === activeIdx ? "text-white" : "text-white/45 hover:text-white/80"
+            }`;
+            if (link.external) {
+              return (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  ref={(el) => { linkRefs.current[i] = el; }}
+                  onMouseEnter={() => setHoveredIdx(i)}
+                  onMouseLeave={() => setHoveredIdx(null)}
+                  className={className}
+                >
+                  {link.label}
+                </a>
+              );
+            }
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                ref={(el) => { linkRefs.current[i] = el; }}
+                onMouseEnter={() => setHoveredIdx(i)}
+                onMouseLeave={() => setHoveredIdx(null)}
+                className={className}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
         </div>
 
         <div className="hidden md:block w-px h-5 bg-white/[0.08] mx-3" />
@@ -189,7 +209,7 @@ export default function Navbar() {
               glowRadius={20}
               glowIntensity={0.8}
               coneSpread={30}
-              colors={["#38bdf8", "#22d3ee", "#4ade80"]}
+              colors={["#47A9CF", "#A6E0F4", "#4ade80"]}
               fillOpacity={0.3}
             >
               <button
@@ -224,18 +244,35 @@ export default function Navbar() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.97 }}
             transition={{ duration: 0.18, ease: [0.25, 0.4, 0.25, 1] }}
-            className="pointer-events-auto absolute top-[calc(100%+10px)] left-4 right-4 rounded-2xl border border-white/[0.08] bg-[#0d1525]/95 backdrop-blur-2xl shadow-[0_16px_48px_rgba(0,0,0,0.5)] p-3 flex flex-col gap-1"
+            className="pointer-events-auto absolute top-[calc(100%+10px)] left-4 right-4 rounded-2xl border border-white/[0.08] bg-[#032A3D]/95 backdrop-blur-2xl shadow-[0_16px_48px_rgba(0,0,0,0.5)] p-3 flex flex-col gap-1"
           >
-            {NAV_LINKS.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={() => setMobileOpen(false)}
-                className="px-4 py-3 rounded-xl text-[15px] font-medium text-white/60 hover:text-white hover:bg-white/[0.06] transition-all"
-              >
-                {link.label}
-              </Link>
-            ))}
+            {NAV_LINKS.map((link) => {
+              const cls = "px-4 py-3 rounded-xl text-[15px] font-medium text-white/60 hover:text-white hover:bg-white/[0.06] transition-all";
+              if (link.external) {
+                return (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setMobileOpen(false)}
+                    className={cls}
+                  >
+                    {link.label}
+                  </a>
+                );
+              }
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setMobileOpen(false)}
+                  className={cls}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
             <div className="h-px bg-white/[0.06] my-1" />
             {authenticated ? (
               <button
@@ -248,7 +285,7 @@ export default function Navbar() {
             ) : (
               <button
                 onClick={() => { setLoggingIn(true); login(); setMobileOpen(false); }}
-                className="px-4 py-3 rounded-xl text-[15px] font-semibold text-[#38bdf8] hover:bg-[#38bdf8]/10 transition-all text-left"
+                className="px-4 py-3 rounded-xl text-[15px] font-semibold text-[#47A9CF] hover:bg-[#47A9CF]/10 transition-all text-left"
               >
                 Connect Wallet
               </button>

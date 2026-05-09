@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, Suspense } from "react";
 import AppNavbar from "@/components/AppNavbar";
 import Footer from "@/components/Footer";
 import RoleSelectModal from "@/components/RoleSelectModal";
+import NetworkGuard from "@/components/NetworkGuard";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { usePrivy } from "@privy-io/react-auth";
@@ -168,12 +169,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       : null;
 
   return (
-    <>
+    <NetworkGuard>
       <RoleSelectModal isOpen={showRoleModal} onConfirmed={handleRoleConfirmed} />
 
-      <main className="min-h-screen bg-[#050810]">
+      <main className="min-h-screen flex flex-col bg-[#050810]">
         <AppNavbar />
-        <div className="pt-28 pb-16 px-6 max-w-7xl mx-auto">
+        <div className="flex-1 pt-28 pb-16 px-6 max-w-7xl mx-auto w-full">
 
           {/* Header */}
           <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -243,6 +244,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
         <Footer />
       </main>
-    </>
+    </NetworkGuard>
   );
 }

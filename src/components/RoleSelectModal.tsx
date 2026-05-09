@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRegisterUser, UserRole, USER_ROLES } from "@/hooks/useUserRegistry";
 import { ogNewton } from "@/lib/wagmi";
@@ -15,11 +15,16 @@ export default function RoleSelectModal({ isOpen, onConfirmed }: RoleSelectModal
   const [selected, setSelected] = useState<UserRole | null>(null);
   const [isSwitching, setIsSwitching] = useState(false);
   const { register, isPending, isConfirming, isConfirmed, error } = useRegisterUser();
+  const firedRef = useRef(false);
 
-  // Once tx is confirmed, bubble up to parent
-  if (isConfirmed && selected !== null) {
-    onConfirmed(selected);
-  }
+  // Once tx is confirmed, bubble up to parent — useEffect so it fires once, not on every render
+  useEffect(() => {
+    if (isConfirmed && selected !== null && !firedRef.current) {
+      firedRef.current = true;
+      onConfirmed(selected);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isConfirmed]);
 
   const handleConfirm = async () => {
     if (selected === null) return;
@@ -53,8 +58,7 @@ export default function RoleSelectModal({ isOpen, onConfirmed }: RoleSelectModal
       setIsSwitching(false);
     }
 
-    const roleNum = selected === USER_ROLES.FreelancerOwner ? 2 : 1;
-    register(roleNum as 1 | 2);
+    register(selected === USER_ROLES.FreelancerOwner ? 2 : 1);
   };
 
   const isLoading = isSwitching || isPending || isConfirming;

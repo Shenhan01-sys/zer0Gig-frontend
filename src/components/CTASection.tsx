@@ -8,9 +8,9 @@ export default function CTASection() {
   return (
     <section className="relative py-24 md:py-32 overflow-hidden">
       {/* Decorative glow orbs */}
-      <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-[400px] h-[400px] rounded-full bg-purple-500/[0.1] blur-[150px] pointer-events-none" />
-      <div className="absolute top-1/2 right-1/4 -translate-y-1/2 w-[400px] h-[400px] rounded-full bg-cyan-500/[0.08] blur-[150px] pointer-events-none" />
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[300px] h-[300px] rounded-full bg-blue-500/[0.06] blur-[100px] pointer-events-none" />
+      <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-[400px] h-[400px] rounded-full bg-[#09799E]/[0.12] blur-[150px] pointer-events-none" />
+      <div className="absolute top-1/2 right-1/4 -translate-y-1/2 w-[400px] h-[400px] rounded-full bg-[#47A9CF]/[0.10] blur-[150px] pointer-events-none" />
+      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[300px] h-[300px] rounded-full bg-[#A6E0F4]/[0.08] blur-[100px] pointer-events-none" />
 
       <div className="relative z-10 max-w-4xl mx-auto px-6 text-center">
         {/* Gradient border card */}
@@ -19,7 +19,7 @@ export default function CTASection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.7 }}
-          className="relative rounded-3xl p-[1px] bg-gradient-to-br from-cyan-500/30 via-purple-500/20 to-blue-500/30"
+          className="relative rounded-3xl p-[1px] bg-gradient-to-br from-[#47A9CF]/40 via-[#09799E]/30 to-[#A6E0F4]/30"
         >
           <div className="bg-black/90 backdrop-blur-xl rounded-3xl px-8 py-16 md:px-16 md:py-20">
             {/* Small decorative element */}
@@ -30,7 +30,7 @@ export default function CTASection() {
               transition={{ duration: 0.5, delay: 0.2 }}
               className="flex justify-center mb-6"
             >
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-400 to-purple-500 p-[1px]">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#47A9CF] to-[#09799E] p-[1px]">
                 <div className="w-full h-full rounded-2xl bg-black flex items-center justify-center">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-white">
                     <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
@@ -56,7 +56,7 @@ export default function CTASection() {
                 text="Ready to Build the Agentic Economy?"
                 speed={3}
                 color="rgba(255,255,255,0.85)"
-                shineColor="#22d3ee"
+                shineColor="#A6E0F4"
                 spread={110}
                 yoyo
                 className="text-3xl md:text-5xl font-medium"
@@ -92,11 +92,11 @@ export default function CTASection() {
               </div>
 
               {/* Secondary CTA */}
-              <Link href="/docs">
-                <button className="px-8 py-3 bg-[#0d1525]/80 border border-white/20 text-white text-[14px] font-medium rounded-full hover:bg-[#0d1525] hover:border-white/35 transition-all duration-200">
+              <a href="https://stylenecy.gitbook.io/zer0gig" target="_blank" rel="noopener noreferrer">
+                <button className="px-8 py-3 bg-[#032A3D]/80 border border-white/20 text-white text-[14px] font-medium rounded-full hover:bg-[#032A3D] hover:border-white/35 transition-all duration-200">
                   Read the Docs
                 </button>
-              </Link>
+              </a>
             </motion.div>
 
             {/* Hackathon badge */}

@@ -108,13 +108,13 @@ export default function MarketplacePage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#050810]">
+    <main className="min-h-screen flex flex-col bg-[#050810]">
       <AppNavbar />
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
-        className="pt-28 pb-16 px-6 max-w-7xl mx-auto"
+        className="flex-1 pt-28 pb-16 px-6 max-w-7xl mx-auto w-full"
       >
         {/* Page header */}
         <div className="mb-10">
@@ -158,7 +158,7 @@ export default function MarketplacePage() {
             {[1, 2, 3, 4, 5, 6].map((i) => (
               <div
                 key={i}
-                className="rounded-2xl border border-white/10 bg-[#0d1525]/90 p-6 animate-pulse"
+                className="h-[480px] rounded-2xl border border-white/10 bg-[#0d1525]/90 p-6 animate-pulse"
               >
                 <div className="w-12 h-12 rounded-full bg-white/5 mb-4" />
                 <div className="h-4 bg-white/5 rounded w-2/3 mb-2" />

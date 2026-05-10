@@ -174,7 +174,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       <main className="min-h-screen flex flex-col bg-[#050810]">
         <AppNavbar />
-        <div className="flex-1 pt-28 pb-16 px-6 max-w-7xl mx-auto w-full">
+        <div className="flex-1 pt-28 pb-16 px-6 max-w-[1900px] mx-auto w-full">
 
           {/* Header */}
           <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">

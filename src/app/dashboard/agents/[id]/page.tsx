@@ -509,10 +509,11 @@ export default function AgentDetailPage() {
 
   return (
     <RBACGuard>
-      <div className="flex flex-col xl:flex-row gap-6 items-start">
+      {/* overflow-x:clip prevents horizontal scroll without breaking sticky */}
+      <div className="flex flex-col xl:flex-row gap-6 items-start" style={{ overflowX: "clip" }}>
 
-      {/* ── Left column: main agent content ─────────────────────────────────── */}
-      <div className="flex-1 min-w-0 space-y-6">
+      {/* ── Left column: fixed 768px, never compressed by sidebar ───────────── */}
+      <div className="w-full xl:w-[768px] xl:flex-shrink-0 space-y-6">
         {/* Back navigation */}
         <Link href="/dashboard?tab=agents" className="flex items-center gap-2 text-white/40 hover:text-white/70 text-[13px] transition-colors">
           ← Back to My Agents
@@ -1191,7 +1192,7 @@ export default function AgentDetailPage() {
       </div>{/* end left column */}
 
       {/* ── Right column: neural map sticky sidebar ──────────────────────────── */}
-      <div className="w-full xl:w-[500px] flex-shrink-0 xl:sticky xl:top-28">
+      <div className="w-full xl:w-[1000px] xl:flex-shrink-0 xl:sticky xl:top-28">
         <motion.div
           initial={{ opacity: 0, x: 16 }}
           animate={{ opacity: 1, x: 0 }}

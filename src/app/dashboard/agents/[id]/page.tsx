@@ -704,15 +704,27 @@ export default function AgentDetailPage() {
         <AnimatePresence>
           {isEditing && (
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.25 }}
-              className="rounded-2xl border border-[#38bdf8]/20 bg-[#0d1525]/90 p-6 space-y-5"
+              initial={{ opacity: 0, y: -16, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.98 }}
+              transition={{ type: "spring", stiffness: 300, damping: 28, mass: 0.8 }}
+              className="rounded-2xl border border-[#38bdf8]/20 bg-[#0d1525]/90 p-6 space-y-5 overflow-hidden"
             >
-              <h2 className="text-[14px] font-semibold text-white/70 uppercase tracking-wider">Edit Agent Profile</h2>
+              <motion.h2
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.08, duration: 0.25 }}
+                className="text-[14px] font-semibold text-white/70 uppercase tracking-wider"
+              >
+                Edit Agent Profile
+              </motion.h2>
 
-              <div className="space-y-4">
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.12, duration: 0.28 }}
+                className="space-y-4"
+              >
                 <p className="text-[11px] text-white/30 uppercase tracking-wider">Off-Chain Profile (Supabase)</p>
                 <div className="grid grid-cols-1 gap-3">
                   <InputField label="Display Name" value={editDisplayName} onChange={setEditDisplayName} placeholder="Agent display name" />
@@ -747,9 +759,14 @@ export default function AgentDetailPage() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </motion.div>
 
-              <div className="space-y-4 pt-2 border-t border-white/5">
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.19, duration: 0.28 }}
+                className="space-y-4 pt-2 border-t border-white/5"
+              >
                 <p className="text-[11px] text-white/30 uppercase tracking-wider">On-Chain Skills</p>
                 <div className="flex flex-wrap gap-2 mb-3">
                   {onChainSkills.length === 0 && <span className="text-white/25 text-[12px]">No on-chain skills registered.</span>}
@@ -798,10 +815,15 @@ export default function AgentDetailPage() {
                     )}
                   </AnimatePresence>
                 </div>
-              </div>
+              </motion.div>
 
               {/* Custom Tools section */}
-              <div className="space-y-3 pt-2 border-t border-white/5">
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.26, duration: 0.28 }}
+                className="space-y-3 pt-2 border-t border-white/5"
+              >
                 <div className="flex items-center justify-between">
                   <p className="text-[11px] text-white/30 uppercase tracking-wider">Custom Tools (MCP / HTTP)</p>
                   <button
@@ -847,10 +869,15 @@ export default function AgentDetailPage() {
                     {toolsSaving ? "Saving…" : "Save Tools"}
                   </button>
                 )}
-              </div>
+              </motion.div>
 
               {/* Platform Skills (n8n, web search, etc.) */}
-              <div className="space-y-3 pt-2 border-t border-white/5">
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.33, duration: 0.28 }}
+                className="space-y-3 pt-2 border-t border-white/5"
+              >
                 <p className="text-[11px] text-white/30 uppercase tracking-wider">Platform Skills</p>
                 <PreBuiltToolsGrid
                   selectedSkills={editPlatformSkills}
@@ -871,9 +898,14 @@ export default function AgentDetailPage() {
                 >
                   {skillsSaving ? "Saving…" : "Save Skills"}
                 </button>
-              </div>
+              </motion.div>
 
-              <div className="flex items-center justify-between pt-2 border-t border-white/5">
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.40, duration: 0.28 }}
+                className="flex items-center justify-between pt-2 border-t border-white/5"
+              >
                 <div>
                   <p className="text-white/60 text-[13px]">Agent Status</p>
                   <p className="text-white/30 text-[11px]">{profile.isActive ? "Agent is accepting jobs" : "Agent is paused"}</p>
@@ -888,7 +920,7 @@ export default function AgentDetailPage() {
                 >
                   {profile.isActive ? "Pause Agent" : "Activate Agent"}
                 </button>
-              </div>
+              </motion.div>
 
               <AnimatePresence>
                 {editError && (

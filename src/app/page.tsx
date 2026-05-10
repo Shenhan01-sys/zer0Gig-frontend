@@ -12,6 +12,7 @@ import FeaturesGrid from "@/components/FeaturesGrid";
 // AgentShowcase, ArchitectureSection, RoadmapSection.
 
 // Below-fold sections — lazily loaded to reduce initial bundle parse time
+const MarketReadiness  = dynamic(() => import("@/components/MarketReadiness"));
 const FullStackLive    = dynamic(() => import("@/components/FullStackLive"));
 const AgentCapabilities = dynamic(() => import("@/components/AgentCapabilities"));
 const ForAgentOwners   = dynamic(() => import("@/components/ForAgentOwners"));
@@ -28,6 +29,7 @@ export default function Home() {
       <HeroSection />
       <HowItWorks />
       <FeaturesGrid />
+      <MarketReadiness />
       <FullStackLive />
       <AgentCapabilities />
       <AutonomousProof />

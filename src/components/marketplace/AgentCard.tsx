@@ -199,30 +199,41 @@ export function AgentCard({ agent, profile, index, isMyAgent: isMyAgentProp }: A
               )}
             </div>
 
-            {/* Footer actions: Show detail + Hire/Subscribe */}
+            {/* Footer actions */}
             <div className="mt-auto flex items-center gap-2">
-              <button
-                onClick={() => { setDir(1); setShowDetail(true); }}
-                className="flex items-center gap-1 px-3 py-2 rounded-full border border-white/15 text-white/60 hover:text-white hover:border-white/30 text-[12px] font-medium transition-colors"
-                aria-label="Show full details"
-              >
-                Show detail
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
-              <Link
-                href={`/dashboard/create-job?agent=${agent.agentId}`}
-                className="flex-1 px-4 py-2 bg-white text-black text-[13px] font-medium rounded-full text-center hover:bg-white/90 transition-colors"
-              >
-                Hire
-              </Link>
-              <Link
-                href={`/dashboard/create-subscription?agent=${agent.agentId}`}
-                className="flex-1 px-4 py-2 bg-[#0d1525]/90 border border-white/20 text-white text-[13px] font-medium rounded-full text-center hover:border-white/40 transition-colors"
-              >
-                Subscribe
-              </Link>
+              {isMyAgent ? (
+                <Link
+                  href={`/dashboard/agents/${agent.agentId}`}
+                  className="flex-1 px-4 py-2 bg-[#0d1525]/90 border border-[#38bdf8]/20 text-[#38bdf8] text-[13px] font-medium rounded-full text-center hover:border-[#38bdf8]/40 transition-colors"
+                >
+                  Manage Agent
+                </Link>
+              ) : (
+                <>
+                  <button
+                    onClick={() => { setDir(1); setShowDetail(true); }}
+                    className="flex items-center gap-1 px-3 py-2 rounded-full border border-white/15 text-white/60 hover:text-white hover:border-white/30 text-[12px] font-medium transition-colors"
+                    aria-label="Show full details"
+                  >
+                    Show detail
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                  <Link
+                    href={`/dashboard/create-job?agent=${agent.agentId}`}
+                    className="flex-1 px-4 py-2 bg-white text-black text-[13px] font-medium rounded-full text-center hover:bg-white/90 transition-colors"
+                  >
+                    Hire
+                  </Link>
+                  <Link
+                    href={`/dashboard/create-subscription?agent=${agent.agentId}`}
+                    className="flex-1 px-4 py-2 bg-[#0d1525]/90 border border-white/20 text-white text-[13px] font-medium rounded-full text-center hover:border-white/40 transition-colors"
+                  >
+                    Subscribe
+                  </Link>
+                </>
+              )}
             </div>
           </motion.div>
         ) : (
@@ -306,14 +317,16 @@ export function AgentCard({ agent, profile, index, isMyAgent: isMyAgentProp }: A
                 href={`/dashboard/agents/${agent.agentId}`}
                 className="flex-1 px-3 py-2 border border-white/15 text-white/70 text-[12px] font-medium rounded-full text-center hover:border-white/30 hover:text-white transition-colors"
               >
-                View Full Profile
+                {isMyAgent ? "Manage Agent" : "View Full Profile"}
               </Link>
-              <Link
-                href={`/dashboard/create-job?agent=${agent.agentId}`}
-                className="flex-1 px-3 py-2 bg-white text-black text-[12px] font-medium rounded-full text-center hover:bg-white/90 transition-colors"
-              >
-                Hire Agent
-              </Link>
+              {!isMyAgent && (
+                <Link
+                  href={`/dashboard/create-job?agent=${agent.agentId}`}
+                  className="flex-1 px-3 py-2 bg-white text-black text-[12px] font-medium rounded-full text-center hover:bg-white/90 transition-colors"
+                >
+                  Hire Agent
+                </Link>
+              )}
             </div>
           </motion.div>
         )}

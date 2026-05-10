@@ -10,7 +10,7 @@ import { useAgentProfile as useSupabaseAgentProfile } from "@/hooks/useAgentProf
 import { useAgentSkills, ALL_SKILLS, SKILL_LABELS } from "@/hooks/useAgentManagement";
 import { useAgentManagement } from "@/hooks/useAgentManagement";
 import { useUpsertAgentProfile } from "@/hooks/useAgentProfile";
-import { useWalletClient } from "wagmi";
+import { useWalletClient, useAccount } from "wagmi";
 import { formatOG, avatarGradient } from "@/lib/utils";
 import Image from "next/image";
 import { parseContractError } from "@/lib/utils";
@@ -124,7 +124,8 @@ export default function AgentDetailPage() {
   const agentId = BigInt(params?.id as string);
   const agentIdNum = Number(agentId);
   const { data: walletClient } = useWalletClient();
-  const connectedWallet = walletClient?.account.address?.toLowerCase();
+  const { address: accountAddress } = useAccount();
+  const connectedWallet = accountAddress?.toLowerCase();
 
   const { data: profileRaw, isLoading: onChainLoading } = useOnChainAgentProfile(agentId);
   const { profile: supabaseProfile } = useSupabaseAgentProfile(agentIdNum);

@@ -212,12 +212,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   + New Job
                 </Link>
               )}
-              <Link
-                href="/dashboard/create-subscription"
-                className="px-4 py-2 bg-[#0d1525]/90 border border-white/20 text-white text-[13px] font-medium rounded-full hover:border-white/40 transition-colors"
-              >
-                + Subscribe
-              </Link>
+              {resolvedRole !== UserRole.FreelancerOwner && (
+                <Link
+                  href="/dashboard/create-subscription"
+                  className="px-4 py-2 bg-[#0d1525]/90 border border-white/20 text-white text-[13px] font-medium rounded-full hover:border-white/40 transition-colors"
+                >
+                  + Subscribe
+                </Link>
+              )}
               {resolvedRole === UserRole.FreelancerOwner && (
                 <Link
                   href="/dashboard/register-agent"

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
+import { supabase } from "@/lib/supabase";
 import { useAgentProfile as useOnChainAgentProfile } from "@/hooks/useAgentRegistry";
 import { useAgentProfile as useSupabaseAgentProfile } from "@/hooks/useAgentProfile";
 import { useAgentSkills, ALL_SKILLS, SKILL_LABELS } from "@/hooks/useAgentManagement";
@@ -21,6 +22,7 @@ import {
 import RBACGuard from "@/components/RBACGuard";
 import ConnectTelegramButton from "@/components/ConnectTelegramButton";
 import CustomToolModal, { type ToolConfig } from "@/components/CustomToolModal";
+import PreBuiltToolsGrid from "@/components/PreBuiltToolsGrid";
 import AgentStoragePanel from "@/components/AgentStoragePanel";
 import NeuralNetwork3D, { type ActivityEntry } from "@/components/agents/NeuralNetwork3D";
 import AgentPortfolio from "@/components/agents/AgentPortfolio";
@@ -160,6 +162,11 @@ export default function AgentDetailPage() {
   const [toolModal, setToolModal] = useState<{ mode: "add" | "edit"; tool?: ToolConfig } | null>(null);
   const [toolsSaving, setToolsSaving] = useState(false);
 
+  // ── platform skills edit ────────────────────────────────────────────────────
+  const [editPlatformSkills, setEditPlatformSkills] = useState<string[]>([]);
+  const [editSkillConfigs, setEditSkillConfigs] = useState<Record<string, Record<string, string>>>({});
+  const [skillsSaving, setSkillsSaving] = useState(false);
+
   // ── erc-7857 action panels ──────────────────────────────────────────────────
   const [activeAction, setActiveAction] = useState<ActionTab>(null);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -230,8 +237,22 @@ export default function AgentDetailPage() {
             : {}),
         } : {}),
       })));
+
+      // Load current agent_skills (platform skill configs)
+      supabase
+        .from("agent_skills")
+        .select("skill_id, config, is_active")
+        .eq("agent_id", agentIdNum)
+        .then(({ data }) => {
+          if (data) {
+            setEditPlatformSkills(data.filter(s => s.is_active).map(s => s.skill_id));
+            const configs: Record<string, Record<string, string>> = {};
+            data.forEach((s: any) => { if (s.config) configs[s.skill_id] = s.config; });
+            setEditSkillConfigs(configs);
+          }
+        });
     }
-  }, [supabaseProfile]);
+  }, [supabaseProfile, agentIdNum]);
 
   // Tools extracted from supabase metadata for the neural map
   const displayTools = useMemo(() => {
@@ -324,6 +345,20 @@ export default function AgentDetailPage() {
       setEditError(err.message || "Failed to save tools");
     } finally {
       setToolsSaving(false);
+    }
+  };
+
+  const saveSkillConfigs = async () => {
+    setSkillsSaving(true);
+    setEditError(null);
+    try {
+      await upsertProfile(agentIdNum, profile?.owner || connectedWallet || "", {}, editPlatformSkills, editSkillConfigs);
+      setEditSuccess(true);
+      setTimeout(() => setEditSuccess(false), 2000);
+    } catch (err: any) {
+      setEditError(err.message || "Failed to save skill configs");
+    } finally {
+      setSkillsSaving(false);
     }
   };
 
@@ -811,6 +846,30 @@ export default function AgentDetailPage() {
                     {toolsSaving ? "Saving…" : "Save Tools"}
                   </button>
                 )}
+              </div>
+
+              {/* Platform Skills (n8n, web search, etc.) */}
+              <div className="space-y-3 pt-2 border-t border-white/5">
+                <p className="text-[11px] text-white/30 uppercase tracking-wider">Platform Skills</p>
+                <PreBuiltToolsGrid
+                  selectedSkills={editPlatformSkills}
+                  skillConfigs={editSkillConfigs}
+                  onToggle={skillId =>
+                    setEditPlatformSkills(prev =>
+                      prev.includes(skillId) ? prev.filter(s => s !== skillId) : [...prev, skillId]
+                    )
+                  }
+                  onConfigSave={(skillId, config) =>
+                    setEditSkillConfigs(prev => ({ ...prev, [skillId]: config }))
+                  }
+                />
+                <button
+                  onClick={saveSkillConfigs}
+                  disabled={skillsSaving}
+                  className="w-full py-2 rounded-lg bg-[#38bdf8]/10 border border-[#38bdf8]/25 text-[#38bdf8] text-[12px] font-medium hover:bg-[#38bdf8]/15 disabled:opacity-40 transition-all"
+                >
+                  {skillsSaving ? "Saving…" : "Save Skills"}
+                </button>
               </div>
 
               <div className="flex items-center justify-between pt-2 border-t border-white/5">

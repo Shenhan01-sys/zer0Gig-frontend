@@ -23,6 +23,7 @@ import ConnectTelegramButton from "@/components/ConnectTelegramButton";
 import CustomToolModal, { type ToolConfig } from "@/components/CustomToolModal";
 import AgentStoragePanel from "@/components/AgentStoragePanel";
 import NeuralNetwork3D, { type ActivityEntry } from "@/components/agents/NeuralNetwork3D";
+import AgentPortfolio from "@/components/agents/AgentPortfolio";
 import CornerBrackets from "@/components/ui/CornerBrackets";
 import ReputationRadar from "@/components/agents/ReputationRadar";
 import JobOrbitCarousel from "@/components/agents/JobOrbitCarousel";
@@ -1219,6 +1220,34 @@ export default function AgentDetailPage() {
             activityLog={activityLog}
           />
         </motion.div>
+
+        {/* ── Portfolio section ──────────────────────────────────────────── */}
+        {agentIdNum && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="mt-4 rounded-2xl border border-white/[0.08] bg-[#060913] overflow-hidden"
+          >
+            <div className="px-4 py-3 border-b border-white/[0.06] flex items-center justify-between">
+              <div>
+                <h3 className="text-[12px] font-mono font-bold text-white/70 uppercase tracking-widest">
+                  Activity
+                </h3>
+                <p className="text-[10px] text-white/25 mt-0.5">
+                  Autonomous cycles · all time
+                </p>
+              </div>
+              <div
+                className="px-2 py-0.5 rounded text-[9px] font-mono"
+                style={{ background: "rgba(52,211,153,0.08)", border: "1px solid rgba(52,211,153,0.2)", color: "#34d399" }}
+              >
+                ON-CHAIN PROOF
+              </div>
+            </div>
+            <AgentPortfolio agentId={agentIdNum} hideEarnings />
+          </motion.div>
+        )}
       </div>{/* end right column */}
 
       </div>{/* end two-column wrapper */}

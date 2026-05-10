@@ -120,17 +120,17 @@ const ACTION_TABS: { id: ActionTab; label: string; icon: React.ReactNode; desc: 
 // ─── edit panel animation variants ──────────────────────────────────────────
 
 const editPanelVariants = {
-  hidden: { opacity: 0, y: -20, scale: 0.97 },
+  hidden: { opacity: 0, scale: 0.97 },
   visible: {
-    opacity: 1, y: 0, scale: 1,
-    transition: { type: "spring" as const, stiffness: 280, damping: 26, mass: 0.9, staggerChildren: 0.09, delayChildren: 0.05 },
+    opacity: 1, scale: 1,
+    transition: { type: "spring" as const, stiffness: 300, damping: 28, staggerChildren: 0.1, delayChildren: 0.05 },
   },
-  exit: { opacity: 0, y: -14, scale: 0.97, transition: { duration: 0.2, ease: "easeIn" } },
+  exit: { opacity: 0, scale: 0.97, transition: { duration: 0.18, ease: "easeIn" } },
 };
 
 const editSectionVariants = {
-  hidden: { opacity: 0, y: 28, scale: 0.96 },
-  visible: { opacity: 1, y: 0, scale: 1, transition: { type: "spring" as const, stiffness: 260, damping: 22 } },
+  hidden: { opacity: 0, y: 40, scale: 0.95 },
+  visible: { opacity: 1, y: 0, scale: 1, transition: { type: "spring" as const, stiffness: 240, damping: 20 } },
 };
 
 // ─── main page ────────────────────────────────────────────────────────────────

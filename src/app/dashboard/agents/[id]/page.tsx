@@ -117,6 +117,22 @@ const ACTION_TABS: { id: ActionTab; label: string; icon: React.ReactNode; desc: 
   },
 ];
 
+// ─── edit panel animation variants ──────────────────────────────────────────
+
+const editPanelVariants = {
+  hidden: { opacity: 0, y: -20, scale: 0.97 },
+  visible: {
+    opacity: 1, y: 0, scale: 1,
+    transition: { type: "spring" as const, stiffness: 280, damping: 26, mass: 0.9, staggerChildren: 0.09, delayChildren: 0.05 },
+  },
+  exit: { opacity: 0, y: -14, scale: 0.97, transition: { duration: 0.2, ease: "easeIn" } },
+};
+
+const editSectionVariants = {
+  hidden: { opacity: 0, y: 28, scale: 0.96 },
+  visible: { opacity: 1, y: 0, scale: 1, transition: { type: "spring" as const, stiffness: 260, damping: 22 } },
+};
+
 // ─── main page ────────────────────────────────────────────────────────────────
 
 export default function AgentDetailPage() {
@@ -704,27 +720,20 @@ export default function AgentDetailPage() {
         <AnimatePresence>
           {isEditing && (
             <motion.div
-              initial={{ opacity: 0, y: -16, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -10, scale: 0.98 }}
-              transition={{ type: "spring", stiffness: 300, damping: 28, mass: 0.8 }}
+              variants={editPanelVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
               className="rounded-2xl border border-[#38bdf8]/20 bg-[#0d1525]/90 p-6 space-y-5 overflow-hidden"
             >
               <motion.h2
-                initial={{ opacity: 0, x: -8 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.08, duration: 0.25 }}
+                variants={editSectionVariants}
                 className="text-[14px] font-semibold text-white/70 uppercase tracking-wider"
               >
                 Edit Agent Profile
               </motion.h2>
 
-              <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.12, duration: 0.28 }}
-                className="space-y-4"
-              >
+              <motion.div variants={editSectionVariants} className="space-y-4">
                 <p className="text-[11px] text-white/30 uppercase tracking-wider">Off-Chain Profile (Supabase)</p>
                 <div className="grid grid-cols-1 gap-3">
                   <InputField label="Display Name" value={editDisplayName} onChange={setEditDisplayName} placeholder="Agent display name" />
@@ -762,9 +771,7 @@ export default function AgentDetailPage() {
               </motion.div>
 
               <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.19, duration: 0.28 }}
+                variants={editSectionVariants}
                 className="space-y-4 pt-2 border-t border-white/5"
               >
                 <p className="text-[11px] text-white/30 uppercase tracking-wider">On-Chain Skills</p>
@@ -819,9 +826,7 @@ export default function AgentDetailPage() {
 
               {/* Custom Tools section */}
               <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.26, duration: 0.28 }}
+                variants={editSectionVariants}
                 className="space-y-3 pt-2 border-t border-white/5"
               >
                 <div className="flex items-center justify-between">
@@ -873,9 +878,7 @@ export default function AgentDetailPage() {
 
               {/* Platform Skills (n8n, web search, etc.) */}
               <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.33, duration: 0.28 }}
+                variants={editSectionVariants}
                 className="space-y-3 pt-2 border-t border-white/5"
               >
                 <p className="text-[11px] text-white/30 uppercase tracking-wider">Platform Skills</p>
@@ -901,9 +904,7 @@ export default function AgentDetailPage() {
               </motion.div>
 
               <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.40, duration: 0.28 }}
+                variants={editSectionVariants}
                 className="flex items-center justify-between pt-2 border-t border-white/5"
               >
                 <div>

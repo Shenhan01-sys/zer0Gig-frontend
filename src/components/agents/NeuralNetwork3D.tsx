@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 
 // ── CSS keyframe animations ───────────────────────────────────────────────────
 const globalStyles = `
@@ -26,7 +26,7 @@ const globalStyles = `
 
 // ── Color palettes ────────────────────────────────────────────────────────────
 const PALETTES = {
-  blue:    {
+  blue: {
     top:  { top: "#38bdf8", south: "#0284c7", east: "#0369a1" },
     base: { top: "#1e3a8a", south: "#172554", east: "#1e40af" },
   },
@@ -35,50 +35,47 @@ const PALETTES = {
     base:    { top: "#064e3b", south: "#022c22", east: "#065f46" },
     coreTop: { top: "#6ee7b7", south: "#10b981", east: "#059669" },
   },
-  purple:  {
+  purple: {
     top:  { top: "#c084fc", south: "#7e22ce", east: "#6b21a8" },
     base: { top: "#4c1d95", south: "#2e1065", east: "#5b21b6" },
   },
-  slate:   {
+  slate: {
     top:  { top: "#94a3b8", south: "#475569", east: "#334155" },
     base: { top: "#1e293b", south: "#0f172a", east: "#020617" },
   },
-  cyan:    {
+  cyan: {
     top:  { top: "#67e8f9", south: "#0891b2", east: "#0e7490" },
     base: { top: "#164e63", south: "#083344", east: "#0c4a6e" },
+  },
+  red: {
+    top:  { top: "#f87171", south: "#dc2626", east: "#b91c1c" },
+    base: { top: "#7f1d1d", south: "#450a0a", east: "#991b1b" },
+  },
+  amber: {
+    top:  { top: "#fbbf24", south: "#b45309", east: "#92400e" },
+    base: { top: "#78350f", south: "#451a03", east: "#7c2d12" },
   },
 } as const;
 type PaletteKey = keyof typeof PALETTES;
 
-// ── Graph types ───────────────────────────────────────────────────────────────
-interface GraphNode {
-  id: string;
-  x: number;
-  y: number;
-  label?: string;
-  palette: PaletteKey;
-  delay: number;
-  scale: number;
-  isCore?: boolean;
-  isActive: boolean;
-}
-
-interface GraphEdge {
-  from: string;
-  to: string;
-  speed: string;
-  delay: string;
-  isActive: boolean;
-}
-
-// ── Activity feed helpers ─────────────────────────────────────────────────────
+// ── Activity helpers ──────────────────────────────────────────────────────────
 export interface ActivityEntry {
   id?: number;
+  job_id?: number;
   phase: string;
   message: string;
   created_at: string;
   agent_wallet?: string;
 }
+
+const PHASE_PALETTE: Record<string, PaletteKey> = {
+  processing:        "cyan",
+  completed:         "emerald",
+  error:             "red",
+  downloading_brief: "blue",
+  uploading:         "purple",
+  submitting:        "amber",
+};
 
 const PHASE_COLORS: Record<string, string> = {
   processing:        "#38bdf8",
@@ -86,7 +83,7 @@ const PHASE_COLORS: Record<string, string> = {
   error:             "#f87171",
   downloading_brief: "#818cf8",
   uploading:         "#c084fc",
-  submitting:        "#fb923c",
+  submitting:        "#fbbf24",
 };
 
 function timeAgo(iso: string): string {
@@ -99,6 +96,28 @@ function timeAgo(iso: string): string {
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
+// ── Graph types ───────────────────────────────────────────────────────────────
+interface GraphNode {
+  id: string;
+  x: number;
+  y: number;
+  label?: string;
+  palette: PaletteKey;
+  delay: number;
+  scale: number;
+  isCore?: boolean;
+  isActive: boolean;
+  activityEntry?: ActivityEntry;
+}
+
+interface GraphEdge {
+  from: string;
+  to: string;
+  speed: string;
+  delay: string;
+  isActive: boolean;
+}
+
 // ── Public props ──────────────────────────────────────────────────────────────
 export interface NeuralNetwork3DProps {
   agentName?: string;
@@ -106,14 +125,11 @@ export interface NeuralNetwork3DProps {
   skills?: string[];
   subscriptions?: { id: string | number; status: string }[];
   activityLog?: ActivityEntry[];
-  compact?: boolean;
 }
 
 // ── Layout constants ──────────────────────────────────────────────────────────
 const CORE_POS = { x: 468, y: 468 };
 
-// These positions mirror the original static design's m1/m2/m3/m4,
-// which were tuned for the rotateX(60deg) rotateZ(-45deg) projection.
 const AGG_BY_COUNT: Record<number, { x: number; y: number }[]> = {
   1: [{ x: 468, y: 268 }],
   2: [{ x: 268, y: 268 }, { x: 668, y: 268 }],
@@ -121,8 +137,6 @@ const AGG_BY_COUNT: Record<number, { x: number; y: number }[]> = {
   4: [{ x: 268, y: 268 }, { x: 668, y: 268 }, { x: 268, y: 668 }, { x: 668, y: 668 }],
 };
 
-// Spread `count` tiny nodes in a radial fan from (cx, cy) pointing away from CORE_POS.
-// spread of 0.6π keeps outer nodes well inside the 0-950 canvas bounds.
 function radialFan(cx: number, cy: number, count: number): { x: number; y: number }[] {
   if (count === 0) return [];
   const base = Math.atan2(cy - CORE_POS.y, cx - CORE_POS.x);
@@ -144,11 +158,12 @@ function buildGraph(
   tools: { name: string; type: string }[],
   skills: string[],
   subscriptions: { id: string | number; status: string }[],
+  activityLog: ActivityEntry[],
 ): { nodes: GraphNode[]; edges: GraphEdge[] } {
   const nodes: GraphNode[] = [];
   const edges: GraphEdge[] = [];
 
-  // Core — always present
+  // Core node
   nodes.push({
     id: "core", x: CORE_POS.x, y: CORE_POS.y,
     label: agentName.length > 16 ? `${agentName.slice(0, 13)}…` : agentName,
@@ -161,7 +176,6 @@ function buildGraph(
   }
 
   const cats: Cat[] = [];
-
   const cappedTools = tools.slice(0, 8);
   const cappedSkills = skills.slice(0, 8);
   const cappedSubs = subscriptions.slice(0, 8);
@@ -187,7 +201,6 @@ function buildGraph(
       })),
     });
 
-  // Fall back to decorative placeholder nodes when the agent has no registered data yet
   const activeCats: Cat[] = cats.length > 0 ? cats : [
     { id: "agg_c1", label: "COMPUTE", palette: "blue",   items: Array.from({ length: 4 }, (_, i) => ({ id: `fn_c1_${i}`, isActive: false })) },
     { id: "agg_c2", label: "MEMORY",  palette: "blue",   items: Array.from({ length: 3 }, (_, i) => ({ id: `fn_c2_${i}`, isActive: false })) },
@@ -205,11 +218,8 @@ function buildGraph(
       id: cat.id, x: slot.x, y: slot.y, label: cat.label,
       palette: cat.palette, delay: ci * 0.3, scale: 1, isActive: aggActive,
     });
-
-    // Aggregator → core edge; active if any child is active
     edges.push({ from: cat.id, to: "core", speed: "2s", delay: `${ci * 0.5}s`, isActive: aggActive });
 
-    // Tiny nodes fanned around the aggregator
     const positions = radialFan(slot.x, slot.y, cat.items.length);
     cat.items.forEach((item, ii) => {
       const pos = positions[ii];
@@ -222,7 +232,6 @@ function buildGraph(
         delay: ((ci * 8 + ii) * 0.137) % 1.5,
         scale: 0.5, isActive: item.isActive,
       });
-
       edges.push({
         from: item.id, to: cat.id, speed: "1.5s",
         delay: `${((ii * 0.2) % 1.2).toFixed(1)}s`, isActive: item.isActive,
@@ -230,7 +239,7 @@ function buildGraph(
     });
   });
 
-  // Cross-connections between neighbouring aggregators (decorative)
+  // Cross-connections between neighbouring aggregators
   for (let i = 0; i < activeCats.length - 1; i++) {
     edges.push({
       from: activeCats[i].id, to: activeCats[i + 1].id,
@@ -238,18 +247,53 @@ function buildGraph(
     });
   }
 
-  // A few active tiny-node → core shortcuts for visual richness
-  const activeTiny = nodes.filter(n => !n.isCore && n.scale === 0.5 && n.isActive);
-  const crossPicks = Math.min(3, Math.floor(activeTiny.length / 3));
-  for (let i = 0; i < crossPicks; i++) {
-    const pick = activeTiny[i * Math.floor(activeTiny.length / Math.max(1, crossPicks))];
+  // ── Activity nodes: orbit around CORE ────────────────────────────────────
+  const cappedActivity = activityLog.slice(0, 24);
+  const totalAct = cappedActivity.length;
+
+  cappedActivity.forEach((entry, i) => {
+    // Spread evenly around CORE in a loose orbit, 3 concentric rings
+    const angle = (i / totalAct) * 2 * Math.PI;
+    const ring = i % 3; // 0, 1, 2 → radii 140, 165, 190
+    const r = 140 + ring * 25;
+    const cx = Math.round(Math.max(60, Math.min(880, CORE_POS.x + Math.cos(angle) * r)));
+    const cy = Math.round(Math.max(60, Math.min(880, CORE_POS.y + Math.sin(angle) * r)));
+
+    const ageMs = Date.now() - new Date(entry.created_at).getTime();
+    const isRecent = ageMs < 3_600_000; // within 1 hour = active
+
+    const palette: PaletteKey = PHASE_PALETTE[entry.phase] ?? "slate";
+
+    nodes.push({
+      id: `act_${i}`,
+      x: cx, y: cy,
+      palette,
+      delay: (i * 0.11) % 2,
+      scale: 0.4,
+      isActive: isRecent,
+      activityEntry: entry,
+    });
+
+    edges.push({
+      from: `act_${i}`,
+      to: "core",
+      speed: isRecent ? "1.8s" : "4s",
+      delay: `${(i * 0.13).toFixed(1)}s`,
+      isActive: isRecent,
+    });
+  });
+
+  // A few active activity-node → aggregator shortcuts for visual richness
+  const activeActNodes = nodes.filter(n => n.activityEntry && n.isActive);
+  activeCats.slice(0, 2).forEach((cat, ci) => {
+    const pick = activeActNodes[ci];
     if (pick) {
       edges.push({
-        from: pick.id, to: "core", speed: "2.5s",
-        delay: `${(i * 0.6).toFixed(1)}s`, isActive: true,
+        from: pick.id, to: cat.id,
+        speed: "2.5s", delay: `${(ci * 0.4).toFixed(1)}s`, isActive: true,
       });
     }
-  }
+  });
 
   return { nodes, edges };
 }
@@ -282,6 +326,74 @@ function IsometricSlab({
   );
 }
 
+// ── Activity popup ─────────────────────────────────────────────────────────────
+function ActivityPopup({
+  entry,
+  onClose,
+}: {
+  entry: ActivityEntry;
+  onClose: () => void;
+}) {
+  const color = PHASE_COLORS[entry.phase] ?? "#94a3b8";
+  return (
+    <div
+      className="absolute inset-0 z-50 flex items-center justify-center"
+      style={{ background: "rgba(6,9,19,0.75)", backdropFilter: "blur(4px)" }}
+      onClick={onClose}
+    >
+      <div
+        className="relative mx-4 rounded-2xl border bg-[#0a0f1f] shadow-[0_30px_80px_rgba(0,0,0,0.9)] max-w-[340px] w-full"
+        style={{ borderColor: `${color}40` }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b" style={{ borderColor: `${color}20` }}>
+          <div className="flex items-center gap-2.5">
+            <div
+              className="w-2 h-2 rounded-full"
+              style={{ background: color, boxShadow: `0 0 8px ${color}` }}
+            />
+            <span
+              className="text-[11px] font-mono font-bold uppercase tracking-[0.2em]"
+              style={{ color }}
+            >
+              {entry.phase.replace(/_/g, " ")}
+            </span>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-white/30 hover:text-white/70 transition-colors text-lg leading-none"
+          >
+            ×
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="px-5 py-4 space-y-3">
+          <p className="text-[13px] text-white/80 leading-relaxed">
+            {entry.message}
+          </p>
+
+          <div className="grid grid-cols-2 gap-2 pt-1">
+            <div className="rounded-lg bg-white/[0.03] border border-white/[0.06] px-3 py-2">
+              <p className="text-[9px] text-white/30 uppercase tracking-wider mb-0.5">Time</p>
+              <p className="text-[11px] text-white/60 font-mono">{timeAgo(entry.created_at)}</p>
+            </div>
+            {entry.job_id && (
+              <div className="rounded-lg bg-white/[0.03] border border-white/[0.06] px-3 py-2">
+                <p className="text-[9px] text-white/30 uppercase tracking-wider mb-0.5">Job ID</p>
+                <p className="text-[11px] text-white/60 font-mono">#{entry.job_id}</p>
+              </div>
+            )}
+          </div>
+
+          <p className="text-[9px] text-white/20 text-center pt-1">click outside to close</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Main export ───────────────────────────────────────────────────────────────
 export default function NeuralNetwork3D({
   agentName = "0G NEURAL CORE",
@@ -289,246 +401,243 @@ export default function NeuralNetwork3D({
   skills = [],
   subscriptions = [],
   activityLog = [],
-  compact = false,
 }: NeuralNetwork3DProps) {
   const { nodes, edges } = useMemo(
-    () => buildGraph(agentName, tools, skills, subscriptions),
-    [agentName, tools, skills, subscriptions],
+    () => buildGraph(agentName, tools, skills, subscriptions, activityLog),
+    [agentName, tools, skills, subscriptions, activityLog],
   );
 
+  const [selectedActivity, setSelectedActivity] = useState<ActivityEntry | null>(null);
+
+  const handleNodeClick = (node: GraphNode) => {
+    if (node.activityEntry) setSelectedActivity(node.activityEntry);
+  };
+
   return (
-    <div className="w-full bg-[#060913] font-sans">
+    <div className="relative w-full bg-[#060913] font-sans">
       <style>{globalStyles}</style>
 
       {/* 3-D scene */}
       <div
         className="relative w-full overflow-hidden flex items-center justify-center"
-        style={{ height: compact ? "360px" : "480px" }}
+        style={{ height: "560px" }}
       >
-
-      {/* Radial vignette — 65% keeps outer nodes readable */}
-      <div
-        className="absolute inset-0 pointer-events-none z-20"
-        style={{ background: "radial-gradient(circle at center, transparent 0%, #060913 65%)" }}
-      />
-
-      {/* Isometric 3-D scene */}
-      <div
-        className="relative"
-        style={{
-          width: "1000px", height: "1000px",
-          transform: `scale(${compact ? 0.52 : 0.8}) rotateX(60deg) rotateZ(-45deg)`,
-          transformStyle: "preserve-3d",
-        }}
-      >
-        {/* Holographic grid floor */}
+        {/* Radial vignette */}
         <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage:
-              "linear-gradient(rgba(56,189,248,0.04) 2px, transparent 2px), linear-gradient(90deg, rgba(56,189,248,0.04) 2px, transparent 2px)",
-            backgroundSize: "50px 50px",
-            border: "1px solid rgba(56,189,248,0.1)",
-            boxShadow: "inset 0 0 100px rgba(6,9,19,0.9)",
-          }}
+          className="absolute inset-0 pointer-events-none z-20"
+          style={{ background: "radial-gradient(circle at center, transparent 0%, #060913 68%)" }}
         />
 
-        {/* ── Edge layer (SVG, flat on the floor) ── */}
-        <svg
-          className="absolute inset-0 w-full h-full"
-          style={{ overflow: "visible", transform: "translateZ(0)" }}
+        {/* Isometric scene */}
+        <div
+          className="relative"
+          style={{
+            width: "1000px", height: "1000px",
+            transform: "scale(0.62) rotateX(60deg) rotateZ(-45deg)",
+            transformStyle: "preserve-3d",
+          }}
         >
-          {edges.map((edge, i) => {
-            const src = nodes.find(n => n.id === edge.from);
-            const tgt = nodes.find(n => n.id === edge.to);
-            if (!src || !tgt) return null;
+          {/* Holographic grid floor */}
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage:
+                "linear-gradient(rgba(56,189,248,0.04) 2px, transparent 2px), linear-gradient(90deg, rgba(56,189,248,0.04) 2px, transparent 2px)",
+              backgroundSize: "50px 50px",
+              border: "1px solid rgba(56,189,248,0.1)",
+              boxShadow: "inset 0 0 100px rgba(6,9,19,0.9)",
+            }}
+          />
 
-            const sx = src.x + 32, sy = src.y + 32;
-            const tx = tgt.x + 32, ty = tgt.y + 32;
-            const d = `M ${sx} ${sy} L ${tx} ${ty}`;
+          {/* ── Edge layer ── */}
+          <svg
+            className="absolute inset-0 w-full h-full"
+            style={{ overflow: "visible", transform: "translateZ(0)" }}
+          >
+            {edges.map((edge, i) => {
+              const src = nodes.find(n => n.id === edge.from);
+              const tgt = nodes.find(n => n.id === edge.to);
+              if (!src || !tgt) return null;
 
-            return (
-              <g key={`e${i}`}>
-                {/* Static track */}
-                <path
-                  d={d} fill="none"
-                  stroke={edge.isActive ? "rgba(56,189,248,0.18)" : "rgba(30,58,138,0.25)"}
-                  strokeWidth="2"
-                />
-                {/* Animated light pulse */}
-                <path
-                  d={d} fill="none"
-                  stroke={edge.isActive ? "#38bdf8" : "#1e3a8a"}
-                  strokeWidth={edge.isActive ? "3" : "1.5"}
-                  strokeLinecap="round"
-                  pathLength="100"
-                  strokeDasharray={edge.isActive ? "15 85" : "6 94"}
-                  style={{
-                    filter: edge.isActive ? "drop-shadow(0 0 8px #38bdf8)" : "none",
-                    opacity: edge.isActive ? 1 : 0.45,
-                    animation: `linePulse ${edge.speed} linear infinite ${edge.delay}`,
-                  }}
-                />
-              </g>
-            );
-          })}
+              const sx = src.x + 32, sy = src.y + 32;
+              const tx = tgt.x + 32, ty = tgt.y + 32;
+              const d = `M ${sx} ${sy} L ${tx} ${ty}`;
 
-          {/* Floor connector sockets */}
-          {nodes.map(n => (
-            <circle
-              key={`sock-${n.id}`}
-              cx={n.x + 32} cy={n.y + 32}
-              r={n.isCore ? "16" : n.scale >= 1 ? "6" : "4"}
-              fill="#060913"
-              stroke={n.isActive ? "#22d3ee" : "#1e3a8a"}
-              strokeWidth="2"
-              style={{ filter: n.isActive ? "drop-shadow(0 0 5px rgba(34,211,238,0.5))" : "none" }}
-            />
-          ))}
-        </svg>
-
-        {/* ── 3-D node layer ── */}
-        {nodes.map(node => {
-          const pal = PALETTES[node.palette] as any;
-
-          return (
-            <div
-              key={node.id}
-              className="absolute w-16 h-16"
-              style={{ left: node.x, top: node.y, transformStyle: "preserve-3d" }}
-            >
-              {/* Dynamic floor shadow */}
-              <div
-                className="absolute inset-0 bg-black blur-[15px] rounded-full"
-                style={{
-                  transform: `translateZ(-2px) scale(${node.scale * 1.5})`,
-                  animation: `shadowPulse 4s ease-in-out infinite ${node.delay}s`,
-                }}
-              />
-
-              {/* Vertical tether: floor → floating node */}
-              <div
-                className="absolute left-[32px] top-[32px] w-[2px] pointer-events-none"
-                style={{
-                  height: "100px",
-                  background: node.isActive
-                    ? "linear-gradient(to top, rgba(34,211,238,0.8), transparent)"
-                    : "linear-gradient(to top, rgba(30,58,138,0.5), transparent)",
-                  transform: "translate(-50%, -100%) rotateX(-90deg)",
-                  transformOrigin: "bottom",
-                  boxShadow: node.isActive ? "0 0 10px rgba(34,211,238,0.5)" : "none",
-                  filter: "blur(0.5px)",
-                }}
-              />
-
-              {/* Floating body (scale + float animation) */}
-              <div
-                className="absolute inset-0"
-                style={{
-                  transform: `scale(${node.scale})`,
-                  animation: `floatZ 4s ease-in-out infinite ${node.delay}s`,
-                  transformStyle: "preserve-3d",
-                }}
-              >
-                {node.isCore ? (
-                  <>
-                    <IsometricSlab zOffset={0}  height={24} size={76} colors={pal.base} />
-                    <IsometricSlab zOffset={24} height={16} size={60} colors={pal.top} />
-                    <IsometricSlab zOffset={40} height={12} size={44} colors={pal.coreTop} />
-                    <div
-                      className="absolute left-1/2 top-1/2 rounded-full bg-emerald-300"
-                      style={{
-                        width: "24px", height: "24px",
-                        transform: "translate3d(-50%, -50%, 60px)",
-                        animation: "coreGlow 3s infinite alternate",
-                      }}
-                    />
-                  </>
-                ) : (
-                  <>
-                    <IsometricSlab zOffset={0}  height={12} size={64} colors={pal.base} />
-                    <IsometricSlab zOffset={12} height={12} size={64} colors={pal.top} />
-                    {/* Status dot — bright if active */}
-                    <div
-                      className="absolute left-1/2 top-1/2 rounded-full"
-                      style={{
-                        width: "6px", height: "6px",
-                        background: node.isActive ? "#67e8f9" : "#475569",
-                        transform: "translate3d(-50%, -50%, 28px)",
-                        boxShadow: node.isActive ? "0 0 15px 5px rgba(34,211,238,0.4)" : "none",
-                      }}
-                    />
-                  </>
-                )}
-
-                {/* Anti-rotation label (aggregators + core only) */}
-                {node.label && (
-                  <div
-                    className="absolute left-1/2 top-1/2 flex items-center justify-center pointer-events-none"
-                    style={{
-                      transform: `translate3d(-50%, -50%, ${node.isCore ? 120 : 60}px) rotateZ(45deg) rotateX(-60deg)`,
-                    }}
-                  >
-                    <div
-                      className="bg-[#0f172a]/90 backdrop-blur-md border border-white/20 px-4 py-2 rounded-lg whitespace-nowrap shadow-[0_20px_40px_rgba(0,0,0,0.9)]"
-                      style={{ transform: `scale(${1 / node.scale})` }}
-                    >
-                      <span className={`font-mono font-bold tracking-widest uppercase ${node.isCore ? "text-emerald-400 text-sm" : "text-white text-xs"}`}>
-                        {node.label}
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-      </div>{/* end 3-D scene */}
-
-      {/* Activity feed — section below the 3D scene */}
-      {activityLog.length > 0 && (
-        <div className="border-t border-white/[0.06]">
-          <div className="px-4 pt-3 pb-1 flex items-center justify-between">
-            <span className="text-[9px] font-mono uppercase tracking-[0.2em] text-white/30">
-              Runtime Activity
-            </span>
-            <span className="text-[9px] text-white/20">{activityLog.length} events</span>
-          </div>
-          <div className="max-h-[200px] overflow-y-auto">
-            {activityLog.slice(0, 20).map((entry, i) => {
-              const color = PHASE_COLORS[entry.phase] ?? "#94a3b8";
               return (
-                <div
-                  key={entry.id ?? i}
-                  className="flex items-start gap-2.5 px-4 py-1.5 border-b border-white/[0.04] last:border-0 hover:bg-white/[0.02]"
-                >
-                  <div
-                    className="w-1.5 h-1.5 rounded-full mt-[5px] flex-shrink-0"
-                    style={{ background: color, boxShadow: `0 0 5px ${color}80` }}
+                <g key={`e${i}`}>
+                  <path d={d} fill="none"
+                    stroke={edge.isActive ? "rgba(56,189,248,0.18)" : "rgba(30,58,138,0.25)"}
+                    strokeWidth="2"
                   />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className="text-[9px] font-mono uppercase tracking-wider font-semibold"
-                        style={{ color }}
-                      >
-                        {entry.phase}
-                      </span>
-                      <span className="text-[9px] text-white/20 ml-auto flex-shrink-0">
-                        {timeAgo(entry.created_at)}
-                      </span>
-                    </div>
-                    <p className="text-[10px] text-white/45 leading-tight truncate mt-0.5">
-                      {entry.message}
-                    </p>
-                  </div>
-                </div>
+                  <path d={d} fill="none"
+                    stroke={edge.isActive ? "#38bdf8" : "#1e3a8a"}
+                    strokeWidth={edge.isActive ? "3" : "1.5"}
+                    strokeLinecap="round"
+                    pathLength="100"
+                    strokeDasharray={edge.isActive ? "15 85" : "6 94"}
+                    style={{
+                      filter: edge.isActive ? "drop-shadow(0 0 8px #38bdf8)" : "none",
+                      opacity: edge.isActive ? 1 : 0.45,
+                      animation: `linePulse ${edge.speed} linear infinite ${edge.delay}`,
+                    }}
+                  />
+                </g>
               );
             })}
-            <div className="h-2" />
-          </div>
+
+            {/* Floor connector sockets */}
+            {nodes.map(n => (
+              <circle
+                key={`sock-${n.id}`}
+                cx={n.x + 32} cy={n.y + 32}
+                r={n.isCore ? "16" : n.scale >= 1 ? "6" : "4"}
+                fill="#060913"
+                stroke={n.isActive ? "#22d3ee" : "#1e3a8a"}
+                strokeWidth="2"
+                style={{ filter: n.isActive ? "drop-shadow(0 0 5px rgba(34,211,238,0.5))" : "none" }}
+              />
+            ))}
+          </svg>
+
+          {/* ── 3-D node layer ── */}
+          {nodes.map(node => {
+            const pal = PALETTES[node.palette] as any;
+            const isClickable = !!node.activityEntry;
+            const phaseColor = node.activityEntry
+              ? (PHASE_COLORS[node.activityEntry.phase] ?? "#94a3b8")
+              : null;
+
+            return (
+              <div
+                key={node.id}
+                className={`absolute w-16 h-16 ${isClickable ? "cursor-pointer" : ""}`}
+                style={{ left: node.x, top: node.y, transformStyle: "preserve-3d" }}
+                onClick={() => handleNodeClick(node)}
+              >
+                {/* Floor shadow */}
+                <div
+                  className="absolute inset-0 bg-black blur-[15px] rounded-full"
+                  style={{
+                    transform: `translateZ(-2px) scale(${node.scale * 1.5})`,
+                    animation: `shadowPulse 4s ease-in-out infinite ${node.delay}s`,
+                  }}
+                />
+
+                {/* Hover ring for activity nodes */}
+                {isClickable && (
+                  <div
+                    className="absolute inset-0 rounded-full opacity-0 hover:opacity-100 transition-opacity duration-200 pointer-events-none"
+                    style={{
+                      transform: `scale(${node.scale * 1.8}) translateZ(10px)`,
+                      border: `1px solid ${phaseColor}60`,
+                      boxShadow: `0 0 12px ${phaseColor}40`,
+                    }}
+                  />
+                )}
+
+                {/* Vertical tether */}
+                <div
+                  className="absolute left-[32px] top-[32px] w-[2px] pointer-events-none"
+                  style={{
+                    height: "100px",
+                    background: node.isActive
+                      ? "linear-gradient(to top, rgba(34,211,238,0.8), transparent)"
+                      : "linear-gradient(to top, rgba(30,58,138,0.5), transparent)",
+                    transform: "translate(-50%, -100%) rotateX(-90deg)",
+                    transformOrigin: "bottom",
+                    boxShadow: node.isActive ? "0 0 10px rgba(34,211,238,0.5)" : "none",
+                    filter: "blur(0.5px)",
+                  }}
+                />
+
+                {/* Floating body */}
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    transform: `scale(${node.scale})`,
+                    animation: `floatZ 4s ease-in-out infinite ${node.delay}s`,
+                    transformStyle: "preserve-3d",
+                  }}
+                >
+                  {node.isCore ? (
+                    <>
+                      <IsometricSlab zOffset={0}  height={24} size={76} colors={pal.base} />
+                      <IsometricSlab zOffset={24} height={16} size={60} colors={pal.top} />
+                      <IsometricSlab zOffset={40} height={12} size={44} colors={pal.coreTop} />
+                      <div
+                        className="absolute left-1/2 top-1/2 rounded-full bg-emerald-300"
+                        style={{
+                          width: "24px", height: "24px",
+                          transform: "translate3d(-50%, -50%, 60px)",
+                          animation: "coreGlow 3s infinite alternate",
+                        }}
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <IsometricSlab zOffset={0}  height={12} size={64} colors={pal.base} />
+                      <IsometricSlab zOffset={12} height={12} size={64} colors={pal.top} />
+                      <div
+                        className="absolute left-1/2 top-1/2 rounded-full"
+                        style={{
+                          width: node.activityEntry ? "5px" : "6px",
+                          height: node.activityEntry ? "5px" : "6px",
+                          background: phaseColor ?? (node.isActive ? "#67e8f9" : "#475569"),
+                          transform: "translate3d(-50%, -50%, 28px)",
+                          boxShadow: node.isActive
+                            ? `0 0 15px 5px ${(phaseColor ?? "#34d3990") + "66"}`
+                            : "none",
+                        }}
+                      />
+                    </>
+                  )}
+
+                  {/* Label — aggregators + core only */}
+                  {node.label && (
+                    <div
+                      className="absolute left-1/2 top-1/2 flex items-center justify-center pointer-events-none"
+                      style={{
+                        transform: `translate3d(-50%, -50%, ${node.isCore ? 120 : 60}px) rotateZ(45deg) rotateX(-60deg)`,
+                      }}
+                    >
+                      <div
+                        className="bg-[#0f172a]/90 backdrop-blur-md border border-white/20 px-4 py-2 rounded-lg whitespace-nowrap shadow-[0_20px_40px_rgba(0,0,0,0.9)]"
+                        style={{ transform: `scale(${1 / node.scale})` }}
+                      >
+                        <span className={`font-mono font-bold tracking-widest uppercase ${node.isCore ? "text-emerald-400 text-sm" : "text-white text-xs"}`}>
+                          {node.label}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
+      </div>
+
+      {/* Click hint — only when there are activity nodes */}
+      {activityLog.length > 0 && (
+        <div className="px-4 py-2 border-t border-white/[0.05] flex items-center gap-2">
+          <div className="flex gap-1">
+            {["processing", "completed", "error", "submitting"].map(p => (
+              <div
+                key={p}
+                className="w-1.5 h-1.5 rounded-full"
+                style={{ background: PHASE_COLORS[p] ?? "#94a3b8" }}
+              />
+            ))}
+          </div>
+          <span className="text-[9px] text-white/25 font-mono">
+            {activityLog.length} activity nodes · tap to inspect
+          </span>
+        </div>
+      )}
+
+      {/* Activity popup — overlays entire card */}
+      {selectedActivity && (
+        <ActivityPopup entry={selectedActivity} onClose={() => setSelectedActivity(null)} />
       )}
     </div>
   );

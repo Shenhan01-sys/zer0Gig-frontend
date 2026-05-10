@@ -1191,7 +1191,7 @@ export default function AgentDetailPage() {
       </div>{/* end left column */}
 
       {/* ── Right column: neural map sticky sidebar ──────────────────────────── */}
-      <div className="w-full xl:w-[400px] flex-shrink-0 xl:sticky xl:top-28">
+      <div className="w-full xl:w-[460px] flex-shrink-0 xl:sticky xl:top-28">
         <motion.div
           initial={{ opacity: 0, x: 16 }}
           animate={{ opacity: 1, x: 0 }}
@@ -1216,7 +1216,6 @@ export default function AgentDetailPage() {
             tools={displayTools}
             skills={onChainSkills}
             activityLog={activityLog}
-            compact
           />
         </motion.div>
       </div>{/* end right column */}

@@ -12,14 +12,17 @@ interface SkillConfigModalProps {
 
 /** Extract properties from a JSON Schema config_schema */
 function getSchemaProps(schema: Record<string, unknown>) {
-  const props = (schema?.properties as Record<string, { type?: string; title?: string; description?: string; default?: unknown }>) || {};
-  return Object.entries(props).map(([key, def]) => ({
-    key,
-    title:       def.title       || key,
-    description: def.description || "",
-    type:        def.type        || "string",
-    defaultVal:  def.default !== undefined ? String(def.default) : "",
-  }));
+  const props = (schema?.properties as Record<string, { type?: string; title?: string; description?: string; default?: unknown; order?: number }>) || {};
+  return Object.entries(props)
+    .map(([key, def]) => ({
+      key,
+      title:       def.title       || key,
+      description: def.description || "",
+      type:        def.type        || "string",
+      defaultVal:  def.default !== undefined ? String(def.default) : "",
+      order:       def.order ?? 999,
+    }))
+    .sort((a, b) => a.order - b.order);
 }
 
 export default function SkillConfigModal({ skill, existingConfig, onSave, onClose }: SkillConfigModalProps) {

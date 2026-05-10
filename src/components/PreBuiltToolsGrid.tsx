@@ -4,7 +4,7 @@ import React from "react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import SkillConfigModal from "@/components/SkillConfigModal";
-import { Search, Globe, Github, Terminal, Send, BarChart3, FileText, Palette, Database, MessageCircle, Settings } from "lucide-react";
+import { Search, Globe, Github, Terminal, Send, BarChart3, FileText, Palette, Database, MessageCircle, Settings, Zap, Link2 } from "lucide-react";
 
 // -- Types ---------------------------------------------------------------------
 
@@ -34,6 +34,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   communication: "Communication",
   media:         "Media & Files",
   storage:       "Storage & DB",
+  automation:    "Automation",
 };
 
 function hasConfigFields(schema: Record<string, unknown>): boolean {
@@ -50,6 +51,8 @@ const FALLBACK_SKILLS: PlatformSkill[] = [
   { id: "github_reader",   name: "GitHub Reader",    description: "Read files, repos, and issues from GitHub",                            category: "code",          icon: "github_reader", is_active: true, is_verified: true,  tool_type: "builtin", config_schema: { properties: { token: { type: "string", title: "GitHub Token (optional)", description: "Increases API rate limit from 60 to 5000 req/hr" }, repo: { type: "string", title: "Default Repo (optional)", description: "e.g. owner/repo � can be overridden per-job" } } }, metadata: {} },
   { id: "code_exec",       name: "Code Executor",    description: "Run real Python/JS/Go/Rust  the agent thinks AND executes code",        category: "code",          icon: "code_exec", is_active: true, is_verified: true,  tool_type: "builtin", config_schema: { properties: { language: { type: "string", title: "Language", description: "python, javascript, typescript, ruby, go, rust, java, cpp, c, php, swift, kotlin" }, code: { type: "string", title: "Default Script (optional)", description: "Optional template code � agent can also generate code dynamically per job" } } }, metadata: {} },
   { id: "telegram_notify", name: "Telegram Notify",  description: "Agent sends milestone cards and approve buttons to your Telegram. Clients can also set up a 24/7 AI customer service bot per subscription.", category: "communication", icon: "telegram_notify", is_active: true, is_verified: true,  tool_type: "builtin", config_schema: { properties: { chatId: { type: "string", title: "Your Telegram Chat ID", description: "Auto-filled when you connect Telegram below. Used to receive milestone approval cards." } } }, metadata: {} },
+  { id: "n8n_manager",    name: "n8n Workflow Manager", description: "Autonomously design, create, activate, execute, and maintain n8n workflows — the agent generates workflow JSON and deploys it to your n8n instance.", category: "automation", icon: "n8n_manager", is_active: true, is_verified: true, tool_type: "builtin", config_schema: { type: "object", properties: { n8nUrl: { type: "string", title: "n8n Instance URL", description: "e.g. https://your-n8n.app.n8n.cloud" }, apiKey: { type: "string", title: "n8n API Key", description: "Settings → API → Create API key" } }, required: ["n8nUrl", "apiKey"] }, metadata: {} },
+  { id: "n8n_webhook",    name: "n8n Webhook Trigger",  description: "Trigger any existing n8n workflow via webhook URL. Agent sends the job brief to your workflow and receives the output, including file URLs.", category: "automation", icon: "n8n_webhook", is_active: true, is_verified: true, tool_type: "builtin", config_schema: { type: "object", properties: { webhookUrl: { type: "string", title: "Webhook URL", description: "n8n workflow → Webhook trigger node → copy URL" }, apiKey: { type: "string", title: "API Key (optional)", description: "Only if your n8n uses header auth" } }, required: ["webhookUrl"] }, metadata: {} },
   // -- Hidden stubs (is_verified=false, no working handler) ----------------------
   { id: "csv_analyst",     name: "CSV Analyst",      description: "Parse and analyze CSV datasets",                                      category: "data",          icon: "csv_analyst", is_active: true, is_verified: false, tool_type: "http",    config_schema: {}, metadata: {} },
   { id: "pdf_reader",      name: "PDF Reader",       description: "Extract text from PDF documents",                                     category: "media",         icon: "pdf_reader", is_active: true, is_verified: false, tool_type: "http",    config_schema: {}, metadata: {} },
@@ -73,6 +76,8 @@ function getSkillIcon(skillId: string): React.ReactNode {
     image_gen:       <Palette size={18} />,
     sql_query:       <Database size={18} />,
     whatsapp_notify: <MessageCircle size={18} />,
+    n8n_manager:     <Zap size={18} />,
+    n8n_webhook:     <Link2 size={18} />,
   };
   return icons[skillId] ?? <Search size={18} />;
 }

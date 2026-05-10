@@ -68,6 +68,54 @@ export default function SkillConfigModal({ skill, existingConfig, onSave, onClos
           </button>
         </div>
 
+        {/* n8n setup guidance */}
+        {skill.id.startsWith("n8n_") && (
+          <div className="mb-5 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 space-y-3">
+            <p className="text-[11px] font-semibold text-amber-400 uppercase tracking-widest">Setup Guide</p>
+            {skill.id === "n8n_manager" ? (
+              <>
+                <ol className="space-y-1.5 text-[11px] text-white/50 list-decimal list-inside">
+                  <li>Open your n8n instance (or create a free cloud account at <span className="text-amber-400/80">app.n8n.cloud</span>)</li>
+                  <li>Go to <span className="text-white/70">Settings → API</span> in the left sidebar</li>
+                  <li>Click <span className="text-white/70">Create API Key</span> and copy it</li>
+                  <li>Paste your instance URL and the API key below</li>
+                </ol>
+                <a
+                  href={values["n8nUrl"] ? `${values["n8nUrl"].replace(/\/$/, "")}/settings/api` : "https://app.n8n.cloud"}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-[11px] text-amber-400 hover:text-amber-300 transition-colors font-medium"
+                >
+                  Open n8n Settings → API
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </a>
+              </>
+            ) : (
+              <>
+                <ol className="space-y-1.5 text-[11px] text-white/50 list-decimal list-inside">
+                  <li>Open your n8n workflow and add a <span className="text-white/70">Webhook</span> trigger node</li>
+                  <li>Set the HTTP method to <span className="text-white/70">POST</span></li>
+                  <li>Copy the <span className="text-white/70">Webhook URL</span> from the node panel</li>
+                  <li>Activate the workflow, then paste the URL below</li>
+                </ol>
+                <a
+                  href="https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.webhook/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-[11px] text-amber-400 hover:text-amber-300 transition-colors font-medium"
+                >
+                  n8n Webhook node docs
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </a>
+              </>
+            )}
+          </div>
+        )}
+
         {/* Fields */}
         <div className="space-y-4">
           {fields.map(field => (

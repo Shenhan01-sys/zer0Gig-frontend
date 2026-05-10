@@ -71,12 +71,42 @@ interface GraphEdge {
   isActive: boolean;
 }
 
+// ── Activity feed helpers ─────────────────────────────────────────────────────
+export interface ActivityEntry {
+  id?: number;
+  phase: string;
+  message: string;
+  created_at: string;
+  agent_wallet?: string;
+}
+
+const PHASE_COLORS: Record<string, string> = {
+  processing:        "#38bdf8",
+  completed:         "#34d399",
+  error:             "#f87171",
+  downloading_brief: "#818cf8",
+  uploading:         "#c084fc",
+  submitting:        "#fb923c",
+};
+
+function timeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
+
 // ── Public props ──────────────────────────────────────────────────────────────
 export interface NeuralNetwork3DProps {
   agentName?: string;
   tools?: { name: string; type: string }[];
   skills?: string[];
   subscriptions?: { id: string | number; status: string }[];
+  activityLog?: ActivityEntry[];
+  compact?: boolean;
 }
 
 // ── Layout constants ──────────────────────────────────────────────────────────
@@ -258,6 +288,8 @@ export default function NeuralNetwork3D({
   tools = [],
   skills = [],
   subscriptions = [],
+  activityLog = [],
+  compact = false,
 }: NeuralNetwork3DProps) {
   const { nodes, edges } = useMemo(
     () => buildGraph(agentName, tools, skills, subscriptions),
@@ -265,11 +297,14 @@ export default function NeuralNetwork3D({
   );
 
   return (
-    <div
-      className="relative w-full bg-[#060913] overflow-hidden flex items-center justify-center font-sans"
-      style={{ height: "560px" }}
-    >
+    <div className="w-full bg-[#060913] font-sans">
       <style>{globalStyles}</style>
+
+      {/* 3-D scene */}
+      <div
+        className="relative w-full overflow-hidden flex items-center justify-center"
+        style={{ height: compact ? "360px" : "480px" }}
+      >
 
       {/* Radial vignette — 65% keeps outer nodes readable */}
       <div
@@ -282,7 +317,7 @@ export default function NeuralNetwork3D({
         className="relative"
         style={{
           width: "1000px", height: "1000px",
-          transform: "scale(0.8) rotateX(60deg) rotateZ(-45deg)",
+          transform: `scale(${compact ? 0.52 : 0.8}) rotateX(60deg) rotateZ(-45deg)`,
           transformStyle: "preserve-3d",
         }}
       >
@@ -449,6 +484,52 @@ export default function NeuralNetwork3D({
           );
         })}
       </div>
+      </div>{/* end 3-D scene */}
+
+      {/* Activity feed — section below the 3D scene */}
+      {activityLog.length > 0 && (
+        <div className="border-t border-white/[0.06]">
+          <div className="px-4 pt-3 pb-1 flex items-center justify-between">
+            <span className="text-[9px] font-mono uppercase tracking-[0.2em] text-white/30">
+              Runtime Activity
+            </span>
+            <span className="text-[9px] text-white/20">{activityLog.length} events</span>
+          </div>
+          <div className="max-h-[200px] overflow-y-auto">
+            {activityLog.slice(0, 20).map((entry, i) => {
+              const color = PHASE_COLORS[entry.phase] ?? "#94a3b8";
+              return (
+                <div
+                  key={entry.id ?? i}
+                  className="flex items-start gap-2.5 px-4 py-1.5 border-b border-white/[0.04] last:border-0 hover:bg-white/[0.02]"
+                >
+                  <div
+                    className="w-1.5 h-1.5 rounded-full mt-[5px] flex-shrink-0"
+                    style={{ background: color, boxShadow: `0 0 5px ${color}80` }}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="text-[9px] font-mono uppercase tracking-wider font-semibold"
+                        style={{ color }}
+                      >
+                        {entry.phase}
+                      </span>
+                      <span className="text-[9px] text-white/20 ml-auto flex-shrink-0">
+                        {timeAgo(entry.created_at)}
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-white/45 leading-tight truncate mt-0.5">
+                      {entry.message}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+            <div className="h-2" />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

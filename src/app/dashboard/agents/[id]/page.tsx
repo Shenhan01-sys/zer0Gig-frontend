@@ -22,7 +22,7 @@ import RBACGuard from "@/components/RBACGuard";
 import ConnectTelegramButton from "@/components/ConnectTelegramButton";
 import CustomToolModal, { type ToolConfig } from "@/components/CustomToolModal";
 import AgentStoragePanel from "@/components/AgentStoragePanel";
-import NeuralNetwork3D from "@/components/agents/NeuralNetwork3D";
+import NeuralNetwork3D, { type ActivityEntry } from "@/components/agents/NeuralNetwork3D";
 import CornerBrackets from "@/components/ui/CornerBrackets";
 import ReputationRadar from "@/components/agents/ReputationRadar";
 import JobOrbitCarousel from "@/components/agents/JobOrbitCarousel";
@@ -237,6 +237,20 @@ export default function AgentDetailPage() {
     const runtimeTools = ((supabaseProfile?.metadata as any)?.tools as any[]) ?? [];
     return runtimeTools.map((t: any) => ({ name: t.name || "unnamed", type: t.type || "http" }));
   }, [supabaseProfile]);
+
+  // Activity log for the neural map sidebar
+  const [activityLog, setActivityLog] = useState<ActivityEntry[]>([]);
+  useEffect(() => {
+    if (!agentIdNum) return;
+    const load = () =>
+      fetch(`/api/agent-activity?agentId=${agentIdNum}&limit=30`)
+        .then(r => r.ok ? r.json() : [])
+        .then(d => Array.isArray(d) ? setActivityLog(d) : null)
+        .catch(() => null);
+    load();
+    const t = setInterval(load, 15_000);
+    return () => clearInterval(t);
+  }, [agentIdNum]);
 
   const startEditing = () => {
     setEditDisplayName(supabaseProfile?.display_name || "");
@@ -495,7 +509,10 @@ export default function AgentDetailPage() {
 
   return (
     <RBACGuard>
-      <div className="max-w-3xl space-y-6">
+      <div className="flex flex-col xl:flex-row gap-6 items-start">
+
+      {/* ── Left column: main agent content ─────────────────────────────────── */}
+      <div className="flex-1 min-w-0 space-y-6">
         {/* Back navigation */}
         <Link href="/dashboard?tab=agents" className="flex items-center gap-2 text-white/40 hover:text-white/70 text-[13px] transition-colors">
           ← Back to My Agents
@@ -644,35 +661,6 @@ export default function AgentDetailPage() {
             </motion.div>
           );
         })()}
-
-        {/* Neural Capability Map */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.2 }}
-          className="rounded-2xl border border-white/10 bg-[#060913] overflow-hidden"
-        >
-          <div className="px-6 pt-5 pb-3 border-b border-white/[0.06]">
-            <div className="flex items-center gap-2 mb-0.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)] animate-pulse" />
-              <h2 className="text-[13px] font-medium text-white/70 uppercase tracking-[0.2em]">Neural Capability Map</h2>
-            </div>
-            <p className="text-[11px] text-white/30 pl-3.5">
-              Isometric topology of registered tools
-              {onChainSkills.length > 0 ? `, ${onChainSkills.length} on-chain skill${onChainSkills.length > 1 ? "s" : ""}` : ""}
-              {displayTools.length > 0 ? ` · ${displayTools.length} custom tool${displayTools.length > 1 ? "s" : ""}` : ""}
-              {" · "}
-              <span className="text-[#38bdf8]/70">active edges</span>{" "}
-              <span className="text-white/20">= in use &nbsp;·&nbsp;</span>
-              <span className="text-[#1e3a8a] bg-[#38bdf8]/10 px-1 rounded">dark edges</span>{" = registered"}
-            </p>
-          </div>
-          <NeuralNetwork3D
-            agentName={displayName}
-            tools={displayTools}
-            skills={onChainSkills}
-          />
-        </motion.div>
 
         {/* Edit Profile Panel */}
         <AnimatePresence>
@@ -1200,7 +1188,40 @@ export default function AgentDetailPage() {
         {/* Storage Panel — owner sees all clients, client sees their own data */}
         <AgentStoragePanel agentId={agentIdNum} viewerAddress={connectedWallet} />
 
-      </div>
+      </div>{/* end left column */}
+
+      {/* ── Right column: neural map sticky sidebar ──────────────────────────── */}
+      <div className="w-full xl:w-[400px] flex-shrink-0 xl:sticky xl:top-28">
+        <motion.div
+          initial={{ opacity: 0, x: 16 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.45, delay: 0.25 }}
+          className="rounded-2xl border border-white/10 bg-[#060913] overflow-hidden"
+        >
+          <div className="px-5 pt-4 pb-3 border-b border-white/[0.06]">
+            <div className="flex items-center gap-2 mb-0.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)] animate-pulse" />
+              <h2 className="text-[12px] font-medium text-white/70 uppercase tracking-[0.2em]">Neural Capability Map</h2>
+            </div>
+            <p className="text-[10px] text-white/30 pl-3.5 leading-relaxed">
+              {[
+                onChainSkills.length > 0 && `${onChainSkills.length} skill${onChainSkills.length > 1 ? "s" : ""}`,
+                displayTools.length > 0 && `${displayTools.length} tool${displayTools.length > 1 ? "s" : ""}`,
+                activityLog.length > 0 && `${activityLog.length} events`,
+              ].filter(Boolean).join(" · ") || "live runtime topology"}
+            </p>
+          </div>
+          <NeuralNetwork3D
+            agentName={displayName}
+            tools={displayTools}
+            skills={onChainSkills}
+            activityLog={activityLog}
+            compact
+          />
+        </motion.div>
+      </div>{/* end right column */}
+
+      </div>{/* end two-column wrapper */}
 
       {/* Custom Tool Modal */}
       {toolModal && (

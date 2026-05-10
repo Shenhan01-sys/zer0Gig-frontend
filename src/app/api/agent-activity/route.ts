@@ -62,24 +62,42 @@ export async function POST(request: NextRequest) {
 
 /**
  * GET /api/agent-activity?jobId=123
- * Returns all activity entries for a given job, ordered newest first.
+ * GET /api/agent-activity?agentId=7&limit=30
+ * Returns activity entries ordered newest first.
  */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const jobId = searchParams.get("jobId");
+    const jobId   = searchParams.get("jobId");
+    const agentId = searchParams.get("agentId");
 
-    if (!jobId) {
+    if (!jobId && !agentId) {
       return NextResponse.json(
-        { error: "Missing jobId parameter" },
+        { error: "Missing jobId or agentId parameter" },
         { status: 400 }
       );
+    }
+
+    if (agentId) {
+      const limit = Math.min(100, parseInt(searchParams.get("limit") || "30", 10));
+      const { data, error } = await supabase
+        .from("agent_activity")
+        .select("id, job_id, phase, message, created_at, agent_wallet")
+        .eq("agent_id", parseInt(agentId, 10))
+        .order("created_at", { ascending: false })
+        .limit(limit);
+
+      if (error) {
+        console.error("[API] Supabase fetch error:", error);
+        return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+      return NextResponse.json(data ?? []);
     }
 
     const { data, error } = await supabase
       .from("agent_activity")
       .select("*")
-      .eq("job_id", parseInt(jobId))
+      .eq("job_id", parseInt(jobId!, 10))
       .order("created_at", { ascending: false })
       .limit(50);
 

@@ -20,6 +20,7 @@ import { MOCK_JOBS, MOCK_SUBSCRIPTIONS } from "@/lib/mockData";
 import { Hand, Lightbulb, Zap } from "lucide-react";
 import CornerBrackets from "@/components/ui/CornerBrackets";
 import NetworkActivityFeed from "@/components/dashboard/NetworkActivityFeed";
+import { AgentCard } from "@/components/marketplace/AgentCard";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -270,8 +271,6 @@ function JobsTab({ jobs, jobsLoading }: { jobs: bigint[]; jobsLoading: boolean }
 
 function AgentsTab({ agents, agentsLoading }: { agents: bigint[]; agentsLoading: boolean }) {
   const { agents: allAgents } = useAllAgents();
-  // capabilityHash is bytes32 — runtime badge no longer deducible from it
-  void allAgents;
   const { profiles } = useAgentProfiles(agents.map(id => Number(id)));
 
   // Sync stats on first load so agent_proposal_stats is populated
@@ -312,59 +311,19 @@ function AgentsTab({ agents, agentsLoading }: { agents: bigint[]; agentsLoading:
           secondary={{ href: "/marketplace", label: "See Other Agents" }}
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {[...agents].reverse().map((id) => {
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {[...agents].reverse().map((id, i) => {
             const agentId = Number(id);
-            const profile = profiles[agentId];
-            const displayName = profile?.display_name || `Agent #${agentId}`;
-            const bio = profile?.bio;
-            const avatarUrl = profile?.avatar_url;
-            const gradients = ["from-cyan-500 to-blue-600","from-violet-500 to-purple-600","from-emerald-500 to-teal-600","from-amber-500 to-orange-600"];
-            const grad = gradients[agentId % gradients.length];
-            const badge = null; // runtime badge removed — capabilityHash is opaque bytes32
-            const skills = (profile?.tags || []).filter((t: string) => !t.startsWith("0x") && t.length < 40).slice(0, 3);
+            const agentData = allAgents.find(a => a.agentId === agentId);
+            if (!agentData) return null;
             return (
-              <Link key={id.toString()} href={`/dashboard/agents/${agentId}`}>
-                <div className="group rounded-2xl border border-white/10 bg-[#0d1525]/90 p-5 hover:border-white/20 transition-all">
-                  <div className="flex items-center gap-3 mb-3">
-                    {/* Avatar */}
-                    {avatarUrl ? (
-                      <img src={avatarUrl} alt={displayName} className="w-10 h-10 rounded-full object-cover flex-shrink-0 border border-white/10" />
-                    ) : (
-                      <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${grad} flex items-center justify-center text-white text-[12px] font-bold flex-shrink-0`}>
-                        #{agentId}
-                      </div>
-                    )}
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-white text-[14px] font-medium truncate">{displayName}</p>
-                        {badge && null}
-                      </div>
-                      {bio && (
-                        <p className="text-white/30 text-[11px] truncate">{bio}</p>
-                      )}
-                      {!bio && (
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                          <span className="text-emerald-400 text-[11px]">Active</span>
-                        </div>
-                      )}
-                    </div>
-                    <svg className="w-4 h-4 text-white/20 ml-auto group-hover:text-white/50 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </div>
-                  {skills.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 mt-2">
-                      {skills.map((tag: string, i: number) => (
-                        <span key={i} className="px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.06] text-[10px] text-white/40">
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </Link>
+              <AgentCard
+                key={id.toString()}
+                agent={agentData}
+                profile={profiles[agentId] ?? null}
+                index={i}
+                isMyAgent={true}
+              />
             );
           })}
         </div>

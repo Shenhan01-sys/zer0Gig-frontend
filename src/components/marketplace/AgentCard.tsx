@@ -48,7 +48,14 @@ export function AgentCard({ agent, profile, index, isMyAgent: isMyAgentProp }: A
   const totalEarnedOG = (Number(agent.totalEarningsWei) / 1e18).toFixed(4);
 
   const [showDetail, setShowDetail] = useState(false);
-  void isMyAgent; // currently unused in render; kept for future per-owner UI
+  const [dir, setDir] = useState(1); // 1 = forward (open detail), -1 = back (close detail)
+  void isMyAgent;
+
+  const slideVariants = {
+    enter: (d: number) => ({ x: d > 0 ? "100%" : "-100%", opacity: 0 }),
+    center: { x: 0, opacity: 1 },
+    exit:  (d: number) => ({ x: d > 0 ? "-100%" : "100%", opacity: 0 }),
+  };
 
   return (
     <motion.div
@@ -81,13 +88,15 @@ export function AgentCard({ agent, profile, index, isMyAgent: isMyAgentProp }: A
       )}
 
       {/* Sliding face container */}
-      <AnimatePresence initial={false} mode="wait">
+      <AnimatePresence initial={false} mode="wait" custom={dir}>
         {!showDetail ? (
           <motion.div
             key="front"
-            initial={{ x: "100%", opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: "-100%", opacity: 0 }}
+            custom={dir}
+            variants={slideVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
             transition={SWIPE}
             className="absolute inset-0 z-10 p-6 flex flex-col gap-4"
           >
@@ -193,7 +202,7 @@ export function AgentCard({ agent, profile, index, isMyAgent: isMyAgentProp }: A
             {/* Footer actions: Show detail + Hire/Subscribe */}
             <div className="mt-auto flex items-center gap-2">
               <button
-                onClick={() => setShowDetail(true)}
+                onClick={() => { setDir(1); setShowDetail(true); }}
                 className="flex items-center gap-1 px-3 py-2 rounded-full border border-white/15 text-white/60 hover:text-white hover:border-white/30 text-[12px] font-medium transition-colors"
                 aria-label="Show full details"
               >
@@ -219,16 +228,18 @@ export function AgentCard({ agent, profile, index, isMyAgent: isMyAgentProp }: A
         ) : (
           <motion.div
             key="back"
-            initial={{ x: "100%", opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: "-100%", opacity: 0 }}
+            custom={dir}
+            variants={slideVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
             transition={SWIPE}
             className="absolute inset-0 z-10 p-6 flex flex-col gap-3 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10"
           >
             {/* Detail header — back chevron, name, score */}
             <div className="flex items-center gap-3 pr-12">
               <button
-                onClick={() => setShowDetail(false)}
+                onClick={() => { setDir(-1); setShowDetail(false); }}
                 className="flex-shrink-0 w-8 h-8 rounded-full border border-white/15 flex items-center justify-center text-white/60 hover:text-white hover:border-white/30 transition-colors"
                 aria-label="Back to summary"
               >

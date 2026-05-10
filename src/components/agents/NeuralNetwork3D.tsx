@@ -247,15 +247,17 @@ function buildGraph(
     });
   }
 
-  // ── Activity nodes: orbit around CORE ────────────────────────────────────
+  // ── Activity nodes: Fibonacci golden-angle spiral around CORE ────────────
+  const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5)); // ≈ 2.399 rad — sunflower spacing
   const cappedActivity = activityLog.slice(0, 24);
-  const totalAct = cappedActivity.length;
+  const totalAct = Math.max(cappedActivity.length, 1);
 
   cappedActivity.forEach((entry, i) => {
-    // Spread evenly around CORE in a loose orbit, 3 concentric rings
-    const angle = (i / totalAct) * 2 * Math.PI;
-    const ring = i % 3; // 0, 1, 2 → radii 140, 165, 190
-    const r = 140 + ring * 25;
+    // Pure phyllotaxis: r = offset + c*sqrt(i).
+    // Min spacing between any two nodes ≈ 2c px canvas ≈ 96px ≈ 1.5 cm at 96 dpi.
+    // Does NOT normalise by totalAct — spacing stays constant regardless of node count.
+    const angle = i * GOLDEN_ANGLE;
+    const r = 170 + 48 * Math.sqrt(i); // i=0→170, i=23→400
     const cx = Math.round(Math.max(60, Math.min(880, CORE_POS.x + Math.cos(angle) * r)));
     const cy = Math.round(Math.max(60, Math.min(880, CORE_POS.y + Math.sin(angle) * r)));
 
@@ -425,7 +427,7 @@ export default function NeuralNetwork3D({
         {/* Radial vignette */}
         <div
           className="absolute inset-0 pointer-events-none z-20"
-          style={{ background: "radial-gradient(circle at center, transparent 0%, #060913 68%)" }}
+          style={{ background: "radial-gradient(circle at center, transparent 0%, #060913 74%)" }}
         />
 
         {/* Isometric scene */}

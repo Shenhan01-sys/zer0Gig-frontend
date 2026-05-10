@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -21,6 +21,8 @@ import {
 import RBACGuard from "@/components/RBACGuard";
 import ConnectTelegramButton from "@/components/ConnectTelegramButton";
 import CustomToolModal, { type ToolConfig } from "@/components/CustomToolModal";
+import AgentStoragePanel from "@/components/AgentStoragePanel";
+import NeuralNetwork3D from "@/components/agents/NeuralNetwork3D";
 import CornerBrackets from "@/components/ui/CornerBrackets";
 import ReputationRadar from "@/components/agents/ReputationRadar";
 import JobOrbitCarousel from "@/components/agents/JobOrbitCarousel";
@@ -228,6 +230,12 @@ export default function AgentDetailPage() {
         } : {}),
       })));
     }
+  }, [supabaseProfile]);
+
+  // Tools extracted from supabase metadata for the neural map
+  const displayTools = useMemo(() => {
+    const runtimeTools = ((supabaseProfile?.metadata as any)?.tools as any[]) ?? [];
+    return runtimeTools.map((t: any) => ({ name: t.name || "unnamed", type: t.type || "http" }));
   }, [supabaseProfile]);
 
   const startEditing = () => {
@@ -636,6 +644,35 @@ export default function AgentDetailPage() {
             </motion.div>
           );
         })()}
+
+        {/* Neural Capability Map */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.2 }}
+          className="rounded-2xl border border-white/10 bg-[#060913] overflow-hidden"
+        >
+          <div className="px-6 pt-5 pb-3 border-b border-white/[0.06]">
+            <div className="flex items-center gap-2 mb-0.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)] animate-pulse" />
+              <h2 className="text-[13px] font-medium text-white/70 uppercase tracking-[0.2em]">Neural Capability Map</h2>
+            </div>
+            <p className="text-[11px] text-white/30 pl-3.5">
+              Isometric topology of registered tools
+              {onChainSkills.length > 0 ? `, ${onChainSkills.length} on-chain skill${onChainSkills.length > 1 ? "s" : ""}` : ""}
+              {displayTools.length > 0 ? ` · ${displayTools.length} custom tool${displayTools.length > 1 ? "s" : ""}` : ""}
+              {" · "}
+              <span className="text-[#38bdf8]/70">active edges</span>{" "}
+              <span className="text-white/20">= in use &nbsp;·&nbsp;</span>
+              <span className="text-[#1e3a8a] bg-[#38bdf8]/10 px-1 rounded">dark edges</span>{" = registered"}
+            </p>
+          </div>
+          <NeuralNetwork3D
+            agentName={displayName}
+            tools={displayTools}
+            skills={onChainSkills}
+          />
+        </motion.div>
 
         {/* Edit Profile Panel */}
         <AnimatePresence>
@@ -1159,6 +1196,10 @@ export default function AgentDetailPage() {
           </div>
           <JobOrbitCarousel jobs={agentJobs} isLoading={jobsLoading} />
         </motion.div>
+
+        {/* Storage Panel — owner sees all clients, client sees their own data */}
+        <AgentStoragePanel agentId={agentIdNum} viewerAddress={connectedWallet} />
+
       </div>
 
       {/* Custom Tool Modal */}

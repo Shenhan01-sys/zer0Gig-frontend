@@ -310,7 +310,7 @@ export default function HeroSection() {
         muted
         playsInline
         className="absolute inset-0 w-full h-full object-cover"
-        style={{ objectPosition: "center 65%" }}
+        style={{ objectPosition: "center 30%" }}
       >
         <source src={VIDEO_URL} type="video/mp4" />
       </video>

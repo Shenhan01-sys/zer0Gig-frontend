@@ -214,7 +214,13 @@ export default function CreateSubscriptionPage() {
         BigInt(gracePeriodPreset),
         x402Enabled,
         x402Mode,
-        "0x00",
+        // x402 voucher signing is not yet wired end-to-end.
+        // Contract treats empty bytes as "no voucher stored" — see
+        // SubscriptionEscrow.createSubscription guard:
+        //   if (x402Enabled && clientX402Sig.length > 0) { ... }
+        // Real EIP-712 voucher signing lands together with runtime
+        // verification path (see contracts docs · OKX session voucher).
+        "0x",
         webhookUrl,
         parseEther(budgetOG)
       );
@@ -364,9 +370,14 @@ export default function CreateSubscriptionPage() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-white text-[14px] font-semibold leading-snug">Enable x402 Protocol</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-white text-[14px] font-semibold leading-snug">Enable x402 Protocol</p>
+                      <span className="text-[9px] font-mono uppercase tracking-widest px-1.5 py-0.5 rounded border border-amber-400/30 bg-amber-400/[0.06] text-amber-300">
+                        preview
+                      </span>
+                    </div>
                     <p className="text-white/35 text-[12px] leading-relaxed mt-0.5">
-                      Agent makes paid API calls billed to this subscription
+                      Agent makes paid API calls billed to this subscription. Runtime verification path is on the roadmap (OKX APP <code className="text-white/55">session</code> voucher) — toggle now flags the subscription for future activation; no per-call drain happens yet.
                     </p>
                   </div>
                   {x402Enabled && (

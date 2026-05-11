@@ -1,8 +1,10 @@
 import dynamic from "next/dynamic";
+import { Suspense } from "react";
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
 import HowItWorks from "@/components/HowItWorks";
 import FeaturesGrid from "@/components/FeaturesGrid";
+import OnboardingGate from "@/components/OnboardingGate";
 // StatsBar removed: its hardcoded values (142 agents, 2400 jobs, 38K OG)
 // conflicted with HeroSection's live on-chain data. Hero now carries the
 // only canonical stats row.
@@ -26,6 +28,9 @@ const Footer           = dynamic(() => import("@/components/Footer"));
 export default function Home() {
   return (
     <main className="min-h-screen">
+      <Suspense fallback={null}>
+        <OnboardingGate />
+      </Suspense>
       <Navbar />
       <HeroSection />
       <HowItWorks />

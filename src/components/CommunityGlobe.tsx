@@ -53,6 +53,18 @@ const COLOR_CLIENT      = "#38bdf8"; // cyan
 const COLOR_AGENT_OWNER = "#34d399"; // emerald
 const COLOR_SEED        = "#a78bfa"; // soft violet — non-data placeholder
 
+// Interpolate between cyan (clients dominant) and emerald (agent owners dominant).
+// `ownerRatio` is agent_owners / total (0 = all clients, 1 = all agent owners).
+function blendRoleColor(ownerRatio: number): string {
+  const r1 = 56,  g1 = 189, b1 = 248; // cyan #38bdf8
+  const r2 = 52,  g2 = 211, b2 = 153; // emerald #34d399
+  const t = Math.min(1, Math.max(0, ownerRatio));
+  const r = Math.round(r1 + (r2 - r1) * t);
+  const g = Math.round(g1 + (g2 - g1) * t);
+  const b = Math.round(b1 + (b2 - b1) * t);
+  return `rgb(${r}, ${g}, ${b})`;
+}
+
 // Auto-rotate config
 const AUTO_ROTATE_SPEED = 0.35;
 
@@ -126,63 +138,49 @@ export default function CommunityGlobe() {
     controls.autoRotate = !selectedCountry;
   }, [selectedCountry]);
 
-  // Build TWO dot datasets (client + agent_owner) so they render in different colors.
-  // Dots are flat (low altitude) so they don't look like towers.
-  const { clientPoints, ownerPoints, seedPoints } = useMemo(() => {
+  // Build ONE flat dot per country. Color blends cyan→emerald based on the
+  // share of agent owners. Keeps every signup at the exact same lat/lng so
+  // nothing visually scatters.
+  const allPoints = useMemo(() => {
     if (stats.byCountry.length === 0) {
       // Demo seed pattern — small flat dots in target markets so the section
       // never looks empty during pre-launch.
       const seedCodes = ["ID", "SG", "MY", "VN", "IN", "JP", "US", "DE", "GB", "BR"];
-      const seeds = seedCodes
+      return seedCodes
         .map(code => COUNTRIES_BY_CODE[code])
         .filter(Boolean)
         .map(c => ({
           lat: c!.lat, lng: c!.lng,
           countryCode: c!.code, countryName: c!.name,
-          count: 0, role: "seed" as const,
-          color: COLOR_SEED, radius: 0.42, altitude: 0.01,
+          totalCount: 0, clientCount: 0, ownerCount: 0,
+          color: COLOR_SEED, radius: 0.42, altitude: 0.012,
+          isSeed: true,
         }));
-      return { clientPoints: [], ownerPoints: [], seedPoints: seeds };
     }
 
     const maxCount = Math.max(...stats.byCountry.map(c => c.signup_count));
-    const scaleRadius = (n: number) => 0.35 + (n / maxCount) * 0.55; // 0.35 - 0.9 (still flat)
+    const scaleRadius = (n: number) => 0.35 + (n / maxCount) * 0.55;
 
-    const clients = stats.byCountry
-      .filter(c => (c.clients_count ?? 0) > 0)
-      .map(c => ({
+    return stats.byCountry.map(c => {
+      const clientCount = c.clients_count ?? 0;
+      const ownerCount  = c.agent_owners_count ?? 0;
+      const total       = clientCount + ownerCount;
+      const ownerRatio  = total === 0 ? 0 : ownerCount / total;
+      return {
         lat: Number(c.latitude),
         lng: Number(c.longitude),
         countryCode: c.country_code,
         countryName: c.country_name,
-        count: c.clients_count ?? 0,
-        role: "client" as const,
-        color: COLOR_CLIENT,
-        radius: scaleRadius(c.clients_count ?? 0),
+        totalCount: total,
+        clientCount,
+        ownerCount,
+        color: blendRoleColor(ownerRatio),
+        radius: scaleRadius(c.signup_count),
         altitude: 0.012,
-      }));
-
-    const owners = stats.byCountry
-      .filter(c => (c.agent_owners_count ?? 0) > 0)
-      .map(c => ({
-        lat: Number(c.latitude),
-        lng: Number(c.longitude),
-        countryCode: c.country_code,
-        countryName: c.country_name,
-        count: c.agent_owners_count ?? 0,
-        role: "agent_owner" as const,
-        color: COLOR_AGENT_OWNER,
-        radius: scaleRadius(c.agent_owners_count ?? 0),
-        altitude: 0.018, // slightly stacked above client dot
-      }));
-
-    return { clientPoints: clients, ownerPoints: owners, seedPoints: [] };
+        isSeed: false,
+      };
+    });
   }, [stats.byCountry]);
-
-  const allPoints = useMemo(
-    () => [...clientPoints, ...ownerPoints, ...seedPoints],
-    [clientPoints, ownerPoints, seedPoints],
-  );
 
   // Animated arcs — agent_owner → client. Visualizes agents "running" jobs
   // between regions. Stays subtle: thin stroke, low opacity, dashed.
@@ -244,7 +242,7 @@ export default function CommunityGlobe() {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handlePointClick = useCallback((point: any) => {
-    if (!point?.countryCode || point.role === "seed") return;
+    if (!point?.countryCode || point.isSeed) return;
     setSelectedCountry(point.countryCode);
   }, []);
 
@@ -316,13 +314,19 @@ export default function CommunityGlobe() {
               pointsMerge={false}
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               pointLabel={(d: any) => {
-                const roleLabel = d.role === "client" ? "Clients" : d.role === "agent_owner" ? "Agent Owners" : "Be the first";
-                return `<div style="background:#0d1525;border:1px solid rgba(255,255,255,0.12);padding:8px 12px;border-radius:8px;color:#fff;font-family:system-ui;font-size:12px;min-width:160px;">
-                    <div style="font-weight:600;">${d.countryName}</div>
-                    <div style="color:rgba(255,255,255,0.6);font-size:11px;margin-top:3px;">
-                      ${roleLabel}${d.role !== "seed" ? `: ${d.count}` : ""}
+                if (d.isSeed) {
+                  return `<div style="background:#0d1525;border:1px solid rgba(255,255,255,0.12);padding:8px 12px;border-radius:8px;color:#fff;font-family:system-ui;font-size:12px;min-width:160px;">
+                      <div style="font-weight:600;">${d.countryName}</div>
+                      <div style="color:rgba(255,255,255,0.6);font-size:11px;margin-top:3px;">Be the first from here</div>
+                    </div>`;
+                }
+                return `<div style="background:#0d1525;border:1px solid rgba(255,255,255,0.12);padding:10px 12px;border-radius:8px;color:#fff;font-family:system-ui;font-size:12px;min-width:180px;">
+                    <div style="font-weight:600;font-size:13px;">${d.countryName}</div>
+                    <div style="display:flex;gap:10px;margin-top:6px;font-size:11px;">
+                      <span style="color:#38bdf8;"><b>${d.clientCount}</b> client${d.clientCount === 1 ? "" : "s"}</span>
+                      <span style="color:#34d399;"><b>${d.ownerCount}</b> agent owner${d.ownerCount === 1 ? "" : "s"}</span>
                     </div>
-                    <div style="color:rgba(255,255,255,0.35);font-size:10px;margin-top:6px;font-family:monospace;">
+                    <div style="color:rgba(255,255,255,0.35);font-size:10px;margin-top:8px;font-family:monospace;">
                       click to view members
                     </div>
                   </div>`;

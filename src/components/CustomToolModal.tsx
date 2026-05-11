@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { motion } from "framer-motion";
 import { Globe, Plug } from "lucide-react";
 
 export type ToolType = "http" | "mcp";
@@ -11,10 +12,10 @@ export interface ToolConfig {
   type: ToolType;
   name: string;
   description: string;
-  endpoint: string;        // HTTP endpoint URL or MCP server URL (when mcpTransport = "url")
+  endpoint: string;
   apiKey: string;
-  mcpTransport?: McpTransport; // only relevant when type = "mcp"
-  npmPackage?: string;         // npm package name when mcpTransport = "package"
+  mcpTransport?: McpTransport;
+  npmPackage?: string;
 }
 
 interface CustomToolModalProps {
@@ -38,7 +39,6 @@ const MCP_CATALOG = [
         <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>
     ),
-    color: "#a855f7",
     badge: "250+ apps",
     needsKey: true,
   },
@@ -53,7 +53,6 @@ const MCP_CATALOG = [
         <path strokeLinecap="round" strokeLinejoin="round" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4v16" />
       </svg>
     ),
-    color: "#10b981",
     badge: "Trading",
     needsKey: true,
     type: "http" as ToolType,
@@ -70,7 +69,6 @@ const MCP_CATALOG = [
         <path strokeLinecap="round" d="M3 9h18M9 21V9"/>
       </svg>
     ),
-    color: "#f59e0b",
     badge: "Browser",
     needsKey: false,
   },
@@ -86,7 +84,6 @@ const MCP_CATALOG = [
         <path strokeLinecap="round" d="M8 21h8M12 17v4"/>
       </svg>
     ),
-    color: "#38bdf8",
     badge: "UI Dev",
     needsKey: false,
   },
@@ -94,20 +91,15 @@ const MCP_CATALOG = [
 
 // ─── COMPONENT ───────────────────────────────────────────────────────────────
 
-export default function CustomToolModal({
-  mode,
-  initialTool,
-  onSave,
-  onClose,
-}: CustomToolModalProps) {
-  const [toolType, setToolType] = useState<ToolType>(initialTool?.type ?? "http");
-  const [mcpTransport, setMcpTransport] = useState<McpTransport>(initialTool?.mcpTransport ?? "url");
-  const [name, setName] = useState(initialTool?.name ?? "");
-  const [endpoint, setEndpoint] = useState(initialTool?.endpoint ?? "");
-  const [npmPackage, setNpmPackage] = useState(initialTool?.npmPackage ?? "");
-  const [description, setDescription] = useState(initialTool?.description ?? "");
-  const [headers, setHeaders] = useState("");
-  const [apiKey, setApiKey] = useState(initialTool?.apiKey ?? "");
+export default function CustomToolModal({ mode, initialTool, onSave, onClose }: CustomToolModalProps) {
+  const [toolType, setToolType]           = useState<ToolType>(initialTool?.type ?? "http");
+  const [mcpTransport, setMcpTransport]   = useState<McpTransport>(initialTool?.mcpTransport ?? "url");
+  const [name, setName]                   = useState(initialTool?.name ?? "");
+  const [endpoint, setEndpoint]           = useState(initialTool?.endpoint ?? "");
+  const [npmPackage, setNpmPackage]       = useState(initialTool?.npmPackage ?? "");
+  const [description, setDescription]     = useState(initialTool?.description ?? "");
+  const [headers, setHeaders]             = useState("");
+  const [apiKey, setApiKey]               = useState(initialTool?.apiKey ?? "");
   const [selectedCatalog, setSelectedCatalog] = useState<string | null>(null);
 
   const isValid = name.trim() && (
@@ -128,16 +120,10 @@ export default function CustomToolModal({
 
   function handleSave() {
     if (!isValid) return;
-
     let parsedHeaders: Record<string, string> = {};
     if (headers.trim()) {
-      try {
-        parsedHeaders = JSON.parse(headers.trim());
-      } catch {
-        return;
-      }
+      try { parsedHeaders = JSON.parse(headers.trim()); } catch { return; }
     }
-
     onSave({
       id: initialTool?.id ?? Date.now().toString(),
       type: toolType,
@@ -151,18 +137,28 @@ export default function CustomToolModal({
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+    <motion.div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.18 }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
 
-      <div className="relative w-full max-w-lg rounded-2xl border border-white/10 bg-[#0d1525] p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+      <motion.div
+        className="relative w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl border border-white/10 bg-[#0d1525] p-6 shadow-2xl max-h-[90vh] overflow-y-auto"
+        initial={{ y: "100%", opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: "100%", opacity: 0 }}
+        transition={{ type: "spring", damping: 28, stiffness: 320, mass: 0.8 }}
+      >
         {/* Header */}
         <div className="flex items-start justify-between mb-5">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#a855f7]/20 to-[#38bdf8]/20 border border-white/10 flex items-center justify-center">
-              <svg className="w-5 h-5 text-[#a855f7]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-10 h-10 rounded-xl bg-white/[0.06] border border-white/10 flex items-center justify-center">
+              <svg className="w-5 h-5 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
               </svg>
             </div>
@@ -170,22 +166,17 @@ export default function CustomToolModal({
               <h3 className="text-white font-medium text-[15px]">
                 {mode === "add" ? "Add Custom Tool" : "Edit Tool"}
               </h3>
-              <p className="text-white/40 text-[11px] mt-0.5">
-                Connect any HTTP API or MCP server
-              </p>
+              <p className="text-white/40 text-[11px] mt-0.5">Connect any HTTP API or MCP server</p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="text-white/30 hover:text-white/60 transition-colors p-1"
-          >
+          <button onClick={onClose} className="text-white/30 hover:text-white/60 transition-colors p-1">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
-        {/* Quick connect catalog (add mode only) */}
+        {/* Quick connect catalog */}
         {mode === "add" && (
           <div className="mb-5">
             <p className="text-[11px] text-white/35 uppercase tracking-wider mb-2.5">Quick Connect</p>
@@ -196,23 +187,16 @@ export default function CustomToolModal({
                   onClick={() => applyPreset(item)}
                   className={`text-left rounded-xl border px-3 py-2.5 transition-all ${
                     selectedCatalog === item.id
-                      ? "border-white/20 bg-white/[0.06]"
-                      : "border-white/[0.07] bg-[#050810]/40 hover:border-white/15 hover:bg-white/[0.04]"
+                      ? "border-white/20 bg-white/[0.07]"
+                      : "border-white/[0.07] bg-white/[0.02] hover:border-white/[0.13] hover:bg-white/[0.04]"
                   }`}
                 >
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-2">
-                      <span style={{ color: item.color }}>{item.icon}</span>
+                      <span className="text-white/50">{item.icon}</span>
                       <span className="text-[12px] text-white/80 font-medium">{item.name}</span>
                     </div>
-                    <span
-                      className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full"
-                      style={{
-                        color: item.color,
-                        backgroundColor: `${item.color}18`,
-                        border: `1px solid ${item.color}30`,
-                      }}
-                    >
+                    <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-white/[0.07] text-white/40 border border-white/[0.1]">
                       {item.badge}
                     </span>
                   </div>
@@ -239,7 +223,7 @@ export default function CustomToolModal({
               onClick={() => setToolType(t)}
               className={`flex-1 py-2.5 text-[12px] font-semibold uppercase tracking-wider transition-colors flex items-center justify-center gap-2 ${
                 toolType === t
-                  ? "bg-[#a855f7]/20 text-[#a855f7] border-t-2 border-t-[#a855f7]"
+                  ? "bg-white/[0.08] text-white border-t-2 border-t-white/30"
                   : "text-white/35 hover:text-white/60"
               }`}
             >
@@ -249,16 +233,16 @@ export default function CustomToolModal({
           ))}
         </div>
 
-        {/* MCP Transport sub-toggle (only when MCP selected) */}
+        {/* MCP Transport sub-toggle */}
         {toolType === "mcp" && (
-          <div className="flex rounded-xl border border-white/[0.07] overflow-hidden mb-5 bg-[#050810]/60">
+          <div className="flex rounded-xl border border-white/[0.07] overflow-hidden mb-5 bg-white/[0.02]">
             {(["url", "package"] as McpTransport[]).map(t => (
               <button
                 key={t}
                 onClick={() => setMcpTransport(t)}
                 className={`flex-1 py-2 text-[11px] font-semibold uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 ${
                   mcpTransport === t
-                    ? "bg-[#38bdf8]/15 text-[#38bdf8]"
+                    ? "bg-white/[0.08] text-white/80"
                     : "text-white/30 hover:text-white/50"
                 }`}
               >
@@ -274,7 +258,6 @@ export default function CustomToolModal({
 
         {/* Form fields */}
         <div className="space-y-4">
-          {/* Tool Name */}
           <div>
             <label className="block text-[12px] text-white/50 mb-1.5">Tool Name</label>
             <input
@@ -286,40 +269,37 @@ export default function CustomToolModal({
             />
           </div>
 
-          {/* Endpoint URL — shown for HTTP or MCP+url */}
           {(toolType === "http" || (toolType === "mcp" && mcpTransport === "url")) && (
-          <div>
-            <label className="block text-[12px] text-white/50 mb-1.5">
-              {toolType === "http" ? "Endpoint URL" : "MCP Server URL"}
-            </label>
-            <input
-              type="text"
-              value={endpoint}
-              onChange={e => setEndpoint(e.target.value)}
-              placeholder={toolType === "http" ? "https://api.myservice.com/query" : "https://mcp-server.example.com/mcp"}
-              className="w-full bg-[#050810]/80 border border-white/10 rounded-xl px-4 py-2.5 text-white text-[13px] placeholder:text-white/20 focus:outline-none focus:border-white/25 font-mono"
-            />
-          </div>
+            <div>
+              <label className="block text-[12px] text-white/50 mb-1.5">
+                {toolType === "http" ? "Endpoint URL" : "MCP Server URL"}
+              </label>
+              <input
+                type="text"
+                value={endpoint}
+                onChange={e => setEndpoint(e.target.value)}
+                placeholder={toolType === "http" ? "https://api.myservice.com/query" : "https://mcp-server.example.com/mcp"}
+                className="w-full bg-[#050810]/80 border border-white/10 rounded-xl px-4 py-2.5 text-white text-[13px] placeholder:text-white/20 focus:outline-none focus:border-white/25 font-mono"
+              />
+            </div>
           )}
 
-          {/* npm Package — shown for MCP+package */}
           {toolType === "mcp" && mcpTransport === "package" && (
-          <div>
-            <label className="block text-[12px] text-white/50 mb-1.5">npm Package Name</label>
-            <input
-              type="text"
-              value={npmPackage}
-              onChange={e => setNpmPackage(e.target.value)}
-              placeholder="@modelcontextprotocol/server-github"
-              className="w-full bg-[#050810]/80 border border-white/10 rounded-xl px-4 py-2.5 text-white text-[13px] placeholder:text-white/20 focus:outline-none focus:border-white/25 font-mono"
-            />
-            <p className="text-[10px] text-amber-400/50 mt-1.5 leading-relaxed">
-              Pre-install this package in the agent-runtime <code className="text-amber-400/70">package.json</code> for reliable execution.
-            </p>
-          </div>
+            <div>
+              <label className="block text-[12px] text-white/50 mb-1.5">npm Package Name</label>
+              <input
+                type="text"
+                value={npmPackage}
+                onChange={e => setNpmPackage(e.target.value)}
+                placeholder="@modelcontextprotocol/server-github"
+                className="w-full bg-[#050810]/80 border border-white/10 rounded-xl px-4 py-2.5 text-white text-[13px] placeholder:text-white/20 focus:outline-none focus:border-white/25 font-mono"
+              />
+              <p className="text-[10px] text-white/30 mt-1.5 leading-relaxed">
+                Pre-install this package in the agent-runtime <code className="text-white/50">package.json</code> for reliable execution.
+              </p>
+            </div>
           )}
 
-          {/* Description */}
           <div>
             <label className="block text-[12px] text-white/50 mb-1.5">
               Description <span className="text-white/25">(optional)</span>
@@ -333,7 +313,6 @@ export default function CustomToolModal({
             />
           </div>
 
-          {/* Headers (HTTP only) */}
           {toolType === "http" && (
             <div>
               <label className="block text-[12px] text-white/50 mb-1.5">
@@ -347,14 +326,11 @@ export default function CustomToolModal({
                 className="w-full bg-[#050810]/80 border border-white/10 rounded-xl px-4 py-2.5 text-white text-[13px] placeholder:text-white/20 focus:outline-none focus:border-white/25 resize-none font-mono"
               />
               {headers.trim() && (
-                <p className="text-[10px] text-white/25 mt-1">
-                  JSON parsed on save — verify format is valid
-                </p>
+                <p className="text-[10px] text-white/25 mt-1">JSON parsed on save — verify format is valid</p>
               )}
             </div>
           )}
 
-          {/* API Key */}
           <div>
             <label className="block text-[12px] text-white/50 mb-1.5">
               API Key <span className="text-white/25">(optional)</span>
@@ -370,11 +346,11 @@ export default function CustomToolModal({
         </div>
 
         {/* Info box */}
-        <div className="mt-4 rounded-xl bg-[#38bdf8]/5 border border-[#38bdf8]/15 px-4 py-3 flex gap-3">
-          <svg className="h-4 w-4 text-[#38bdf8] flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="mt-4 rounded-xl bg-white/[0.03] border border-white/[0.08] px-4 py-3 flex gap-3">
+          <svg className="h-4 w-4 text-white/30 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <p className="text-[#38bdf8]/70 text-[12px] leading-relaxed">
+          <p className="text-white/40 text-[12px] leading-relaxed">
             {toolType === "http"
               ? "The agent will POST job context to your endpoint and include the response in the LLM context."
               : mcpTransport === "package"
@@ -394,7 +370,7 @@ export default function CustomToolModal({
           <button
             onClick={handleSave}
             disabled={!isValid}
-            className="flex-1 py-2.5 rounded-xl bg-[#a855f7]/15 border border-[#a855f7]/30 text-[#a855f7] text-[13px] font-medium hover:bg-[#a855f7]/20 transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="flex-1 py-2.5 rounded-xl bg-white/[0.07] border border-white/[0.14] text-white/80 text-[13px] font-medium hover:bg-white/[0.11] hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {mode === "add" ? (
               <>
@@ -403,12 +379,10 @@ export default function CustomToolModal({
                 </svg>
                 Add Tool
               </>
-            ) : (
-              "Save Changes"
-            )}
+            ) : "Save Changes"}
           </button>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

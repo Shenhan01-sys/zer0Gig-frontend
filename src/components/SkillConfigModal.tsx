@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { motion } from "framer-motion";
 import type { PlatformSkill } from "@/components/PreBuiltToolsGrid";
 
 interface SkillConfigModalProps {
@@ -43,15 +44,25 @@ export default function SkillConfigModal({ skill, existingConfig, onSave, onClos
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+    <motion.div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.18 }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
 
       {/* Modal */}
-      <div className="relative w-full max-w-md rounded-2xl border border-white/10 bg-[#0d1525] p-6 shadow-2xl">
+      <motion.div
+        className="relative w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl border border-white/10 bg-[#0d1525] p-6 shadow-2xl"
+        initial={{ y: "100%", opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: "100%", opacity: 0 }}
+        transition={{ type: "spring", damping: 28, stiffness: 320, mass: 0.8 }}
+      >
         {/* Header */}
         <div className="flex items-start justify-between mb-5">
           <div className="flex items-center gap-3">
@@ -166,12 +177,12 @@ export default function SkillConfigModal({ skill, existingConfig, onSave, onClos
           </button>
           <button
             onClick={() => { onSave(skill.id, values); onClose(); }}
-            className="flex-1 py-2.5 rounded-xl bg-[#38bdf8]/15 border border-[#38bdf8]/30 text-[#38bdf8] text-[13px] font-medium hover:bg-[#38bdf8]/20 transition-colors"
+            className="flex-1 py-2.5 rounded-xl bg-white/[0.07] border border-white/[0.14] text-white/80 text-[13px] font-medium hover:bg-white/[0.11] hover:text-white transition-colors"
           >
             Save & Enable
           </button>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

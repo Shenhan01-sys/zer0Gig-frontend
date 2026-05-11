@@ -461,9 +461,65 @@ function SubmitProposalPanel({
 // ─── Milestone builder panel (client, PENDING_MILESTONES status) ─────────────
 function DefineMilestonesPanel({ jobId, onDefined }: { jobId: number; onDefined: () => void }) {
   const { defineMilestones, isPending, isSuccess } = useDefineMilestones();
+  const [showSuccess, setShowSuccess] = useState(false);
 
-  if (isSuccess) {
-    onDefined();
+  useEffect(() => {
+    if (!isSuccess) return;
+    setShowSuccess(true);
+    const t = setTimeout(() => onDefined(), 1600);
+    return () => clearTimeout(t);
+  }, [isSuccess, onDefined]);
+
+  if (showSuccess) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.3, ease: "easeOut" }}
+        className="bg-[#0d1525]/90 rounded-2xl border border-emerald-500/20 p-8 text-center"
+      >
+        <div className="flex justify-center mb-5">
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: "spring", stiffness: 220, damping: 14, delay: 0.08 }}
+            className="w-16 h-16 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center"
+          >
+            <svg className="w-8 h-8 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+          </motion.div>
+        </div>
+        <motion.h3
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.18 }}
+          className="text-white text-[16px] font-medium mb-2"
+        >
+          Milestones Locked
+        </motion.h3>
+        <motion.p
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.26 }}
+          className="text-white/40 text-[13px] mb-5"
+        >
+          Budget secured in escrow. AI agent is initializing work...
+        </motion.p>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.38 }}
+          className="flex items-center justify-center gap-2"
+        >
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
+          </span>
+          <span className="text-emerald-400 text-[12px] font-mono uppercase tracking-wider">Agent active</span>
+        </motion.div>
+      </motion.div>
+    );
   }
 
   return (
@@ -692,7 +748,8 @@ function JobDetailInner({ jobId }: { jobId: number }) {
   const isAgentOwner = role === UserRole.FreelancerOwner;
 
   return (
-    <div className="max-w-4xl space-y-6">
+    <div className="flex gap-6 items-start">
+      <div className="flex-1 min-w-0 space-y-6">
       {/* Back navigation */}
       <Link href="/dashboard" className="flex items-center gap-2 text-white/40 hover:text-white/70 text-[13px] transition-colors">
         ← Back to Dashboard
@@ -891,15 +948,10 @@ function JobDetailInner({ jobId }: { jobId: number }) {
       {/* ── IN_PROGRESS / COMPLETED / PARTIALLY_DONE: milestone timeline ── */}
       {job.status >= JOB_STATUS.IN_PROGRESS && job.status !== JOB_STATUS.CANCELLED && (
         <>
-          {/* Agent Activity + Chat side by side */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Agent Activity (live from Supabase) */}
-            {job.agentWallet && (
-              <AgentActivityByWallet agentWallet={job.agentWallet} maxEntries={15} />
-            )}
-            {/* Live Chat with Agent */}
-            <JobChat jobId={jobId} />
-          </div>
+          {/* Agent Activity */}
+          {job.agentWallet && (
+            <AgentActivityByWallet agentWallet={job.agentWallet} maxEntries={30} />
+          )}
 
           {/* Milestone Timeline */}
           <div className="rounded-2xl border border-white/10 bg-[#0d1525]/90 p-6">
@@ -967,7 +1019,13 @@ function JobDetailInner({ jobId }: { jobId: number }) {
       </div>
 
       {/* Activity log */}
-      <SystemMessageLog jobId={jobId} maxEntries={15} />
+      <SystemMessageLog jobId={jobId} maxEntries={50} />
+      </div>
+
+      {/* Right column — live chat */}
+      <div className="w-[360px] flex-shrink-0 sticky top-28 h-[calc(100vh-9rem)]">
+        <JobChat jobId={jobId} className="h-full" />
+      </div>
     </div>
   );
 }

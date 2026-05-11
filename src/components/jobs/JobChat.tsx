@@ -40,13 +40,12 @@ function TypingDots() {
   );
 }
 
-export default function JobChat({ jobId }: { jobId: number }) {
+export default function JobChat({ jobId, className }: { jobId: number; className?: string }) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [awaitingAgent, setAwaitingAgent] = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Resolve agent identity for the header + avatar
@@ -93,11 +92,6 @@ export default function JobChat({ jobId }: { jobId: number }) {
     return () => clearTimeout(t);
   }, [awaitingAgent]);
 
-  // Auto-scroll to bottom on new messages / typing
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages.length, awaitingAgent]);
-
   // Group consecutive messages from same sender so only the last shows timestamp/avatar
   const bubbles = useMemo(() => {
     return messages.map((msg, i) => {
@@ -142,7 +136,7 @@ export default function JobChat({ jobId }: { jobId: number }) {
   };
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-[#0d1525]/90 flex flex-col overflow-hidden" style={{ height: 420 }}>
+    <div className={`rounded-2xl border border-white/10 bg-[#0d1525]/90 flex flex-col overflow-hidden ${className ?? ""}`} style={!className ? { height: 420 } : undefined}>
       {/* Header — agent identity + online status */}
       <div className="flex items-center gap-3 px-5 py-3 border-b border-white/10 bg-[#050810]/40">
         <div className="relative shrink-0">
@@ -308,7 +302,6 @@ export default function JobChat({ jobId }: { jobId: number }) {
           )}
         </AnimatePresence>
 
-        <div ref={bottomRef} />
       </div>
 
       {/* Error display */}

@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useEffect, useState } from "react";
+import { AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import SkillConfigModal from "@/components/SkillConfigModal";
 import { Search, Globe, Github, Terminal, Send, BarChart3, FileText, Palette, Database, MessageCircle, Settings, Zap, Link2 } from "lucide-react";
@@ -144,8 +145,8 @@ export default function PreBuiltToolsGrid({ selectedSkills, skillConfigs, onTogg
               onClick={() => setActiveCategory(cat)}
               className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all border ${
                 activeCategory === cat
-                  ? "border-[#38bdf8]/50 bg-[#38bdf8]/15 text-[#38bdf8]"
-                  : "border-white/10 text-white/35 hover:border-white/20 hover:text-white/50"
+                  ? "border-white/25 bg-white/[0.1] text-white"
+                  : "border-white/[0.08] text-white/35 hover:border-white/18 hover:text-white/55"
               }`}
             >
               {cat === "all" ? "All" : CATEGORY_LABELS[cat] || cat}
@@ -166,36 +167,36 @@ export default function PreBuiltToolsGrid({ selectedSkills, skillConfigs, onTogg
                 onClick={() => handleCardClick(skill)}
                 className={`relative text-left p-3 rounded-xl border transition-all ${
                   isSelected
-                    ? "border-[#38bdf8]/40 bg-[#38bdf8]/10"
-                    : "border-white/8 bg-[#050810]/60 hover:border-white/15"
+                    ? "border-white/20 bg-white/[0.07]"
+                    : "border-white/[0.07] bg-white/[0.02] hover:border-white/[0.13] hover:bg-white/[0.04]"
                 }`}
               >
                 {/* Verified badge */}
                 {skill.is_verified && !isSelected && (
-                  <span className="absolute top-2 right-2 text-[9px] px-1.5 py-0.5 rounded-full bg-[#38bdf8]/10 text-[#38bdf8]/70 border border-[#38bdf8]/20 font-medium">
+                  <span className="absolute top-2 right-2 text-[9px] px-1.5 py-0.5 rounded-full bg-white/[0.07] text-white/40 border border-white/[0.1] font-medium">
                     Official
                   </span>
                 )}
 
                 {/* Config needed indicator */}
                 {isSelected && needsConfig && !isConfigured && (
-                  <span className="absolute top-2 right-2 text-[9px] px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/25 font-medium">
-                    Config <Settings size={12} />
+                  <span className="absolute top-2 right-2 inline-flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded-full bg-amber-900/60 text-amber-200 border border-amber-700/40 font-medium">
+                    Config <Settings size={10} />
                   </span>
                 )}
                 {isSelected && isConfigured && (
-                  <span className="absolute top-2 right-2 text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 font-medium">
-                    Configured ?
+                  <span className="absolute top-2 right-2 text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-900/60 text-emerald-300 border border-emerald-700/40 font-medium">
+                    Configured ✓
                   </span>
                 )}
 
                 <div className="flex items-start gap-2.5">
-                  <span className="mt-0.5 text-[#38bdf8]">{getSkillIcon(skill.id)}</span>
+                  <span className={`mt-0.5 ${isSelected ? "text-white/70" : "text-white/40"}`}>{getSkillIcon(skill.id)}</span>
                   <div className="flex-1 min-w-0">
-                    <p className={`text-[12px] font-semibold truncate ${isSelected ? "text-[#38bdf8]" : "text-white/80"}`}>
+                    <p className={`text-[12px] font-semibold truncate ${isSelected ? "text-white/90" : "text-white/70"}`}>
                       {skill.name}
                     </p>
-                    <p className="text-[10px] text-white/35 line-clamp-2 mt-0.5 leading-relaxed">
+                    <p className="text-[10px] text-white/30 line-clamp-2 mt-0.5 leading-relaxed">
                       {skill.description}
                     </p>
                   </div>
@@ -205,16 +206,16 @@ export default function PreBuiltToolsGrid({ selectedSkills, skillConfigs, onTogg
                 {isSelected && needsConfig && (
                   <button
                     onClick={e => { e.stopPropagation(); setConfiguringSkill(skill); }}
-                    className="mt-2 text-[10px] text-[#38bdf8]/60 hover:text-[#38bdf8] transition-colors"
+                    className="mt-2 text-[10px] text-white/35 hover:text-white/65 transition-colors flex items-center gap-1"
                   >
-                    <Settings size={12} /> Edit config
+                    <Settings size={11} /> Edit config
                   </button>
                 )}
 
                 {/* Selected checkmark */}
                 {isSelected && !needsConfig && (
-                  <div className="absolute bottom-2 right-2 w-4 h-4 rounded-full bg-[#38bdf8] flex items-center justify-center">
-                    <svg className="w-2.5 h-2.5 text-[#050810]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="absolute bottom-2 right-2 w-4 h-4 rounded-full bg-white/20 border border-white/30 flex items-center justify-center">
+                    <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
@@ -225,25 +226,27 @@ export default function PreBuiltToolsGrid({ selectedSkills, skillConfigs, onTogg
         </div>
 
         {selectedSkills.length > 0 && (
-          <p className="text-[11px] text-[#38bdf8]/60">
-            {selectedSkills.length} skill{selectedSkills.length !== 1 ? "s" : ""} selected � agent will use these during job execution
+          <p className="text-[11px] text-white/35">
+            {selectedSkills.length} skill{selectedSkills.length !== 1 ? "s" : ""} selected — agent will use these during job execution
           </p>
         )}
       </div>
 
       {/* Config modal */}
-      {configuringSkill && (
-        <SkillConfigModal
-          skill={configuringSkill}
-          existingConfig={skillConfigs[configuringSkill.id] || {}}
-          onSave={(skillId, config) => {
-            onConfigSave(skillId, config);
-            // Also select the skill if not already selected
-            if (!selectedSkills.includes(skillId)) onToggle(skillId);
-          }}
-          onClose={() => setConfiguringSkill(null)}
-        />
-      )}
+      <AnimatePresence>
+        {configuringSkill && (
+          <SkillConfigModal
+            key={configuringSkill.id}
+            skill={configuringSkill}
+            existingConfig={skillConfigs[configuringSkill.id] || {}}
+            onSave={(skillId, config) => {
+              onConfigSave(skillId, config);
+              if (!selectedSkills.includes(skillId)) onToggle(skillId);
+            }}
+            onClose={() => setConfiguringSkill(null)}
+          />
+        )}
+      </AnimatePresence>
     </>
   );
 }

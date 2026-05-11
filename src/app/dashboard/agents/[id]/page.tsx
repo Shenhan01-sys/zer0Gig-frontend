@@ -24,6 +24,12 @@ import ConnectTelegramButton from "@/components/ConnectTelegramButton";
 import CustomToolModal, { type ToolConfig } from "@/components/CustomToolModal";
 import PreBuiltToolsGrid from "@/components/PreBuiltToolsGrid";
 import AgentStoragePanel from "@/components/AgentStoragePanel";
+import { BlurFade } from "@/components/ui/blur-fade";
+import { ShimmerButton } from "@/components/ui/shimmer-button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import NeuralNetwork3D, { type ActivityEntry } from "@/components/agents/NeuralNetwork3D";
 import AgentPortfolio from "@/components/agents/AgentPortfolio";
 import CornerBrackets from "@/components/ui/CornerBrackets";
@@ -47,7 +53,7 @@ import {
 function getScoreLabel(score: number): { label: string; color: string } {
   if (score >= 9500) return { label: "S", color: "text-amber-400" };
   if (score >= 9000) return { label: "A", color: "text-emerald-400" };
-  if (score >= 8500) return { label: "B", color: "text-[#38bdf8]" };
+  if (score >= 8500) return { label: "B", color: "text-sky-400" };
   if (score >= 8000) return { label: "C", color: "text-white/60" };
   if (score >= 7000) return { label: "D", color: "text-amber-400/70" };
   return { label: "F", color: "text-red-400" };
@@ -73,14 +79,14 @@ function InputField({
   placeholder?: string; type?: string; mono?: boolean;
 }) {
   return (
-    <div>
-      <label className="block text-[11px] text-white/40 mb-1.5">{label}</label>
-      <input
+    <div className="space-y-1.5">
+      <Label>{label}</Label>
+      <Input
         type={type}
         value={value}
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
-        className={`w-full bg-[#050810]/80 border border-white/10 rounded-lg px-3 py-2.5 text-white text-[13px] placeholder:text-white/20 focus:outline-none focus:border-[#38bdf8]/40 transition-colors ${mono ? "font-mono" : ""}`}
+        className={mono ? "font-mono" : ""}
       />
     </div>
   );
@@ -120,17 +126,9 @@ const ACTION_TABS: { id: ActionTab; label: string; icon: React.ReactNode; desc: 
 // ─── edit panel animation variants ──────────────────────────────────────────
 
 const editPanelVariants = {
-  hidden: { opacity: 0, scale: 0.97 },
-  visible: {
-    opacity: 1, scale: 1,
-    transition: { type: "spring" as const, stiffness: 300, damping: 28, staggerChildren: 0.1, delayChildren: 0.05 },
-  },
-  exit: { opacity: 0, scale: 0.97, transition: { duration: 0.18, ease: "easeIn" } },
-};
-
-const editSectionVariants = {
-  hidden: { opacity: 0, y: 40, scale: 0.95 },
-  visible: { opacity: 1, y: 0, scale: 1, transition: { type: "spring" as const, stiffness: 240, damping: 20 } },
+  hidden: { opacity: 0, scale: 0.98, y: -8 },
+  visible: { opacity: 1, scale: 1, y: 0, transition: { duration: 0.22, ease: [0.21, 0.47, 0.32, 0.98] } },
+  exit:   { opacity: 0, scale: 0.98, y: -6, transition: { duration: 0.16, ease: "easeIn" } },
 };
 
 // ─── main page ────────────────────────────────────────────────────────────────
@@ -587,7 +585,7 @@ export default function AgentDetailPage() {
           <div
             className="absolute inset-0 pointer-events-none opacity-[0.035]"
             style={{
-              backgroundImage: "linear-gradient(to right, #38bdf8 1px, transparent 1px), linear-gradient(to bottom, #38bdf8 1px, transparent 1px)",
+              backgroundImage: "linear-gradient(to right, rgba(255,255,255,0.04) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.04) 1px, transparent 1px)",
               backgroundSize: "40px 40px",
             }}
             aria-hidden
@@ -595,7 +593,7 @@ export default function AgentDetailPage() {
           <CornerBrackets size="md" weight="hair" accent="rgba(56,189,248,0.7)" inset={14} className="absolute inset-0" />
 
           <div className="absolute top-3 right-16 hidden md:flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-white/30 pointer-events-none" aria-hidden>
-            <span className={`w-1.5 h-1.5 rounded-full ${profile.isActive ? "bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)] animate-pulse" : "bg-white/25"}`} />
+            <span className={`w-1.5 h-1.5 rounded-full ${profile.isActive ? "bg-emerald-400 animate-pulse" : "bg-white/20"}`} />
             <span>agent-{agentIdNum} · erc-7857 · v{Number(profile.version || 1)}</span>
           </div>
 
@@ -612,7 +610,7 @@ export default function AgentDetailPage() {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3 mb-1 flex-wrap">
                 <h1 className="text-2xl font-medium text-white">{displayName}</h1>
-                <span className={`px-2.5 py-1 rounded-full text-[12px] font-medium ${profile.isActive ? "bg-emerald-500/10 text-emerald-400" : "bg-red-500/10 text-red-400"}`}>
+                <span className={`px-2.5 py-1 rounded-full text-[12px] font-medium ${profile.isActive ? "bg-emerald-900/60 text-emerald-300 border border-emerald-700/40" : "bg-red-900/60 text-red-300 border border-red-700/40"}`}>
                   {profile.isActive ? "Active" : "Inactive"}
                 </span>
                 <span className={`px-2.5 py-1 rounded-full text-[12px] font-bold ${scoreInfo.color} bg-white/5`}>
@@ -649,7 +647,7 @@ export default function AgentDetailPage() {
                 initial={{ width: 0 }}
                 animate={{ width: `${Math.min(100, score / 100)}%` }}
                 transition={{ duration: 0.8, ease: "easeOut" }}
-                className="h-full bg-gradient-to-r from-[#38bdf8] to-[#22d3ee] rounded-full"
+                className="h-full bg-gradient-to-r from-sky-600 to-sky-400 rounded-full"
               />
             </div>
           </div>
@@ -683,7 +681,7 @@ export default function AgentDetailPage() {
               <div
                 className="absolute inset-0 pointer-events-none opacity-[0.04]"
                 style={{
-                  backgroundImage: "linear-gradient(to right, #38bdf8 1px, transparent 1px), linear-gradient(to bottom, #38bdf8 1px, transparent 1px)",
+                  backgroundImage: "linear-gradient(to right, rgba(255,255,255,0.035) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.035) 1px, transparent 1px)",
                   backgroundSize: "32px 32px",
                 }}
                 aria-hidden
@@ -696,7 +694,7 @@ export default function AgentDetailPage() {
                   <p className="text-white/40 text-[12px] mt-1">Five-axis reputation read from on-chain performance</p>
                 </div>
                 <div className="hidden md:flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-white/35">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#38bdf8] animate-pulse shadow-[0_0_6px_rgba(56,189,248,0.8)]" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-white/50 animate-pulse" />
                   on-chain · live
                 </div>
               </div>
@@ -724,227 +722,235 @@ export default function AgentDetailPage() {
               initial="hidden"
               animate="visible"
               exit="exit"
-              className="rounded-2xl border border-[#38bdf8]/20 bg-[#0d1525]/90 p-6 space-y-5 overflow-hidden"
+              className="rounded-2xl border border-white/[0.08] bg-[#0d1525]/90 overflow-hidden"
             >
-              <motion.h2
-                variants={editSectionVariants}
-                className="text-[14px] font-semibold text-white/70 uppercase tracking-wider"
-              >
-                Edit Agent Profile
-              </motion.h2>
+              {/* Panel header */}
+              <BlurFade delay={0} className="px-6 pt-6 pb-5 border-b border-white/[0.07]">
+                <h2 className="text-[15px] font-semibold text-white/90">Edit Agent Profile</h2>
+                <p className="text-[12px] text-white/30 mt-0.5">Agent #{agentIdNum}</p>
+              </BlurFade>
 
-              <motion.div variants={editSectionVariants} className="space-y-4">
-                <p className="text-[11px] text-white/30 uppercase tracking-wider">Off-Chain Profile (Supabase)</p>
-                <div className="grid grid-cols-1 gap-3">
-                  <InputField label="Display Name" value={editDisplayName} onChange={setEditDisplayName} placeholder="Agent display name" />
-                  <div>
-                    <label className="block text-[11px] text-white/40 mb-1.5">Bio</label>
+              <div className="divide-y divide-white/[0.06]">
+
+                {/* ── Profile ─────────────────────────────── */}
+                <BlurFade delay={0.07} className="px-6 py-6 space-y-4">
+                  <p className="text-[10px] font-semibold text-white/30 uppercase tracking-[0.14em]">Profile</p>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="edit-name">Display Name</Label>
+                    <Input
+                      id="edit-name"
+                      value={editDisplayName}
+                      onChange={e => setEditDisplayName(e.target.value)}
+                      placeholder="Agent display name"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="edit-bio">Bio</Label>
                     <textarea
+                      id="edit-bio"
                       value={editBio}
                       onChange={e => setEditBio(e.target.value)}
                       placeholder="Short bio..."
                       rows={2}
-                      className="w-full bg-[#050810]/80 border border-white/10 rounded-lg px-3 py-2.5 text-white text-[13px] placeholder:text-white/20 focus:outline-none focus:border-[#38bdf8]/40 transition-colors resize-none"
+                      className="w-full bg-white/[0.04] border border-white/[0.09] rounded-lg px-3 py-2.5 text-white text-[13px] placeholder:text-white/20 focus:outline-none focus:border-white/[0.22] transition-colors resize-none"
                     />
                   </div>
-                  <InputField label="Avatar URL" value={editAvatarUrl} onChange={setEditAvatarUrl} placeholder="https://..." />
-
-                  <div>
-                    <label className="block text-[11px] text-white/40 mb-2">Tags / Capabilities</label>
-                    <div className="flex flex-wrap gap-2 mb-2">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="edit-avatar">Avatar URL</Label>
+                    <Input
+                      id="edit-avatar"
+                      value={editAvatarUrl}
+                      onChange={e => setEditAvatarUrl(e.target.value)}
+                      placeholder="https://..."
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Capabilities</Label>
+                    <div className="flex flex-wrap gap-1.5">
                       {editTags.map(tag => (
-                        <span key={tag} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#38bdf8]/10 border border-[#38bdf8]/20 text-[12px] text-[#38bdf8]">
+                        <Badge key={tag} variant="skill" className="gap-1.5">
                           {tag.replace(/_/g, " ")}
-                          <button onClick={() => toggleTag(tag)} className="hover:text-white/60 ml-1"><X className="w-3 h-3" /></button>
-                        </span>
+                          <button onClick={() => toggleTag(tag)} className="hover:text-white/80 ml-0.5">
+                            <X className="w-2.5 h-2.5" />
+                          </button>
+                        </Badge>
                       ))}
-                    </div>
-                    <div className="flex flex-wrap gap-2">
                       {ALL_SKILLS.filter(s => !editTags.includes(s.id)).map(skill => (
-                        <button key={skill.id} onClick={() => toggleTag(skill.id)} className="px-2.5 py-1 rounded-full border border-white/10 text-[11px] text-white/40 hover:border-white/30 hover:text-white/60 transition-all">
+                        <button
+                          key={skill.id}
+                          onClick={() => toggleTag(skill.id)}
+                          className="px-2.5 py-0.5 rounded-full border border-white/[0.09] text-[11px] text-white/30 hover:border-white/[0.22] hover:text-white/55 transition-all"
+                        >
                           + {skill.label}
                         </button>
                       ))}
                     </div>
                   </div>
-                </div>
-              </motion.div>
+                </BlurFade>
 
-              <motion.div
-                variants={editSectionVariants}
-                className="space-y-4 pt-2 border-t border-white/5"
-              >
-                <p className="text-[11px] text-white/30 uppercase tracking-wider">On-Chain Skills</p>
-                <div className="flex flex-wrap gap-2 mb-3">
-                  {onChainSkills.length === 0 && <span className="text-white/25 text-[12px]">No on-chain skills registered.</span>}
-                  {onChainSkills.map(sid => {
-                    const skillLabel = SKILL_LABELS[sid] || sid.slice(0, 8) + "...";
-                    return (
-                      <span key={sid} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[12px] text-white/60">
-                        {skillLabel}
-                        <button onClick={() => removeOnChainSkill(sid)} className="hover:text-red-400 ml-1"><X className="w-3 h-3" /></button>
-                      </span>
-                    );
-                  })}
-                </div>
-
-                <div className="relative">
-                  <button
-                    onClick={() => setShowSkillDropdown(!showSkillDropdown)}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-[#38bdf8]/30 bg-[#38bdf8]/5 text-[#38bdf8] text-[12px] hover:bg-[#38bdf8]/10 transition-all"
-                  >
-                    <Plus className="w-4 h-4" /> Add On-Chain Skill
-                  </button>
-                  <AnimatePresence>
-                    {showSkillDropdown && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -4 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -4 }}
-                        transition={{ duration: 0.15 }}
-                        className="absolute z-10 mt-2 w-56 bg-[#0a0f1a] border border-white/10 rounded-xl shadow-xl overflow-hidden"
-                      >
-                        {availableSkills.length === 0 ? (
-                          <p className="px-4 py-3 text-white/30 text-[12px]">All skills added</p>
-                        ) : (
-                          availableSkills.map(skill => (
-                            <button
-                              key={skill.id}
-                              onClick={() => { addOnChainSkill(skill.id); setShowSkillDropdown(false); }}
-                              className="w-full px-4 py-2.5 text-left text-[13px] text-white/60 hover:bg-white/5 hover:text-white transition-all flex items-center gap-2"
-                            >
-                              <span className="text-[10px] text-white/30">{skill.category}</span>
-                              {skill.label}
-                            </button>
-                          ))
-                        )}
-                      </motion.div>
+                {/* ── On-Chain Skills ──────────────────────── */}
+                <BlurFade delay={0.14} className="px-6 py-6 space-y-4">
+                  <p className="text-[10px] font-semibold text-white/30 uppercase tracking-[0.14em]">On-Chain Skills</p>
+                  <div className="flex flex-wrap gap-2">
+                    {onChainSkills.length === 0 && (
+                      <span className="text-white/25 text-[12px]">No on-chain skills registered.</span>
                     )}
-                  </AnimatePresence>
-                </div>
-              </motion.div>
+                    {onChainSkills.map(sid => (
+                      <Badge key={sid} variant="default" className="gap-1.5">
+                        {SKILL_LABELS[sid] || sid.slice(0, 8) + "..."}
+                        <button onClick={() => removeOnChainSkill(sid)} className="hover:text-red-400 transition-colors ml-0.5">
+                          <X className="w-2.5 h-2.5" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                  <div className="relative">
+                    <Button variant="outline" size="sm" onClick={() => setShowSkillDropdown(!showSkillDropdown)}>
+                      <Plus className="w-3.5 h-3.5" /> Add On-Chain Skill
+                    </Button>
+                    <AnimatePresence>
+                      {showSkillDropdown && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -4 }}
+                          transition={{ duration: 0.15 }}
+                          className="absolute z-10 mt-2 w-56 bg-[#111318] border border-white/[0.1] rounded-xl shadow-xl overflow-hidden"
+                        >
+                          {availableSkills.length === 0 ? (
+                            <p className="px-4 py-3 text-white/30 text-[12px]">All skills added</p>
+                          ) : (
+                            availableSkills.map(skill => (
+                              <button
+                                key={skill.id}
+                                onClick={() => { addOnChainSkill(skill.id); setShowSkillDropdown(false); }}
+                                className="w-full px-4 py-2.5 text-left text-[13px] text-white/55 hover:bg-white/[0.05] hover:text-white/90 transition-all flex items-center gap-2"
+                              >
+                                <span className="text-[10px] text-white/25">{skill.category}</span>
+                                {skill.label}
+                              </button>
+                            ))
+                          )}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </BlurFade>
 
-              {/* Custom Tools section */}
-              <motion.div
-                variants={editSectionVariants}
-                className="space-y-3 pt-2 border-t border-white/5"
-              >
-                <div className="flex items-center justify-between">
-                  <p className="text-[11px] text-white/30 uppercase tracking-wider">Custom Tools (MCP / HTTP)</p>
-                  <button
-                    onClick={() => setToolModal({ mode: "add" })}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#a855f7]/30 bg-[#a855f7]/5 text-[#a855f7] text-[11px] hover:bg-[#a855f7]/10 transition-all"
-                  >
-                    <Plus className="w-3 h-3" /> Add Tool
-                  </button>
-                </div>
+                {/* ── Custom Tools ─────────────────────────── */}
+                <BlurFade delay={0.21} className="px-6 py-6 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] font-semibold text-white/30 uppercase tracking-[0.14em]">Custom Tools</p>
+                    <Button variant="outline" size="xs" onClick={() => setToolModal({ mode: "add" })}>
+                      <Plus className="w-3 h-3" /> Add
+                    </Button>
+                  </div>
+                  {editTools.length === 0 && (
+                    <p className="text-[12px] text-white/20 italic">No custom tools configured.</p>
+                  )}
+                  <div className="space-y-2">
+                    {editTools.map(t => (
+                      <div key={t.id} className="flex items-center gap-3 rounded-lg border border-white/[0.07] bg-white/[0.02] px-3 py-2.5">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[12px] text-white/65 font-medium truncate">{t.name || "(unnamed)"}</p>
+                          <p className="text-[10px] text-white/30 mt-0.5">
+                            {t.type === "mcp"
+                              ? (t.mcpTransport === "package" ? `npm: ${t.npmPackage}` : `MCP: ${t.endpoint}`)
+                              : `HTTP: ${t.endpoint}`}
+                          </p>
+                        </div>
+                        <Badge variant={t.type === "mcp" ? "default" : "skill"} className="text-[9px] uppercase tracking-wide">
+                          {t.type}
+                        </Badge>
+                        <button onClick={() => setToolModal({ mode: "edit", tool: t })} className="text-white/30 hover:text-white/60 transition-colors">
+                          <Settings className="w-3.5 h-3.5" />
+                        </button>
+                        <button onClick={() => setEditTools(prev => prev.filter(x => x.id !== t.id))} className="text-white/30 hover:text-red-400 transition-colors">
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  {editTools.length > 0 && (
+                    <Button variant="secondary" size="sm" onClick={saveTools} disabled={toolsSaving} className="w-full">
+                      {toolsSaving ? "Saving…" : "Save Tools"}
+                    </Button>
+                  )}
+                </BlurFade>
 
-                {editTools.length === 0 && (
-                  <p className="text-[12px] text-white/20 italic">No custom tools configured.</p>
-                )}
+                {/* ── Platform Skills ──────────────────────── */}
+                <BlurFade delay={0.28} className="px-6 py-6 space-y-3">
+                  <p className="text-[10px] font-semibold text-white/30 uppercase tracking-[0.14em]">Platform Skills</p>
+                  <PreBuiltToolsGrid
+                    selectedSkills={editPlatformSkills}
+                    skillConfigs={editSkillConfigs}
+                    onToggle={skillId =>
+                      setEditPlatformSkills(prev =>
+                        prev.includes(skillId) ? prev.filter(s => s !== skillId) : [...prev, skillId]
+                      )
+                    }
+                    onConfigSave={(skillId, config) =>
+                      setEditSkillConfigs(prev => ({ ...prev, [skillId]: config }))
+                    }
+                  />
+                  <Button variant="secondary" size="sm" onClick={saveSkillConfigs} disabled={skillsSaving} className="w-full">
+                    {skillsSaving ? "Saving…" : "Save Skills"}
+                  </Button>
+                </BlurFade>
 
-                {editTools.map(t => (
-                  <div key={t.id} className="flex items-center gap-3 rounded-xl border border-white/[0.07] bg-[#050810]/60 px-3 py-2.5">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[12px] text-white/70 font-medium truncate">{t.name || "(unnamed)"}</p>
-                      <p className="text-[10px] text-white/30 mt-0.5">
-                        {t.type === "mcp"
-                          ? (t.mcpTransport === "package" ? `npm: ${t.npmPackage}` : `MCP: ${t.endpoint}`)
-                          : `HTTP: ${t.endpoint}`}
+                {/* ── Agent Status ─────────────────────────── */}
+                <BlurFade delay={0.35} className="px-6 py-5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-[10px] font-semibold text-white/30 uppercase tracking-[0.14em] mb-1">Agent Status</p>
+                      <p className="text-[12px] text-white/50">
+                        {profile.isActive ? "Currently accepting jobs" : "Currently paused"}
                       </p>
                     </div>
-                    <span className={`text-[9px] px-1.5 py-0.5 rounded-full border font-semibold uppercase tracking-wider ${
-                      t.type === "mcp" ? "text-[#a855f7] border-[#a855f7]/30 bg-[#a855f7]/10" : "text-[#38bdf8] border-[#38bdf8]/30 bg-[#38bdf8]/10"
-                    }`}>{t.type}</span>
-                    <button onClick={() => setToolModal({ mode: "edit", tool: t })} className="text-white/30 hover:text-white/60 transition-colors">
-                      <Settings className="w-3.5 h-3.5" />
-                    </button>
-                    <button onClick={() => setEditTools(prev => prev.filter(x => x.id !== t.id))} className="text-white/30 hover:text-red-400 transition-colors">
-                      <X className="w-3.5 h-3.5" />
-                    </button>
+                    <Button
+                      variant={profile.isActive ? "destructive" : "success"}
+                      size="sm"
+                      onClick={toggleAgentActive}
+                    >
+                      {profile.isActive ? "Pause Agent" : "Activate Agent"}
+                    </Button>
                   </div>
-                ))}
+                </BlurFade>
 
-                {editTools.length > 0 && (
-                  <button
-                    onClick={saveTools}
-                    disabled={toolsSaving}
-                    className="w-full py-2 rounded-lg bg-[#a855f7]/10 border border-[#a855f7]/25 text-[#a855f7] text-[12px] font-medium hover:bg-[#a855f7]/15 disabled:opacity-40 transition-all"
-                  >
-                    {toolsSaving ? "Saving…" : "Save Tools"}
-                  </button>
-                )}
-              </motion.div>
+                {/* ── Feedback ─────────────────────────────── */}
+                <AnimatePresence>
+                  {editError && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      className="mx-6 my-2 rounded-lg bg-red-500/[0.08] border border-red-500/[0.18] px-4 py-2.5"
+                    >
+                      <p className="text-red-400 text-[12px]">{editError}</p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+                <AnimatePresence>
+                  {editSuccess && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      className="mx-6 my-2 rounded-lg bg-emerald-500/[0.08] border border-emerald-500/[0.18] px-4 py-2.5"
+                    >
+                      <p className="text-emerald-400 text-[12px]">Profile updated successfully!</p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
-              {/* Platform Skills (n8n, web search, etc.) */}
-              <motion.div
-                variants={editSectionVariants}
-                className="space-y-3 pt-2 border-t border-white/5"
-              >
-                <p className="text-[11px] text-white/30 uppercase tracking-wider">Platform Skills</p>
-                <PreBuiltToolsGrid
-                  selectedSkills={editPlatformSkills}
-                  skillConfigs={editSkillConfigs}
-                  onToggle={skillId =>
-                    setEditPlatformSkills(prev =>
-                      prev.includes(skillId) ? prev.filter(s => s !== skillId) : [...prev, skillId]
-                    )
-                  }
-                  onConfigSave={(skillId, config) =>
-                    setEditSkillConfigs(prev => ({ ...prev, [skillId]: config }))
-                  }
-                />
-                <button
-                  onClick={saveSkillConfigs}
-                  disabled={skillsSaving}
-                  className="w-full py-2 rounded-lg bg-[#38bdf8]/10 border border-[#38bdf8]/25 text-[#38bdf8] text-[12px] font-medium hover:bg-[#38bdf8]/15 disabled:opacity-40 transition-all"
-                >
-                  {skillsSaving ? "Saving…" : "Save Skills"}
-                </button>
-              </motion.div>
+                {/* ── Save ─────────────────────────────────── */}
+                <BlurFade delay={0.42} className="px-6 py-5">
+                  <ShimmerButton onClick={saveProfile} disabled={editPending}>
+                    {editPending ? "Saving..." : "Save Profile Changes"}
+                  </ShimmerButton>
+                </BlurFade>
 
-              <motion.div
-                variants={editSectionVariants}
-                className="flex items-center justify-between pt-2 border-t border-white/5"
-              >
-                <div>
-                  <p className="text-white/60 text-[13px]">Agent Status</p>
-                  <p className="text-white/30 text-[11px]">{profile.isActive ? "Agent is accepting jobs" : "Agent is paused"}</p>
-                </div>
-                <button
-                  onClick={toggleAgentActive}
-                  className={`px-4 py-2 rounded-lg text-[12px] font-medium border transition-all ${
-                    profile.isActive
-                      ? "border-red-500/30 text-red-400 hover:bg-red-500/10"
-                      : "border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
-                  }`}
-                >
-                  {profile.isActive ? "Pause Agent" : "Activate Agent"}
-                </button>
-              </motion.div>
-
-              <AnimatePresence>
-                {editError && (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-2.5">
-                    <p className="text-red-400 text-[12px]">{editError}</p>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-              <AnimatePresence>
-                {editSuccess && (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-4 py-2.5">
-                    <p className="text-emerald-400 text-[12px]">Profile updated successfully!</p>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              <button
-                onClick={saveProfile}
-                disabled={editPending}
-                className="w-full px-6 py-3 bg-white text-black text-[14px] font-semibold rounded-xl disabled:opacity-40 disabled:cursor-not-allowed hover:bg-white/90 transition-colors"
-              >
-                {editPending ? "Saving..." : "Save Profile Changes"}
-              </button>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -960,7 +966,7 @@ export default function AgentDetailPage() {
             {/* Section header */}
             <div className="px-6 pt-5 pb-4 border-b border-white/5">
               <div className="flex items-center gap-2 mb-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#38bdf8] shadow-[0_0_6px_rgba(56,189,248,0.8)]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-white/40" />
                 <h2 className="text-[13px] font-medium text-white/70 uppercase tracking-wider">ERC-7857 Agent Actions</h2>
               </div>
               <p className="text-[11px] text-white/30 pl-3.5">Encrypted intelligence control — capability, access, ownership</p>
@@ -974,8 +980,8 @@ export default function AgentDetailPage() {
                   onClick={() => toggleAction(tab.id)}
                   className={`flex flex-col items-start gap-1.5 px-4 py-3.5 text-left transition-all ${
                     activeAction === tab.id
-                      ? "bg-[#38bdf8]/8 text-[#38bdf8]"
-                      : "bg-[#0d1525]/90 text-white/50 hover:bg-white/[0.03] hover:text-white/70"
+                      ? "bg-white/[0.08] text-white"
+                      : "bg-[#0d1525]/90 text-white/45 hover:bg-white/[0.04] hover:text-white/70"
                   }`}
                 >
                   <div className="flex items-center gap-2">
@@ -1033,7 +1039,7 @@ export default function AgentDetailPage() {
                           <div className="rounded-lg bg-white/[0.03] border border-white/8 px-3 py-2 flex items-center gap-2">
                             <span className="text-[10px] text-white/30">Computed hash:</span>
                             <span className="font-mono text-[11px] text-white/50 truncate">{hashString(newCapValue)}</span>
-                            <button onClick={() => navigator.clipboard.writeText(hashString(newCapValue))} className="ml-auto flex-shrink-0 hover:text-[#38bdf8] text-white/30 transition-colors">
+                            <button onClick={() => navigator.clipboard.writeText(hashString(newCapValue))} className="ml-auto flex-shrink-0 hover:text-white/70 text-white/30 transition-colors">
                               <Copy className="w-3 h-3" />
                             </button>
                           </div>
@@ -1041,7 +1047,7 @@ export default function AgentDetailPage() {
                         <button
                           onClick={handleUpdateCapability}
                           disabled={updCapLoading || !newCapValue.trim()}
-                          className="w-full py-2.5 rounded-lg bg-[#38bdf8]/10 border border-[#38bdf8]/30 text-[#38bdf8] text-[13px] font-medium hover:bg-[#38bdf8]/15 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                          className="w-full py-2.5 rounded-lg bg-white/[0.06] border border-white/[0.12] text-white/80 text-[13px] font-medium hover:bg-white/[0.09] hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                         >
                           {updCapLoading ? "Broadcasting…" : "Update Capability"}
                         </button>
@@ -1068,7 +1074,7 @@ export default function AgentDetailPage() {
                             {(authorizedUsers as string[]).map(addr => (
                               <div key={addr} className="flex items-center justify-between rounded-lg bg-white/[0.03] border border-white/8 px-3 py-2">
                                 <div className="flex items-center gap-2">
-                                  <Clock className="w-3.5 h-3.5 text-[#38bdf8]/60" />
+                                  <Clock className="w-3.5 h-3.5 text-white/40" />
                                   <span className="font-mono text-[11px] text-white/50">{addr.slice(0, 12)}…{addr.slice(-6)}</span>
                                 </div>
                                 <button
@@ -1088,7 +1094,7 @@ export default function AgentDetailPage() {
                         <button
                           onClick={handleAuthorize}
                           disabled={authLoading || !isValidAddress(execAddr)}
-                          className="w-full py-2.5 rounded-lg bg-[#38bdf8]/10 border border-[#38bdf8]/30 text-[#38bdf8] text-[13px] font-medium hover:bg-[#38bdf8]/15 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                          className="w-full py-2.5 rounded-lg bg-white/[0.06] border border-white/[0.12] text-white/80 text-[13px] font-medium hover:bg-white/[0.09] hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                         >
                           {authLoading ? "Broadcasting…" : "Authorize Executor"}
                         </button>
@@ -1116,14 +1122,14 @@ export default function AgentDetailPage() {
                             <p className="text-[10px] text-white/30 uppercase tracking-wider">Transfer Digest (oracle must sign this)</p>
                             <div className="flex items-center gap-2">
                               <span className="font-mono text-[11px] text-white/50 break-all">{txDigest as string}</span>
-                              <button onClick={() => navigator.clipboard.writeText(txDigest as string)} className="ml-auto flex-shrink-0 hover:text-[#38bdf8] text-white/30 transition-colors">
+                              <button onClick={() => navigator.clipboard.writeText(txDigest as string)} className="ml-auto flex-shrink-0 hover:text-white/70 text-white/30 transition-colors">
                                 <Copy className="w-3 h-3" />
                               </button>
                             </div>
                             <button
                               onClick={() => txDigest && fetchOracleSig(txDigest as string, setTransferOracleSig)}
                               disabled={!txDigest || oracleSigLoading}
-                              className="mt-1 text-[10px] px-2 py-1 rounded bg-sky-500/10 border border-sky-500/20 text-sky-400 hover:bg-sky-500/15 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                              className="mt-1 text-[10px] px-2 py-1 rounded bg-white/[0.06] border border-white/[0.12] text-white/60 hover:bg-white/[0.09] hover:text-white/80 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                             >
                               {oracleSigLoading ? "Signing…" : "Get Oracle Signature"}
                             </button>
@@ -1163,7 +1169,7 @@ export default function AgentDetailPage() {
                             <p className="text-[10px] text-white/30 uppercase tracking-wider">Clone Digest (oracle must sign this)</p>
                             <div className="flex items-center gap-2">
                               <span className="font-mono text-[11px] text-white/50 break-all">{cloneDigest as string}</span>
-                              <button onClick={() => navigator.clipboard.writeText(cloneDigest as string)} className="ml-auto flex-shrink-0 hover:text-[#38bdf8] text-white/30 transition-colors">
+                              <button onClick={() => navigator.clipboard.writeText(cloneDigest as string)} className="ml-auto flex-shrink-0 hover:text-white/70 text-white/30 transition-colors">
                                 <Copy className="w-3 h-3" />
                               </button>
                             </div>
@@ -1295,7 +1301,7 @@ export default function AgentDetailPage() {
         >
           <div className="px-5 pt-4 pb-3 border-b border-white/[0.06]">
             <div className="flex items-center gap-2 mb-0.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)] animate-pulse" />
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
               <h2 className="text-[12px] font-medium text-white/70 uppercase tracking-[0.2em]">Neural Capability Map</h2>
             </div>
             <p className="text-[10px] text-white/30 pl-3.5 leading-relaxed">
@@ -1346,21 +1352,24 @@ export default function AgentDetailPage() {
       </div>{/* end two-column wrapper */}
 
       {/* Custom Tool Modal */}
-      {toolModal && (
-        <CustomToolModal
-          mode={toolModal.mode}
-          initialTool={toolModal.tool}
-          onSave={tool => {
-            if (toolModal.mode === "add") {
-              setEditTools(prev => [...prev, tool]);
-            } else {
-              setEditTools(prev => prev.map(t => t.id === tool.id ? tool : t));
-            }
-            setToolModal(null);
-          }}
-          onClose={() => setToolModal(null)}
-        />
-      )}
+      <AnimatePresence>
+        {toolModal && (
+          <CustomToolModal
+            key={toolModal.mode + (toolModal.tool?.id ?? "new")}
+            mode={toolModal.mode}
+            initialTool={toolModal.tool}
+            onSave={tool => {
+              if (toolModal.mode === "add") {
+                setEditTools(prev => [...prev, tool]);
+              } else {
+                setEditTools(prev => prev.map(t => t.id === tool.id ? tool : t));
+              }
+              setToolModal(null);
+            }}
+            onClose={() => setToolModal(null)}
+          />
+        )}
+      </AnimatePresence>
     </RBACGuard>
   );
 }

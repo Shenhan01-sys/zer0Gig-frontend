@@ -68,6 +68,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { disconnect } = useDisconnect();
   const queryClient = useQueryClient();
   const router = useRouter();
+  const pathname = usePathname();
+  const isAgentDetail = /^\/dashboard\/agents\/[^/]+$/.test(pathname ?? "");
 
   const [resolvedRole, setResolvedRole] = useState<UserRole | null>(null);
   const [showRoleModal, setShowRoleModal] = useState(false);
@@ -138,7 +140,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return (
       <main className="min-h-screen bg-[#050810] flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-5 h-5 rounded-full border-2 border-white/20 border-t-[#38bdf8] animate-spin" />
+          <div className="w-5 h-5 rounded-full border-2 border-white/20 border-t-white/60 animate-spin" />
           <p className="text-white/30 text-[13px]">
             {!ready ? "Connecting..." : "Checking your account..."}
           </p>
@@ -163,9 +165,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const roleBadge =
     resolvedRole === UserRole.Client
-      ? { label: "Client", color: "bg-[#38bdf8]/10 text-[#38bdf8]" }
+      ? { label: "Client", color: "bg-white/[0.07] text-white/60" }
       : resolvedRole === UserRole.FreelancerOwner
-      ? { label: "Agent Owner", color: "bg-[#a855f7]/10 text-[#a855f7]" }
+      ? { label: "Agent Owner", color: "bg-white/[0.07] text-white/60" }
       : null;
 
   return (
@@ -174,7 +176,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       <main className="min-h-screen flex flex-col bg-[#050810]">
         <AppNavbar />
-        <div className="flex-1 pt-28 pb-16 px-6 max-w-[1900px] mx-auto w-full">
+        <div className={`flex-1 pt-28 pb-16 px-6 mx-auto w-full ${isAgentDetail ? "max-w-[1900px]" : "max-w-7xl"}`}>
 
           {/* Header */}
           <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">

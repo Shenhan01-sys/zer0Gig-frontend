@@ -44,7 +44,7 @@ function StatCard({ label, value, sub, icon, color }: {
       animate={{ opacity: 1, y: 0 }}
       className="relative rounded-2xl border border-white/10 bg-[#0d1525]/90 p-5 flex items-start gap-4 overflow-hidden"
     >
-      <BorderBeam colorFrom="#38bdf8" colorTo="#a855f7" duration={12} size={120} borderWidth={1} />
+      <BorderBeam colorFrom="#ffffff" colorTo="#555555" duration={12} size={120} borderWidth={1} />
       <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${color}`}>
         {icon}
       </div>
@@ -66,9 +66,9 @@ function StatCard({ label, value, sub, icon, color }: {
 type EmptyStateVariant = "cyan" | "emerald" | "violet";
 
 const EMPTY_STATE_THEMES: Record<EmptyStateVariant, { accent: string; ring: string; glow: string; chip: string; rgb: string }> = {
-  cyan:    { accent: "#38bdf8", ring: "border-[#38bdf8]/30", glow: "rgba(56,189,248,0.15)",  chip: "bg-[#38bdf8]/10 text-[#38bdf8]",   rgb: "56,189,248" },
-  emerald: { accent: "#10b981", ring: "border-emerald-500/30", glow: "rgba(16,185,129,0.15)", chip: "bg-emerald-500/10 text-emerald-400", rgb: "16,185,129" },
-  violet:  { accent: "#a855f7", ring: "border-violet-500/30",  glow: "rgba(168,85,247,0.15)", chip: "bg-violet-500/10 text-violet-400",  rgb: "168,85,247" },
+  cyan:    { accent: "#ffffff", ring: "border-white/[0.12]",    glow: "rgba(255,255,255,0.07)", chip: "bg-white/[0.08] text-white/60",    rgb: "255,255,255" },
+  emerald: { accent: "#10b981", ring: "border-emerald-700/40",  glow: "rgba(16,185,129,0.10)",  chip: "bg-emerald-900/60 text-emerald-300", rgb: "16,185,129" },
+  violet:  { accent: "#ffffff", ring: "border-white/[0.12]",    glow: "rgba(255,255,255,0.07)", chip: "bg-white/[0.08] text-white/60",    rgb: "255,255,255" },
 };
 
 function EmptyState({ icon, title, desc, href, cta, variant = "cyan", steps, secondary }: {
@@ -118,7 +118,7 @@ function EmptyState({ icon, title, desc, href, cta, variant = "cyan", steps, sec
           />
           <div
             className={`relative w-20 h-20 rounded-2xl border ${theme.ring} bg-[#050810]/80 flex items-center justify-center`}
-            style={{ color: theme.accent, boxShadow: `0 0 24px ${theme.glow}` }}
+            style={{ color: theme.accent, boxShadow: `0 0 20px ${theme.glow}` }}
           >
             {icon}
           </div>
@@ -215,7 +215,7 @@ function MiniAgentCard({ agent, profile, index }: { agent: any; profile?: { disp
           <p className="text-white/40 text-[11px]">{agent.rateDisplay} OG/task</p>
         </div>
         <div className="text-right flex-shrink-0">
-          <p className="text-[#38bdf8] text-[12px] font-semibold">{score}/100</p>
+          <p className="text-white/60 text-[12px] font-semibold">{score}/100</p>
           <p className="text-white/30 text-[10px]">{agent.totalJobsCompleted} jobs</p>
         </div>
       </div>
@@ -392,20 +392,19 @@ function ClientOverview({ jobs, subs, jobsLoading, subsLoading, displayName }: {
         initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
         className="rounded-2xl border border-white/10 bg-gradient-to-r from-[#0d1525] to-[#0a1020] p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 overflow-hidden relative"
       >
-        {/* Decorative: cyan gradient aura on right edge */}
-        <div className="absolute right-0 top-0 w-64 h-full bg-gradient-to-l from-[#38bdf8]/5 to-transparent pointer-events-none" />
-        {/* Decorative: faint tech-grid background */}
+        {/* Decorative: subtle right-edge fade */}
+        <div className="absolute right-0 top-0 w-64 h-full bg-gradient-to-l from-white/[0.02] to-transparent pointer-events-none" />
+        {/* Decorative: faint grid */}
         <div
-          className="absolute inset-0 pointer-events-none opacity-[0.04]"
+          className="absolute inset-0 pointer-events-none opacity-[0.03]"
           style={{
             backgroundImage:
-              "linear-gradient(to right, #38bdf8 1px, transparent 1px), linear-gradient(to bottom, #38bdf8 1px, transparent 1px)",
+              "linear-gradient(to right, rgba(255,255,255,1) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,1) 1px, transparent 1px)",
             backgroundSize: "48px 48px",
           }}
           aria-hidden
         />
-        {/* Decorative: terminal corner brackets */}
-        <CornerBrackets size="md" weight="hair" accent="rgba(56,189,248,0.55)" inset={12} className="absolute inset-0" />
+        <CornerBrackets size="md" weight="hair" accent="rgba(255,255,255,0.18)" inset={12} className="absolute inset-0" />
 
         <div className="relative">
           <p className="text-white/40 text-[13px] mb-1">{getGreeting()},</p>
@@ -432,12 +431,12 @@ function ClientOverview({ jobs, subs, jobsLoading, subsLoading, displayName }: {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Active Jobs" value={jobsLoading ? "—" : jobs.length}
           sub="Posted on-chain"
-          color="bg-[#38bdf8]/10 text-[#38bdf8]"
+          color="bg-white/[0.07] text-white/60"
           icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>}
         />
         <StatCard label="Subscriptions" value={subsLoading ? "—" : subs.length}
           sub="Recurring contracts"
-          color="bg-[#a855f7]/10 text-[#a855f7]"
+          color="bg-white/[0.07] text-white/60"
           icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>}
         />
         <StatCard label="AI Agents Available" value={topAgents.length || "—"}
@@ -458,7 +457,7 @@ function ClientOverview({ jobs, subs, jobsLoading, subsLoading, displayName }: {
         <div className="lg:col-span-2 space-y-6">
           <div className="flex items-center justify-between">
             <h3 className="text-[15px] font-medium text-white">Recent Jobs</h3>
-            <Link href="/dashboard?tab=jobs" className="text-[12px] text-[#38bdf8] hover:text-[#38bdf8]/80 transition-colors">
+            <Link href="/dashboard?tab=jobs" className="text-[12px] text-white/40 hover:text-white/70 transition-colors">
               View all →
             </Link>
           </div>
@@ -492,7 +491,7 @@ function ClientOverview({ jobs, subs, jobsLoading, subsLoading, displayName }: {
             <div>
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-[15px] font-medium text-white">Active Subscriptions</h3>
-                <Link href="/dashboard?tab=subscriptions" className="text-[12px] text-[#38bdf8] hover:text-[#38bdf8]/80 transition-colors">
+                <Link href="/dashboard?tab=subscriptions" className="text-[12px] text-white/40 hover:text-white/70 transition-colors">
                   View all →
                 </Link>
               </div>
@@ -515,12 +514,12 @@ function ClientOverview({ jobs, subs, jobsLoading, subsLoading, displayName }: {
             <div className="space-y-2">
               <QuickAction href="/dashboard/create-job"
                 label="Post a New Job" desc="Hire an AI agent instantly"
-                accent="border-white/10 hover:border-[#38bdf8]/30"
+                accent="border-white/10 hover:border-white/25"
                 icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>}
               />
               <QuickAction href="/marketplace"
                 label="Browse Marketplace" desc="Find the right AI agent"
-                accent="border-white/10 hover:border-[#a855f7]/30"
+                accent="border-white/10 hover:border-white/25"
                 icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>}
               />
               <QuickAction href="/dashboard/create-subscription"
@@ -536,7 +535,7 @@ function ClientOverview({ jobs, subs, jobsLoading, subsLoading, displayName }: {
             <div className="rounded-2xl border border-white/10 bg-[#0d1525]/90 p-5">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-[13px] font-medium text-white/50 uppercase tracking-wide">Top Agents</h3>
-                <Link href="/marketplace" className="text-[11px] text-[#38bdf8] hover:text-[#38bdf8]/80 transition-colors">
+                <Link href="/marketplace" className="text-[11px] text-white/40 hover:text-white/70 transition-colors">
                   View all
                 </Link>
               </div>
@@ -549,12 +548,12 @@ function ClientOverview({ jobs, subs, jobsLoading, subsLoading, displayName }: {
           )}
 
           {/* How it works tip */}
-          <div className="rounded-2xl border border-[#38bdf8]/20 bg-[#38bdf8]/[0.04] p-5">
-            <p className="text-[#38bdf8] text-[12px] font-medium mb-2"><Lightbulb size={16} /> How payments work</p>
+          <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5">
+            <p className="text-white/60 text-[12px] font-medium mb-2 flex items-center gap-1.5"><Lightbulb size={16} /> How payments work</p>
             <p className="text-white/40 text-[12px] leading-relaxed">
               Funds are locked in smart contract escrow. AI agents get paid automatically when milestone quality is verified by 175K+ alignment nodes — no manual approval needed.
             </p>
-            <Link href="/#how-it-works" className="text-[#38bdf8] text-[11px] mt-2 inline-block hover:underline">
+            <Link href="/#how-it-works" className="text-white/40 text-[11px] mt-2 inline-block hover:text-white/60 transition-colors">
               Learn more →
             </Link>
           </div>
@@ -594,20 +593,17 @@ function AgentOwnerOverview({ agents, subs, agentsLoading, displayName }: {
         initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
         className="rounded-2xl border border-white/10 bg-gradient-to-r from-[#0d1525] to-[#0a1020] p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 relative overflow-hidden"
       >
-        {/* Decorative: violet gradient aura (differentiates owner from client view) */}
-        <div className="absolute right-0 top-0 w-64 h-full bg-gradient-to-l from-[#a855f7]/5 to-transparent pointer-events-none" />
-        {/* Decorative: faint tech-grid background */}
+        <div className="absolute right-0 top-0 w-64 h-full bg-gradient-to-l from-white/[0.02] to-transparent pointer-events-none" />
         <div
-          className="absolute inset-0 pointer-events-none opacity-[0.04]"
+          className="absolute inset-0 pointer-events-none opacity-[0.03]"
           style={{
             backgroundImage:
-              "linear-gradient(to right, #a855f7 1px, transparent 1px), linear-gradient(to bottom, #a855f7 1px, transparent 1px)",
+              "linear-gradient(to right, rgba(255,255,255,1) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,1) 1px, transparent 1px)",
             backgroundSize: "48px 48px",
           }}
           aria-hidden
         />
-        {/* Decorative: terminal corner brackets */}
-        <CornerBrackets size="md" weight="hair" accent="rgba(168,85,247,0.55)" inset={12} className="absolute inset-0" />
+        <CornerBrackets size="md" weight="hair" accent="rgba(255,255,255,0.18)" inset={12} className="absolute inset-0" />
 
         <div className="relative">
           <p className="text-white/40 text-[13px] mb-1">{getGreeting()},</p>
@@ -620,7 +616,7 @@ function AgentOwnerOverview({ agents, subs, agentsLoading, displayName }: {
         </div>
         <div className="relative flex gap-3 flex-shrink-0">
           <Link href="/dashboard/jobs"
-            className="px-5 py-2.5 bg-[#38bdf8] text-black text-[13px] font-medium rounded-full hover:bg-[#7dd3fc] transition-colors whitespace-nowrap">
+            className="px-5 py-2.5 bg-white text-black text-[13px] font-medium rounded-full hover:bg-white/90 transition-colors whitespace-nowrap">
             Find Jobs
           </Link>
           <Link href="/dashboard/register-agent"
@@ -638,12 +634,12 @@ function AgentOwnerOverview({ agents, subs, agentsLoading, displayName }: {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="My Agents" value={agentsLoading ? "—" : agents.length}
           sub="Registered on-chain"
-          color="bg-[#a855f7]/10 text-[#a855f7]"
+          color="bg-white/[0.07] text-white/60"
           icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v10a2 2 0 01-2 2h-2" /></svg>}
         />
         <StatCard label="Subscriptions" value={subs.length}
           sub="Recurring income"
-          color="bg-[#38bdf8]/10 text-[#38bdf8]"
+          color="bg-white/[0.07] text-white/60"
           icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>}
         />
         <StatCard label="Total Earned" value={agentsLoading ? "—" : `${totalEarnedOG}`}
@@ -663,7 +659,7 @@ function AgentOwnerOverview({ agents, subs, agentsLoading, displayName }: {
         <div className="lg:col-span-2 space-y-6">
           <div className="flex items-center justify-between">
             <h3 className="text-[15px] font-medium text-white">My Agents</h3>
-            <Link href="/dashboard?tab=agents" className="text-[12px] text-[#38bdf8] hover:text-[#38bdf8]/80 transition-colors">
+            <Link href="/dashboard?tab=agents" className="text-[12px] text-white/40 hover:text-white/70 transition-colors">
               View all →
             </Link>
           </div>
@@ -710,7 +706,7 @@ function AgentOwnerOverview({ agents, subs, agentsLoading, displayName }: {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                         </svg>
                       </div>
-                      <p className="text-[#38bdf8] text-[12px]">View full profile →</p>
+                      <p className="text-white/40 text-[12px]">View full profile →</p>
                     </div>
                   </Link>
                 );
@@ -728,17 +724,17 @@ function AgentOwnerOverview({ agents, subs, agentsLoading, displayName }: {
             <div className="space-y-2">
               <QuickAction href="/dashboard/register-agent"
                 label="Register New Agent" desc="Add another AI agent"
-                accent="border-white/10 hover:border-[#a855f7]/30"
+                accent="border-white/10 hover:border-white/25"
                 icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>}
               />
               <QuickAction href="/marketplace"
                 label="View Marketplace" desc="See how agents compete"
-                accent="border-white/10 hover:border-[#38bdf8]/30"
+                accent="border-white/10 hover:border-white/25"
                 icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>}
               />
               <QuickAction href="/dashboard/my-proposals"
                 label="My Proposals" desc="Track submitted proposals"
-                accent="border-white/10 hover:border-cyan-500/30"
+                accent="border-white/10 hover:border-white/25"
                 icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}
               />
               <QuickAction href="/dashboard?tab=subscriptions"
@@ -749,8 +745,8 @@ function AgentOwnerOverview({ agents, subs, agentsLoading, displayName }: {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-[#a855f7]/20 bg-[#a855f7]/[0.04] p-5">
-            <p className="text-[#a855f7] text-[12px] font-medium mb-2"><Zap size={16} /> The Efficiency Game</p>
+          <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5">
+            <p className="text-white/60 text-[12px] font-medium mb-2 flex items-center gap-1.5"><Zap size={16} /> The Efficiency Game</p>
             <p className="text-white/40 text-[12px] leading-relaxed">
               Agents that complete jobs in 1 attempt keep ~95% of revenue. Agents that retry 3× lose ~30% to evaluation fees. Train better models, earn more.
             </p>

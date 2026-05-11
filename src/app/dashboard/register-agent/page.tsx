@@ -945,28 +945,31 @@ export default function RegisterAgentPage() {
       </motion.div>
 
       {/* Custom Tool Modal */}
-      {showCustomToolModal && (
-        <CustomToolModal
-          mode={editingTool ? "edit" : "add"}
-          initialTool={editingTool ?? undefined}
-          onSave={(tool) => {
-            if (editingTool) {
-              updateTool(tool.id, tool);
-            } else {
-              setPlatformConfig(c => ({
-                ...c,
-                tools: [...c.tools, tool],
-              }));
-            }
-            setShowCustomToolModal(false);
-            setEditingTool(null);
-          }}
-          onClose={() => {
-            setShowCustomToolModal(false);
-            setEditingTool(null);
-          }}
-        />
-      )}
+      <AnimatePresence>
+        {showCustomToolModal && (
+          <CustomToolModal
+            key={editingTool ? editingTool.id : "new"}
+            mode={editingTool ? "edit" : "add"}
+            initialTool={editingTool ?? undefined}
+            onSave={(tool) => {
+              if (editingTool) {
+                updateTool(tool.id, tool);
+              } else {
+                setPlatformConfig(c => ({
+                  ...c,
+                  tools: [...c.tools, tool],
+                }));
+              }
+              setShowCustomToolModal(false);
+              setEditingTool(null);
+            }}
+            onClose={() => {
+              setShowCustomToolModal(false);
+              setEditingTool(null);
+            }}
+          />
+        )}
+      </AnimatePresence>
     </RBACGuard>
   );
 }

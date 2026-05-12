@@ -85,15 +85,6 @@ const STAKEHOLDERS = [
 export default function PartnershipTrust() {
   return (
     <section className="relative w-full bg-black py-24 px-6 overflow-hidden">
-      <div
-        className="absolute inset-0 pointer-events-none opacity-30"
-        style={{
-          background:
-            "radial-gradient(ellipse 60% 40% at 50% 50%, rgba(255,255,255,0.04) 0%, transparent 70%)",
-        }}
-        aria-hidden
-      />
-
       <div className="relative max-w-6xl mx-auto">
         {/* Heading */}
         <motion.div

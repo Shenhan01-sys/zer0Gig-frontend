@@ -248,16 +248,6 @@ export default function CommunityGlobe() {
 
   return (
     <section className="relative w-full bg-black py-24 px-6 overflow-hidden border-y border-white/[0.04]">
-      {/* Backdrop accents */}
-      <div
-        className="absolute inset-0 pointer-events-none opacity-30"
-        style={{
-          background:
-            "radial-gradient(ellipse 60% 40% at 50% 40%, rgba(56,189,248,0.12) 0%, transparent 65%)",
-        }}
-        aria-hidden
-      />
-
       <div className="relative max-w-6xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 12 }}

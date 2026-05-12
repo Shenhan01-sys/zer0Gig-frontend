@@ -247,7 +247,7 @@ export default function CommunityGlobe() {
   }, []);
 
   return (
-    <section className="relative w-full bg-[#050810] py-24 px-6 overflow-hidden border-y border-white/[0.04]">
+    <section className="relative w-full bg-black py-24 px-6 overflow-hidden border-y border-white/[0.04]">
       {/* Backdrop accents */}
       <div
         className="absolute inset-0 pointer-events-none opacity-30"

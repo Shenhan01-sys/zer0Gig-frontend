@@ -84,7 +84,7 @@ const STAKEHOLDERS = [
 
 export default function PartnershipTrust() {
   return (
-    <section className="relative w-full bg-[#050810] py-24 px-6 overflow-hidden">
+    <section className="relative w-full bg-black py-24 px-6 overflow-hidden">
       <div
         className="absolute inset-0 pointer-events-none opacity-30"
         style={{

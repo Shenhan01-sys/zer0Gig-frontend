@@ -27,7 +27,7 @@ export default function MarketReadiness() {
   };
 
   return (
-    <section className="relative w-full h-screen bg-[#050B14] overflow-hidden font-sans text-white">
+    <section className="relative w-full h-screen bg-black overflow-hidden font-sans text-white">
 
       {/* Center guide text */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 pointer-events-none mix-blend-difference">

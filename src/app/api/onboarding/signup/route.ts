@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { OG_MODELS } from "@/lib/og-models";
 import { COUNTRIES_BY_CODE } from "@/lib/countries";
+import { findIdCity } from "@/lib/idCities";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -29,6 +30,11 @@ export async function POST(req: Request) {
   const role           = String(body.role ?? "").trim();
   const preferredModel = String(body.preferredModel ?? "").trim();
   const countryCode    = String(body.countryCode ?? "").trim().toUpperCase();
+  // Optional sub-country location fields (only relevant when country is ID).
+  // We accept them for any country to keep the API flexible, but only the
+  // ID lookup table resolves city -> precise coordinates today.
+  const cityInput      = String(body.city ?? "").trim();
+  const kecamatanInput = String(body.kecamatan ?? "").trim().slice(0, 80);
 
   // ── Validation ─────────────────────────────────────────────────────────────
   if (!displayName || displayName.length < 2 || displayName.length > 64) {
@@ -63,6 +69,25 @@ export async function POST(req: Request) {
     );
   }
 
+  // Resolve city coords when country is Indonesia and the city is in our
+  // lookup table. Falls back to the country centroid otherwise.
+  let latitude  = country.lat;
+  let longitude = country.lng;
+  let resolvedCity: string | null = null;
+  if (countryCode === "ID" && cityInput) {
+    const city = findIdCity(cityInput);
+    if (city) {
+      resolvedCity = city.name;
+      latitude     = city.lat;
+      longitude    = city.lng;
+    } else {
+      // Accept the user's typed value even if not in lookup — they keep the
+      // country centroid coords but the city name still ends up on the row
+      // for later analysis.
+      resolvedCity = cityInput.slice(0, 80);
+    }
+  }
+
   const supabase = createClient(url, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
@@ -78,8 +103,10 @@ export async function POST(req: Request) {
         preferred_model: preferredModel,
         country_code:    country.code,
         country_name:    country.name,
-        latitude:        country.lat,
-        longitude:       country.lng,
+        latitude,
+        longitude,
+        city:            resolvedCity,
+        kecamatan:       countryCode === "ID" && kecamatanInput ? kecamatanInput : null,
         updated_at:      new Date().toISOString(),
       },
       { onConflict: "wallet_address" },
@@ -117,7 +144,7 @@ export async function GET(req: Request) {
 
   const { data, error } = await supabase
     .from("community_signups")
-    .select("id, display_name, role, preferred_model, country_code")
+    .select("id, display_name, role, preferred_model, country_code, city, kecamatan")
     .eq("wallet_address", wallet)
     .maybeSingle();
 

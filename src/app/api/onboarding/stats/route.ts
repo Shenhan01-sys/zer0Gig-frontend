@@ -18,10 +18,13 @@ export async function GET() {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-  const [stats, byCountry, byModel] = await Promise.all([
+  const [stats, byCountry, byModel, byIdCity] = await Promise.all([
     supabase.from("community_stats").select("*").maybeSingle(),
     supabase.from("community_by_country").select("*"),
     supabase.from("community_by_model").select("*"),
+    // Optional view — only present after migration 014. Tolerate missing view
+    // so the route doesn't 500 if migration hasn't been applied yet.
+    supabase.from("community_id_cities").select("*"),
   ]);
 
   if (stats.error || byCountry.error || byModel.error) {
@@ -39,5 +42,6 @@ export async function GET() {
     agentOwners:  stats.data?.agent_owners ?? 0,
     byCountry:    byCountry.data ?? [],
     byModel:      byModel.data ?? [],
+    byIdCity:     byIdCity.error ? [] : (byIdCity.data ?? []),
   });
 }

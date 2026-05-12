@@ -26,6 +26,15 @@ interface ModelRow {
   signup_count: number;
 }
 
+interface IdCityRow {
+  city:               string;
+  latitude:           number;
+  longitude:          number;
+  signup_count:       number;
+  clients_count?:     number;
+  agent_owners_count?: number;
+}
+
 interface StatsResponse {
   ok: boolean;
   total: number;
@@ -34,6 +43,7 @@ interface StatsResponse {
   agentOwners: number;
   byCountry: CountryRow[];
   byModel: ModelRow[];
+  byIdCity?: IdCityRow[];
 }
 
 interface MemberRow {
@@ -46,7 +56,7 @@ interface MemberRow {
 }
 
 const SAMPLE_STATS: StatsResponse = {
-  ok: true, total: 0, countries: 0, clients: 0, agentOwners: 0, byCountry: [], byModel: [],
+  ok: true, total: 0, countries: 0, clients: 0, agentOwners: 0, byCountry: [], byModel: [], byIdCity: [],
 };
 
 const COLOR_CLIENT      = "#38bdf8"; // cyan
@@ -65,10 +75,12 @@ function blendRoleColor(ownerRatio: number): string {
   return `rgb(${r}, ${g}, ${b})`;
 }
 
-// Manual rotation step in degrees per animation frame (~60fps). 0.06 deg/frame
-// = ~3.6 deg/sec = 100s per revolution. Tuned to read as a slow, intentional
-// drift rather than a spin. Bump to 0.12 for "obvious motion" demo mode.
-const ROTATION_STEP_DEG = 0.06;
+// Globe drifts longitude every ROTATION_INTERVAL_MS by ROTATION_STEP_DEG.
+// Tween duration matches the interval so motion is continuous, not jittery.
+// 1.8° / 100ms = ~18°/sec = 20 seconds per revolution. Clearly visible motion
+// without spinning fast enough to disorient.
+const ROTATION_STEP_DEG    = 1.8;
+const ROTATION_INTERVAL_MS = 100;
 
 export default function CommunityGlobe() {
   const [stats, setStats] = useState<StatsResponse>(SAMPLE_STATS);
@@ -109,26 +121,25 @@ export default function CommunityGlobe() {
     return () => observer.disconnect();
   }, []);
 
-  // Manual longitude-drift rotation via requestAnimationFrame.
+  // Globe rotation — interval-based instead of per-frame.
   //
-  // Earlier attempts used OrbitControls.autoRotate (the "proper" path), but
-  // it depends on react-globe.gl's internal render loop calling controls.update()
-  // every frame AND on the ref being populated by the time the effect runs.
-  // Both were brittle: the ref sometimes wasn't ready (dynamic import +
-  // three.js init), and when it was, autoRotate occasionally didn't render
-  // any visible motion. Manually driving pointOfView every frame is bulletproof.
+  // Earlier per-frame approach issued pointOfView() 60x/sec with 0ms tween,
+  // which globe.gl appears to debounce/coalesce internally, leaving the
+  // visible motion ambiguous. Switched to a 100ms tick that issues a
+  // pointOfView() with a matching 100ms transition — three.js interpolates
+  // between target poses smoothly so motion is continuous.
   //
-  // On user drag (OrbitControls reads input), we stop pushing — otherwise our
-  // pointOfView call would fight the user's gesture. Drag end -> resume.
-  // On country select (modal open) -> pause. Modal close -> resume.
+  // Pauses cleanly while:
+  //   - the country modal is open (selectedCountryRef.current)
+  //   - the user is dragging (OrbitControls 'start'/'end' events)
   useEffect(() => {
-    let cancelled  = false;
-    let rafId:    number | null = null;
-    let lng     = 110;
-    const lat   = 5;
-    const alt   = 2.4;
-
-    let started = false;
+    let cancelled       = false;
+    let intervalId:    ReturnType<typeof setInterval> | null = null;
+    let setupIntervalId: ReturnType<typeof setInterval> | null = null;
+    let lng         = 110;
+    const lat       = 5;
+    const altitude  = 2.4;
+    let started         = false;
     let userInteracting = false;
 
     const onStart = () => { userInteracting = true; };
@@ -136,11 +147,11 @@ export default function CommunityGlobe() {
 
     const tick = () => {
       if (cancelled) return;
-      if (!selectedCountryRef.current && !userInteracting && globeRef.current) {
-        lng = (lng + ROTATION_STEP_DEG) % 360;
-        globeRef.current.pointOfView?.({ lat, lng, altitude: alt }, 0);
-      }
-      rafId = requestAnimationFrame(tick);
+      if (selectedCountryRef.current || userInteracting) return;
+      const g = globeRef.current;
+      if (!g) return;
+      lng = (lng + ROTATION_STEP_DEG) % 360;
+      g.pointOfView?.({ lat, lng, altitude }, ROTATION_INTERVAL_MS);
     };
 
     const tryStart = () => {
@@ -149,45 +160,35 @@ export default function CommunityGlobe() {
       if (!g) return false;
       const controls = g.controls?.();
       if (!controls) return false;
-      // Disable zoom so users can't accidentally squish the camera, but keep
-      // pan/orbit so they can poke the globe. Wire pointerdown/up to pause
-      // our rAF drift while the user drags.
       controls.enableZoom = false;
       controls.addEventListener?.("start", onStart);
       controls.addEventListener?.("end",   onEnd);
-      // Initial framing
-      g.pointOfView?.({ lat, lng, altitude: alt }, 1500);
-      started = true;
-      rafId   = requestAnimationFrame(tick);
+      // Snap to initial framing instantly so the first tick has somewhere
+      // sensible to interpolate from.
+      g.pointOfView?.({ lat, lng, altitude }, 0);
+      started    = true;
+      intervalId = setInterval(tick, ROTATION_INTERVAL_MS);
       return true;
     };
 
     if (!tryStart()) {
-      // Poll every 100ms up to 20s — covers slow texture/three.js init.
       let attempts = 0;
-      const intervalId = setInterval(() => {
+      setupIntervalId = setInterval(() => {
         attempts++;
-        if (cancelled || tryStart() || attempts > 200) clearInterval(intervalId);
+        if (cancelled || tryStart() || attempts > 200) {
+          if (setupIntervalId !== null) clearInterval(setupIntervalId);
+        }
       }, 100);
-      return () => {
-        cancelled = true;
-        clearInterval(intervalId);
-        if (rafId !== null) cancelAnimationFrame(rafId);
-        const controls = globeRef.current?.controls?.();
-        controls?.removeEventListener?.("start", onStart);
-        controls?.removeEventListener?.("end",   onEnd);
-      };
     }
 
     return () => {
       cancelled = true;
-      if (rafId !== null) cancelAnimationFrame(rafId);
+      if (intervalId      !== null) clearInterval(intervalId);
+      if (setupIntervalId !== null) clearInterval(setupIntervalId);
       const controls = globeRef.current?.controls?.();
       controls?.removeEventListener?.("start", onStart);
       controls?.removeEventListener?.("end",   onEnd);
     };
-    // selectedCountry intentionally read inside tick via closure-stable ref
-    // pattern below to avoid restarting the rAF on every modal open/close.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -235,11 +236,18 @@ export default function CommunityGlobe() {
     const maxCount = Math.max(...stats.byCountry.map(c => c.signup_count));
     const scaleRadius = (n: number) => 0.35 + (n / maxCount) * 0.55;
 
-    return stats.byCountry.map(c => {
+    // Country-level dots. For Indonesia, we'd ideally only render the city
+    // dots below — but the country aggregate still shows up because signups
+    // without a resolved city contribute to it. Showing both is fine: the
+    // country dot represents "Indonesia overall", the city dots fan out from
+    // there.
+    const countryDots = stats.byCountry.map(c => {
       const clientCount = c.clients_count ?? 0;
       const ownerCount  = c.agent_owners_count ?? 0;
       const total       = clientCount + ownerCount;
       const ownerRatio  = total === 0 ? 0 : ownerCount / total;
+      // Indonesia: shrink the country dot a bit so the city dots stand out.
+      const isIndonesia = c.country_code === "ID";
       return {
         lat: Number(c.latitude),
         lng: Number(c.longitude),
@@ -249,12 +257,40 @@ export default function CommunityGlobe() {
         clientCount,
         ownerCount,
         color: blendRoleColor(ownerRatio),
-        radius: scaleRadius(c.signup_count),
+        radius: isIndonesia && (stats.byIdCity?.length ?? 0) > 0
+          ? scaleRadius(c.signup_count) * 0.4   // subdue ID dot when cities present
+          : scaleRadius(c.signup_count),
         altitude: 0.012,
         isSeed: false,
+        isCity: false,
       };
     });
-  }, [stats.byCountry]);
+
+    // Indonesia city-level dots. Sized off the same scale so a small city
+    // with 1 signup is a small dot but visible.
+    const cityDots = (stats.byIdCity ?? []).map(c => {
+      const clientCount = c.clients_count ?? 0;
+      const ownerCount  = c.agent_owners_count ?? 0;
+      const total       = clientCount + ownerCount;
+      const ownerRatio  = total === 0 ? 0 : ownerCount / total;
+      return {
+        lat: Number(c.latitude),
+        lng: Number(c.longitude),
+        countryCode: "ID",
+        countryName: c.city,
+        totalCount:  total,
+        clientCount,
+        ownerCount,
+        color: blendRoleColor(ownerRatio),
+        radius: 0.30 + (c.signup_count / Math.max(1, maxCount)) * 0.30,
+        altitude: 0.020,    // slight lift so they read above the country dot
+        isSeed: false,
+        isCity: true,
+      };
+    });
+
+    return [...countryDots, ...cityDots];
+  }, [stats.byCountry, stats.byIdCity]);
 
   // Animated arcs — agent_owner → client. Visualizes agents "running" jobs
   // between regions. Stays subtle: thin stroke, low opacity, dashed.

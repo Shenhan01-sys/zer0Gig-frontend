@@ -9,6 +9,7 @@ import { Check, ChevronRight, ChevronLeft, Wallet, Globe2, Cpu, Sparkles, ArrowR
 import Footer from "@/components/Footer";
 import { OG_MODELS, DEFAULT_MODEL_ID, type OGModel } from "@/lib/og-models";
 import { COUNTRIES, type Country } from "@/lib/countries";
+import { ID_CITIES } from "@/lib/idCities";
 
 type Role = "client" | "agent_owner";
 
@@ -49,6 +50,10 @@ export default function OnboardingPage() {
   const [countryCode,   setCountryCode]   = useState("");
   const [countryQuery,  setCountryQuery]  = useState("");
   const [modelId,       setModelId]       = useState<string>(DEFAULT_MODEL_ID);
+  // Indonesia-only sub-country fields. Shown only when country = ID.
+  const [city,          setCity]          = useState("");
+  const [cityQuery,     setCityQuery]     = useState("");
+  const [kecamatan,     setKecamatan]     = useState("");
 
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -79,7 +84,32 @@ export default function OnboardingPage() {
     return COUNTRIES.filter(c => c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q));
   }, [countryQuery]);
 
-  const canNextFromProfile = displayName.trim().length >= 2 && !!role && !!countryCode;
+  // Indonesia-specific city autocomplete suggestions
+  const filteredIdCities = useMemo(() => {
+    const q = cityQuery.trim().toLowerCase();
+    if (!q) return ID_CITIES;
+    return ID_CITIES.filter(c =>
+      c.name.toLowerCase().includes(q) || c.province.toLowerCase().includes(q),
+    );
+  }, [cityQuery]);
+
+  // When country switches AWAY from ID, clear the Indonesia-only fields so
+  // they don't ride along into a non-ID submission.
+  useEffect(() => {
+    if (countryCode !== "ID") {
+      setCity("");
+      setCityQuery("");
+      setKecamatan("");
+    }
+  }, [countryCode]);
+
+  // For Indonesian users, city is required so the globe can plot them
+  // distinctly. Non-ID users skip this requirement.
+  const canNextFromProfile =
+    displayName.trim().length >= 2 &&
+    !!role &&
+    !!countryCode &&
+    (countryCode !== "ID" || city.trim().length > 0);
   const canSubmit = canNextFromProfile && !!modelId;
 
   async function submit() {
@@ -96,6 +126,8 @@ export default function OnboardingPage() {
           role,
           preferredModel: modelId,
           countryCode,
+          city:      countryCode === "ID" ? city.trim() : undefined,
+          kecamatan: countryCode === "ID" ? kecamatan.trim() : undefined,
         }),
       });
       const json = await res.json();
@@ -238,6 +270,55 @@ export default function OnboardingPage() {
                     )}
                   </div>
                 </Field>
+
+                {/* Indonesia-only: city autocomplete + kecamatan free text */}
+                {countryCode === "ID" && (
+                  <>
+                    <Field label="Kota / Kabupaten">
+                      <input
+                        value={cityQuery || city}
+                        onChange={e => { setCityQuery(e.target.value); if (city) setCity(""); }}
+                        placeholder="Cari kota — Jakarta, Bandung, Surabaya…"
+                        className="w-full bg-[#050810]/80 border border-white/10 rounded-xl px-4 py-3 text-[15px] focus:border-white/30 focus:outline-none transition-colors mb-3"
+                      />
+                      <div className="max-h-56 overflow-y-auto rounded-xl border border-white/10 bg-[#0d1525]/90 divide-y divide-white/[0.04]">
+                        {filteredIdCities.slice(0, 30).map(c => (
+                          <button
+                            key={c.name}
+                            type="button"
+                            onClick={() => { setCity(c.name); setCityQuery(c.name); }}
+                            className={`w-full flex items-center justify-between gap-3 px-4 py-2.5 hover:bg-white/[0.03] transition-colors ${
+                              city === c.name ? "bg-white/[0.06]" : ""
+                            }`}
+                          >
+                            <span className={`text-[14px] ${city === c.name ? "text-white" : "text-white/80"}`}>
+                              {c.name}
+                            </span>
+                            <span className="text-white/30 text-[11px] font-mono">{c.province}</span>
+                          </button>
+                        ))}
+                        {filteredIdCities.length === 0 && (
+                          <p className="px-4 py-3 text-white/40 text-[13px]">No matches — type to use your own</p>
+                        )}
+                      </div>
+                      <p className="text-white/30 text-[11px] mt-1.5">
+                        Kotamu gak ada di list? Tulis aja namanya — kita simpan apa adanya.
+                      </p>
+                    </Field>
+
+                    <Field label="Kecamatan (opsional)">
+                      <input
+                        value={kecamatan}
+                        onChange={e => setKecamatan(e.target.value.slice(0, 80))}
+                        placeholder="e.g. Cengkareng, Sukajadi, Gubeng"
+                        className="w-full bg-[#050810]/80 border border-white/10 rounded-xl px-4 py-3 text-[15px] focus:border-white/30 focus:outline-none transition-colors"
+                      />
+                      <p className="text-white/30 text-[11px] mt-1.5">
+                        Lokasi spesifik bantu kami plot kamu di peta Indonesia.
+                      </p>
+                    </Field>
+                  </>
+                )}
 
                 <Nav
                   onBack={() => setStep(prevStepFrom(1, role))}

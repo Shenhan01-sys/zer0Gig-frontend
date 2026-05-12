@@ -135,6 +135,8 @@ export default function WithdrawPage() {
   const [state,       setState]       = useState<WithdrawState>("idle");
   const [error,       setError]       = useState<string | null>(null);
   const [txHash,      setTxHash]      = useState<string | null>(null);
+  const [txMock,      setTxMock]      = useState<boolean>(false);
+  const [mockReason,  setMockReason]  = useState<string | null>(null);
 
   // Default destination = connected owner wallet
   useEffect(() => {
@@ -197,14 +199,18 @@ export default function WithdrawPage() {
       if (!json.ok) throw new Error(json.error ?? "Withdraw failed");
 
       setTxHash(json.txHash);
+      setTxMock(!!json.mock);
+      setMockReason(json.reason ?? null);
       setState("success");
-      // Refresh the balance reading so the UI reflects the (eventual) drain
-      setTimeout(() => refetchBalance(), 4000);
-      // Auto-return to idle so the user can do another harvest
+      // Real txs: refetch balance shortly after broadcast so the UI reflects
+      // the drain. Mock txs: balance won't have changed so skip the refetch.
+      if (!json.mock) setTimeout(() => refetchBalance(), 4000);
+      // Auto-return to idle so the user can do another harvest. Give a longer
+      // window for mock so the demo banner reads.
       setTimeout(() => {
         setState("idle");
         setAmount("");
-      }, 5000);
+      }, json.mock ? 8000 : 5000);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Withdraw failed";
       setError(msg);
@@ -588,20 +594,37 @@ export default function WithdrawPage() {
 
             {/* Success receipt */}
             {state === "success" && txHash && (
-              <div className="rounded-xl border border-emerald-400/20 bg-emerald-400/[0.04] px-4 py-3 text-[12px] flex items-center justify-between gap-2">
-                <div className="min-w-0 flex-1">
-                  <p className="text-emerald-300 font-medium mb-0.5">Withdrawal submitted</p>
-                  <p className="text-emerald-300/70 font-mono truncate">{txHash}</p>
+              <div className={`rounded-xl border px-4 py-3 text-[12px] ${
+                txMock
+                  ? "border-amber-400/25 bg-amber-400/[0.05]"
+                  : "border-emerald-400/20 bg-emerald-400/[0.04]"
+              }`}>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className={`font-medium mb-0.5 ${txMock ? "text-amber-300" : "text-emerald-300"}`}>
+                      {txMock ? "Demo mode · no funds moved" : "Withdrawal broadcast"}
+                    </p>
+                    <p className={`font-mono truncate ${txMock ? "text-amber-300/60" : "text-emerald-300/70"}`}>
+                      {txHash}
+                    </p>
+                  </div>
+                  {!txMock && (
+                    <a
+                      href={`https://scan-testnet.0g.ai/tx/${txHash}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 text-emerald-300 hover:text-emerald-200 text-[11px] font-medium shrink-0"
+                    >
+                      Chainscan
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  )}
                 </div>
-                <a
-                  href={`https://scan-testnet.0g.ai/tx/${txHash}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1 text-emerald-300 hover:text-emerald-200 text-[11px] font-medium shrink-0"
-                >
-                  Chainscan
-                  <ExternalLink className="w-3 h-3" />
-                </a>
+                {txMock && mockReason && (
+                  <p className="text-amber-300/70 text-[11px] leading-relaxed mt-2 pt-2 border-t border-amber-400/15">
+                    {mockReason}
+                  </p>
+                )}
               </div>
             )}
 

@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Wallet, Cpu, ArrowRight, ShieldCheck, CheckCircle2,
   Activity, Fingerprint, Coins, Zap, Landmark, ExternalLink,
-  AlertCircle, ChevronLeft, KeyRound, Shield,
+  AlertCircle, ChevronLeft, KeyRound, Shield, Plus, Loader2,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -159,6 +159,60 @@ export default function WithdrawPage() {
   const [txHash,      setTxHash]      = useState<`0x${string}` | null>(null);
   const [txMock,      setTxMock]      = useState<boolean>(false);
   const [mockReason,  setMockReason]  = useState<string | null>(null);
+
+  // Deposit form state — used to top up the vault for testing / demo.
+  // Until escrow contracts route earnings into vault directly, this is the
+  // only way to give the vault a balance to withdraw against.
+  const [depositOpen,    setDepositOpen]    = useState(false);
+  const [depositAmount,  setDepositAmount]  = useState<string>("");
+  const [depositState,   setDepositState]   = useState<WithdrawState>("idle");
+  const [depositTxHash,  setDepositTxHash]  = useState<`0x${string}` | null>(null);
+  const [depositError,   setDepositError]   = useState<string | null>(null);
+
+  // Wait for deposit tx receipt so the balance refetch happens after
+  // confirmation rather than racing against block inclusion.
+  const { data: depositReceipt } = useWaitForTransactionReceipt({
+    hash:   depositTxHash ?? undefined,
+    chainId: 16602,
+    query:   { enabled: !!depositTxHash && depositState === "processing" },
+  });
+  useEffect(() => {
+    if (depositReceipt && depositState === "processing") {
+      setDepositState("success");
+      setTimeout(() => refetchVault(), 1200);
+      setTimeout(() => {
+        setDepositState("idle");
+        setDepositAmount("");
+        setDepositTxHash(null);
+        setDepositOpen(false);
+      }, 3500);
+    }
+  }, [depositReceipt, depositState, refetchVault]);
+
+  async function handleDeposit() {
+    if (!selected) return;
+    const amt = Number(depositAmount);
+    if (!Number.isFinite(amt) || amt <= 0) return;
+    setDepositError(null);
+    setDepositTxHash(null);
+    setDepositState("signing");
+    try {
+      const hash = await writeContractAsync({
+        address:      VAULT_ADDRESS,
+        abi:          CONTRACT_CONFIG.AgentEarningsVault.abi,
+        functionName: "deposit",
+        args:         [BigInt(selected.agentId)],
+        value:        parseEther(depositAmount),
+      });
+      setDepositTxHash(hash);
+      setDepositState("processing");
+    } catch (err) {
+      const raw = err instanceof Error ? err.message : "Deposit failed";
+      setDepositError(raw.split("\n")[0].slice(0, 200));
+      setDepositState("error");
+      setTimeout(() => setDepositState("idle"), 5000);
+    }
+  }
 
   // Wait for vault tx receipt so the UI can wait for confirmation before
   // declaring success.
@@ -411,7 +465,7 @@ export default function WithdrawPage() {
                   </div>
 
                   {/* Dual balance — vault + EOA side by side */}
-                  <div className="w-full grid grid-cols-2 gap-2 mb-3">
+                  <div className="w-full grid grid-cols-2 gap-2 mb-2">
                     <BalanceTile
                       label="Vault"
                       sublabel="keyless"
@@ -431,6 +485,114 @@ export default function WithdrawPage() {
                       loading={eoaBalLoading}
                     />
                   </div>
+
+                  {/* Top-up vault — small disclosure that owner (or anyone)
+                      can use to fund the vault directly. For demo + before
+                      escrow upgrade. */}
+                  {VAULT_DEPLOYED && (
+                    <div className="w-full mb-3">
+                      {!depositOpen ? (
+                        <button
+                          type="button"
+                          onClick={() => setDepositOpen(true)}
+                          className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-dashed border-white/15 text-white/55 text-[11px] font-medium hover:border-white/30 hover:text-white/80 transition-colors"
+                        >
+                          <Plus className="w-3 h-3" />
+                          Top up vault
+                        </button>
+                      ) : (
+                        <div className="rounded-xl border border-white/15 bg-[#050810]/80 p-3">
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="text-[10px] font-mono uppercase tracking-widest text-white/45">
+                              Deposit to vault · Agent #{selected.agentId}
+                            </p>
+                            <button
+                              onClick={() => { setDepositOpen(false); setDepositAmount(""); setDepositError(null); }}
+                              disabled={depositState !== "idle" && depositState !== "error"}
+                              className="text-white/35 hover:text-white/70 text-[14px] leading-none disabled:opacity-30"
+                              aria-label="Close deposit form"
+                            >
+                              ×
+                            </button>
+                          </div>
+                          <div className="relative mb-2">
+                            <input
+                              type="number"
+                              step="any"
+                              value={depositAmount}
+                              onChange={e => setDepositAmount(e.target.value)}
+                              disabled={depositState !== "idle" && depositState !== "error"}
+                              placeholder="0.0500"
+                              className="w-full bg-[#0d1525]/90 border border-white/10 rounded-lg py-2 pl-3 pr-12 text-[14px] font-mono text-white placeholder-white/15 focus:outline-none focus:border-white/30 disabled:opacity-50 tabular-nums"
+                            />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-mono text-white/45">
+                              OG
+                            </span>
+                          </div>
+                          <button
+                            onClick={handleDeposit}
+                            disabled={
+                              !Number.isFinite(Number(depositAmount)) ||
+                              Number(depositAmount) <= 0 ||
+                              (depositState !== "idle" && depositState !== "error")
+                            }
+                            className="w-full py-2 rounded-lg bg-white text-black text-[12px] font-medium hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-1.5"
+                          >
+                            {depositState === "idle" && (
+                              <>
+                                <Plus className="w-3.5 h-3.5" />
+                                Confirm Deposit
+                              </>
+                            )}
+                            {depositState === "signing" && (
+                              <>
+                                <Fingerprint className="w-3.5 h-3.5 animate-pulse" />
+                                Awaiting Signature…
+                              </>
+                            )}
+                            {depositState === "processing" && (
+                              <>
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                Confirming on-chain…
+                              </>
+                            )}
+                            {depositState === "success" && (
+                              <>
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                Deposited
+                              </>
+                            )}
+                            {depositState === "error" && (
+                              <>
+                                <AlertCircle className="w-3.5 h-3.5" />
+                                Retry
+                              </>
+                            )}
+                          </button>
+                          {depositTxHash && depositState !== "idle" && (
+                            <a
+                              href={`https://scan-testnet.0g.ai/tx/${depositTxHash}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="block mt-2 text-[10px] font-mono text-white/35 hover:text-white/65 truncate"
+                            >
+                              {depositTxHash}
+                            </a>
+                          )}
+                          {depositError && (
+                            <p className="text-red-400/80 text-[10px] mt-2 leading-snug">
+                              {depositError}
+                            </p>
+                          )}
+                          <p className="text-white/30 text-[10px] mt-2 leading-snug">
+                            Sends OG from your connected wallet into the vault keyed by this agent.
+                            Anyone can fund any agent — useful for testing the harvest flow before
+                            escrow contracts auto-route earnings.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   <p className="text-[10px] font-mono text-white/30 truncate w-full text-center">
                     {selected.agentWallet}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, X } from "lucide-react";
 
@@ -62,6 +63,8 @@ function markSeen(tourKey: string) {
 export default function GuidedTour({ tourKey, steps, badge }: GuidedTourProps) {
   const [open, setOpen] = useState(false);
   const [index, setIndex] = useState(0);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
 
   // Auto-open on first visit. Defer to the next tick so the page has a moment
   // to render before the dim backdrop appears — feels less abrupt.
@@ -112,21 +115,26 @@ export default function GuidedTour({ tourKey, steps, badge }: GuidedTourProps) {
   // Stable per-step key so AnimatePresence cross-fades content
   const contentKey = useMemo(() => `${tourKey}-${index}`, [tourKey, index]);
 
-  if (!current) return null;
+  if (!current || !mounted) return null;
 
-  return (
+  // Render through a portal attached to document.body so the overlay escapes
+  // any ancestor with `pointer-events: none` (eg. the fixed nav wrapper).
+  // Without this, the card mounts inside the navbar's pointer-events-none
+  // container and its Skip / Next buttons silently swallow clicks.
+  const overlay = (
     <AnimatePresence>
       {open && (
         <>
-          {/* Dimming backdrop. Clicking it does NOT close — too easy to dismiss
-              accidentally on mobile. Use Skip or the explicit close button. */}
+          {/* Dimming backdrop — `pointer-events-auto` so clicks ON IT don't
+              reach the underlying UI (intentional modal dim). No onClick =
+              clicks are absorbed without dismissing the tour. */}
           <motion.div
             key="tour-backdrop"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-[100] bg-black/55 backdrop-blur-[2px] pointer-events-none"
+            className="fixed inset-0 z-[2147483646] bg-black/55 backdrop-blur-[2px] pointer-events-auto"
             aria-hidden
           />
 
@@ -140,7 +148,7 @@ export default function GuidedTour({ tourKey, steps, badge }: GuidedTourProps) {
             animate={{ opacity: 1, y: 0,  scale: 1 }}
             exit={{ opacity: 0, y: 12, scale: 0.98 }}
             transition={{ duration: 0.25, ease: [0.25, 0.4, 0.25, 1] }}
-            className="fixed z-[101] left-4 right-4 bottom-5 sm:left-auto sm:right-6 sm:bottom-6 sm:w-[380px] rounded-2xl border border-white/10 bg-[#0d1525] shadow-[0_24px_64px_rgba(0,0,0,0.55)] p-5"
+            className="fixed z-[2147483647] left-4 right-4 bottom-5 sm:left-auto sm:right-6 sm:bottom-6 sm:w-[380px] rounded-2xl border border-white/10 bg-[#0d1525] shadow-[0_24px_64px_rgba(0,0,0,0.55)] p-5 pointer-events-auto"
           >
             {/* Header — progress dots + counter + close */}
             <div className="flex items-center justify-between mb-4">
@@ -222,4 +230,6 @@ export default function GuidedTour({ tourKey, steps, badge }: GuidedTourProps) {
       )}
     </AnimatePresence>
   );
+
+  return createPortal(overlay, document.body);
 }

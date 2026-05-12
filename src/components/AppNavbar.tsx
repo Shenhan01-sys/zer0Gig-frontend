@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, Suspense } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -281,8 +281,13 @@ export default function AppNavbar() {
           <HarvestNavButton pathname={pathname} />
 
           {/* Guide — re-opens the current page's tour. Hidden on routes that
-              don't have a tour configured. */}
-          <GuideNavButton pathname={pathname} />
+              don't have a tour configured. Suspense-wrapped because the
+              inner button reads useSearchParams() for tab awareness, which
+              would otherwise bail static prerender on /marketplace and
+              /leaderboard during next build. */}
+          <Suspense fallback={null}>
+            <GuideNavButton pathname={pathname} />
+          </Suspense>
 
           {/* Wallet */}
           {authenticated ? (
@@ -382,8 +387,12 @@ export default function AppNavbar() {
 
       {/* Single mount for the guided tour overlay. RouteAwareTour reads the
           pathname and renders the right tour from the registry. Lives here
-          so every page that renders AppNavbar gets the tour automatically. */}
-      <RouteAwareTour />
+          so every page that renders AppNavbar gets the tour automatically.
+          Suspense-wrapped because the overlay reads useSearchParams() for
+          tab-aware routing, which would bail static prerender otherwise. */}
+      <Suspense fallback={null}>
+        <RouteAwareTour />
+      </Suspense>
     </nav>
   );
 }

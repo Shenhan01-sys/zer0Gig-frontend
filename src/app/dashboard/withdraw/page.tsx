@@ -8,11 +8,13 @@ import {
   AlertCircle, ChevronLeft,
 } from "lucide-react";
 import Link from "next/link";
-import { useAccount, useBalance, useSignMessage } from "wagmi";
-import { formatEther, parseEther } from "viem";
+import { useAccount, useBalance, useReadContracts, useSignMessage } from "wagmi";
+import { formatEther } from "viem";
+import type { Address } from "viem";
 import { useOwnerAgents } from "@/hooks/useAgentRegistry";
 import { useAllAgents } from "@/hooks/useAllAgents";
 import { useUserRole, UserRole } from "@/hooks/useUserRegistry";
+import { CONTRACT_CONFIG } from "@/lib/contracts";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Agent Wallet Withdrawal Hub — /dashboard/withdraw
@@ -53,22 +55,56 @@ export default function WithdrawPage() {
   const { agents: allAgents, isLoading: allLoading } = useAllAgents();
   const { signMessageAsync } = useSignMessage();
 
-  // Resolve the owner's iNFTs into rich AgentChoice objects
-  const myAgents: AgentChoice[] = useMemo(() => {
+  // Owner's agent ID list — normalized to number[]
+  const ownerIds: number[] = useMemo(() => {
     if (!ownerAgentIds) return [];
-    const ids = (ownerAgentIds as bigint[]).map(b => Number(b));
-    return ids
-      .map(id => allAgents.find(a => a.agentId === id))
-      .filter((a): a is NonNullable<typeof a> => !!a)
-      .map(a => ({
-        agentId:     a.agentId,
-        name:        a.name,
-        agentWallet: a.agentWallet as `0x${string}`,
-        category:    a.tags?.[0] ?? a.skills?.[0] ?? "AI Agent",
-        isActive:    a.isActive,
-        color:       accentFor(a.agentId),
-      }));
-  }, [ownerAgentIds, allAgents]);
+    return (ownerAgentIds as bigint[]).map(b => Number(b));
+  }, [ownerAgentIds]);
+
+  // Direct on-chain read for each owned agent's profile. This is the source of
+  // truth for the agentWallet address (which we need for balance reads) and
+  // ensures the switcher works even when the Supabase indexer behind
+  // useAllAgents lags or doesn't have the agent yet.
+  const profileContracts = useMemo(
+    () =>
+      ownerIds.map(id => ({
+        address:      CONTRACT_CONFIG.AgentRegistry.address as Address,
+        abi:          CONTRACT_CONFIG.AgentRegistry.abi,
+        functionName: "getAgentProfile" as const,
+        args:         [BigInt(id)] as const,
+      })),
+    [ownerIds],
+  );
+  const { data: profileResults, isLoading: profilesLoading } = useReadContracts({
+    contracts: profileContracts,
+    query:     { enabled: ownerIds.length > 0 },
+  });
+
+  // Resolve the owner's iNFTs into rich AgentChoice objects. Cross-references
+  // allAgents (for friendly name + category) but falls back to a synthesized
+  // entry from the on-chain profile when the indexer doesn't have the agent
+  // yet — fixes the switcher silently dropping agents.
+  const myAgents: AgentChoice[] = useMemo(() => {
+    return ownerIds
+      .map((id, i) => {
+        const fromApi  = allAgents.find(a => a.agentId === id);
+        // wagmi useReadContracts result shape: { status, result }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const onChain  = profileResults?.[i]?.result as any;
+        const wallet   = (fromApi?.agentWallet as `0x${string}` | undefined)
+                      ?? (onChain?.agentWallet as `0x${string}` | undefined);
+        if (!wallet || wallet === "0x0000000000000000000000000000000000000000") return null;
+        return {
+          agentId:     id,
+          name:        fromApi?.name ?? `Agent #${id}`,
+          agentWallet: wallet,
+          category:    fromApi?.tags?.[0] ?? fromApi?.skills?.[0] ?? "AI Agent",
+          isActive:    fromApi?.isActive ?? true,
+          color:       accentFor(id),
+        };
+      })
+      .filter((a): a is AgentChoice => !!a);
+  }, [ownerIds, allAgents, profileResults]);
 
   // Selected agent (default: first one)
   const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -190,7 +226,7 @@ export default function WithdrawPage() {
     );
   }
 
-  const isLoading = roleLoading || idsLoading || allLoading;
+  const isLoading = roleLoading || idsLoading || (ownerIds.length > 0 && profilesLoading) || allLoading;
 
   // ── Empty state — no agents owned ─────────────────────────────────────────
   if (!isLoading && myAgents.length === 0) {
@@ -339,28 +375,44 @@ export default function WithdrawPage() {
               )}
             </AnimatePresence>
 
-            {/* Agent selector dots */}
-            {myAgents.length > 1 && (
-              <div className="flex gap-2.5 mt-6">
-                {myAgents.map(a => (
-                  <button
-                    key={a.agentId}
-                    onClick={() => state === "idle" && setSelectedId(a.agentId)}
-                    disabled={state !== "idle"}
-                    aria-label={`Select ${a.name}`}
-                    className="relative flex items-center justify-center w-6 h-6 disabled:cursor-not-allowed"
-                  >
-                    <span
-                      className={`rounded-full transition-all duration-300 ${
-                        selectedId === a.agentId ? "w-3 h-3" : "w-1.5 h-1.5 opacity-30 hover:opacity-60"
-                      }`}
-                      style={{
-                        backgroundColor: a.color,
-                        boxShadow: selectedId === a.agentId ? `0 0 10px ${a.color}` : "none",
-                      }}
-                    />
-                  </button>
-                ))}
+            {/* Agent switcher — tile cards (works for 1 or many) */}
+            {myAgents.length > 0 && (
+              <div className="w-full mt-6">
+                <p className="text-[10px] font-mono uppercase tracking-widest text-white/35 mb-2">
+                  Switch Agent · {myAgents.length}
+                </p>
+                <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+                  {myAgents.map(a => {
+                    const active = selectedId === a.agentId;
+                    return (
+                      <button
+                        key={a.agentId}
+                        type="button"
+                        onClick={() => state === "idle" && setSelectedId(a.agentId)}
+                        disabled={state !== "idle"}
+                        aria-label={`Select ${a.name}`}
+                        aria-pressed={active}
+                        className={`shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl border transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+                          active
+                            ? "border-white/30 bg-white/[0.06]"
+                            : "border-white/10 bg-[#050810]/60 hover:border-white/25 hover:bg-white/[0.04]"
+                        }`}
+                      >
+                        <span
+                          className="w-2 h-2 rounded-full shrink-0"
+                          style={{
+                            backgroundColor: a.color,
+                            boxShadow: active ? `0 0 10px ${a.color}` : "none",
+                          }}
+                        />
+                        <span className={`text-[12px] font-medium whitespace-nowrap ${active ? "text-white" : "text-white/65"}`}>
+                          {a.name}
+                        </span>
+                        <span className="text-[10px] font-mono text-white/35">#{a.agentId}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>

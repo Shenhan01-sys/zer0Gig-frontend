@@ -8,7 +8,9 @@ import { useAccount, useDisconnect } from "wagmi";
 import { usePrivy } from "@privy-io/react-auth";
 import { useQueryClient } from "@tanstack/react-query";
 import { animate } from "animejs";
-import { Store, Zap, Book, Trophy, Tag } from "lucide-react";
+import { Store, Zap, Book, Trophy, Tag, Coins } from "lucide-react";
+import { useAccount as useAccountForRole } from "wagmi";
+import { useUserRole, UserRole } from "@/hooks/useUserRegistry";
 
 // ── App nav links ──────────────────────────────────────────────────────────────
 
@@ -269,6 +271,11 @@ export default function AppNavbar() {
             )}
           </AnimatePresence>
 
+          {/* Harvest Yield — agent owners only. Sits between the back-button
+              area and the wallet pill so it reads as a quick action without
+              fighting the primary nav links. */}
+          <HarvestNavButton pathname={pathname} />
+
           {/* Wallet */}
           {authenticated ? (
             <button
@@ -363,5 +370,31 @@ export default function AppNavbar() {
         )}
       </AnimatePresence>
     </nav>
+  );
+}
+
+// ── Harvest Yield nav button ─────────────────────────────────────────────────
+// Visible only to wallet-authenticated FreelancerOwner users. Renders a
+// compact CTA in the navbar that pulses subtly when the user is NOT already on
+// the withdraw page, so it reads as "go withdraw your earnings" without
+// shouting.
+function HarvestNavButton({ pathname }: { pathname: string }) {
+  const { address } = useAccountForRole();
+  const { role } = useUserRole(address);
+  if (role !== UserRole.FreelancerOwner) return null;
+  const active = pathname.startsWith("/dashboard/withdraw");
+  return (
+    <Link
+      href="/dashboard/withdraw"
+      aria-current={active ? "page" : undefined}
+      className={`hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-medium whitespace-nowrap transition-all ${
+        active
+          ? "bg-white text-black hover:bg-white/90"
+          : "bg-emerald-400/15 border border-emerald-400/30 text-emerald-300 hover:bg-emerald-400/25 hover:border-emerald-400/45"
+      }`}
+    >
+      <Coins className="w-3.5 h-3.5" />
+      Harvest
+    </Link>
   );
 }

@@ -20,6 +20,10 @@ const APP_LINKS = [
   { label: "Docs",        href: "https://stylenecy.gitbook.io/zer0gig", icon: <Book size={16} /> },
 ];
 
+// Sub-routes that should keep "Dashboard" highlighted (since they live under /dashboard)
+// my-purchases gets a back-button on Dashboard like other sub-pages.
+
+
 // ── Back button config per route ───────────────────────────────────────────────
 
 function getBackConfig(pathname: string): { label: string; href: string } | null {

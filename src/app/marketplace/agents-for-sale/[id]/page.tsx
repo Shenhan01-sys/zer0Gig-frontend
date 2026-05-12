@@ -219,9 +219,9 @@ export default function ListingDetailPage() {
         <BuyAgentModal
           listing={listing}
           onClose={() => setBuyModalOpen(false)}
-          onSuccess={(orderId) => {
+          onSuccess={() => {
             setBuyModalOpen(false);
-            router.push(`/dashboard/my-purchases?order=${orderId}`);
+            router.push(`/dashboard/my-purchases`);
           }}
         />
       )}

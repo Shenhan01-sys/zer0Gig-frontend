@@ -30,6 +30,7 @@ function getBackConfig(pathname: string): { label: string; href: string } | null
   if (pathname.startsWith("/dashboard/register-agent"))  return { label: "Dashboard", href: "/dashboard" };
   if (pathname.startsWith("/dashboard/create-job"))      return { label: "Dashboard", href: "/dashboard" };
   if (pathname.startsWith("/dashboard/create-subscription")) return { label: "Dashboard", href: "/dashboard" };
+  if (pathname.startsWith("/dashboard/withdraw"))        return { label: "Dashboard", href: "/dashboard" };
   if (pathname === "/dashboard/jobs")                return { label: "Dashboard", href: "/dashboard" };
   if (pathname === "/dashboard/my-proposals")        return { label: "Dashboard", href: "/dashboard" };
   if (pathname.startsWith("/dashboard/jobs/"))           return { label: "Jobs",      href: "/dashboard/jobs" };
@@ -47,6 +48,7 @@ function getSectionLabel(pathname: string): string {
   if (pathname.startsWith("/dashboard/register-agent"))    return "Register Agent";
   if (pathname.startsWith("/dashboard/create-job"))        return "Post a Job";
   if (pathname.startsWith("/dashboard/create-subscription")) return "New Subscription";
+  if (pathname.startsWith("/dashboard/withdraw"))           return "Withdraw";
   if (pathname === "/dashboard/jobs")              return "Open Jobs";
   if (pathname === "/dashboard/my-proposals")      return "My Proposals";
   if (pathname.startsWith("/dashboard/jobs/"))             return "Job Details";

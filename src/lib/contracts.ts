@@ -12,6 +12,7 @@ import ProgressiveEscrowABI from './abis/ProgressiveEscrow.json';
 import SubscriptionEscrowABI from './abis/SubscriptionEscrow.json';
 import UserRegistryABI from './abis/UserRegistry.json';
 import AgentMarketplaceABI from './abis/AgentMarketplace.json';
+import AgentEarningsVaultABI from './abis/AgentEarningsVault.json';
 import { type Abi } from 'viem';
 
 export const AGENT_REGISTRY_ABI = AgentRegistryABI.abi as Abi;
@@ -19,6 +20,7 @@ export const PROGRESSIVE_ESCROW_ABI = ProgressiveEscrowABI.abi as Abi;
 export const SUBSCRIPTION_ESCROW_ABI = SubscriptionEscrowABI.abi as Abi;
 export const USER_REGISTRY_ABI = UserRegistryABI.abi as Abi;
 export const AGENT_MARKETPLACE_ABI = AgentMarketplaceABI.abi as Abi;
+export const AGENT_EARNINGS_VAULT_ABI = AgentEarningsVaultABI.abi as Abi;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SKILL IDS (Well-known keccak256 hashes)
@@ -49,6 +51,12 @@ export const CONTRACT_ADDRESSES = {
   // Treasury: same as deployer · references AgentRegistry above
   // Scan: https://scan-testnet.0g.ai/address/0x02476780C4d2ae3AE7F54aFba35F25Df4F20d018
   AgentMarketplace: "0x02476780C4d2ae3AE7F54aFba35F25Df4F20d018",
+  // Keyless agent earnings custody. Owner-of-iNFT gated withdrawals — no
+  // private keys held anywhere. Address filled in after deployment via
+  //   cd Project/contracts
+  //   npx hardhat run scripts/deploy-vault.js --network newton
+  // Then paste the printed address here and redeploy frontend.
+  AgentEarningsVault: "0x0000000000000000000000000000000000000000",
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -75,6 +83,10 @@ export const CONTRACT_CONFIG = {
   AgentMarketplace: {
     address: CONTRACT_ADDRESSES.AgentMarketplace,
     abi: AGENT_MARKETPLACE_ABI,
+  },
+  AgentEarningsVault: {
+    address: CONTRACT_ADDRESSES.AgentEarningsVault,
+    abi: AGENT_EARNINGS_VAULT_ABI,
   },
 } as const;
 

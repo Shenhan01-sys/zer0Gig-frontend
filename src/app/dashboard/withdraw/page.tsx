@@ -5,40 +5,53 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Wallet, Cpu, ArrowRight, ShieldCheck, CheckCircle2,
   Activity, Fingerprint, Coins, Zap, Landmark, ExternalLink,
-  AlertCircle, ChevronLeft,
+  AlertCircle, ChevronLeft, KeyRound, Shield,
 } from "lucide-react";
 import Link from "next/link";
-import { useAccount, useBalance, useReadContracts, useSignMessage } from "wagmi";
-import { formatEther } from "viem";
+import {
+  useAccount, useBalance, useReadContracts, useSignMessage,
+  useWriteContract, useWaitForTransactionReceipt,
+} from "wagmi";
+import { formatEther, parseEther } from "viem";
 import type { Address } from "viem";
 import { useOwnerAgents } from "@/hooks/useAgentRegistry";
 import { useAllAgents } from "@/hooks/useAllAgents";
 import { useAgentProfiles } from "@/hooks/useAgentProfile";
 import { useUserRole, UserRole } from "@/hooks/useUserRegistry";
-import { CONTRACT_CONFIG } from "@/lib/contracts";
+import { CONTRACT_CONFIG, CONTRACT_ADDRESSES } from "@/lib/contracts";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Agent Wallet Withdrawal Hub — /dashboard/withdraw
 //
-// Adapted from the founder's mockup (Docs/Frontend/Components/Page/WithdrawalPage.md)
-// with real wagmi hooks + the buy-agents palette per direction. Per-agent
-// accent color survives ONLY around the holographic core; every other
-// surface is the neutral white-tint card pattern shared with /marketplace/agents-for-sale.
+// Two paths exist for an iNFT owner to harvest their agent's yield:
 //
-// Flow documented at Docs/Frontend/Components/Page/WithdrawalFlow.md. The
-// backend POST is currently a stub — UI is production-ready, on-chain
-// dispatch is a Phase-2 deliverable.
+//   1. Vault path (preferred, keyless) — earnings deposited into
+//      AgentEarningsVault are withdrawn via a direct user-signed contract
+//      call. No backend, no API, no private keys held anywhere. The vault
+//      contract verifies AgentRegistry.ownerOf(agentId) == msg.sender on
+//      every withdraw.
+//
+//   2. Legacy EOA path — earnings sent directly to agent.agentWallet (the
+//      original ERC-7857 design). Withdrawal requires the agent's private
+//      key on the server, configured via the AGENT_WALLET_KEYS env var.
+//      Falls back to a clearly-labeled demo response when the env is missing
+//      so the UX never silently lies.
+//
+// The page detects which pool has balance and routes accordingly. Both
+// balances are surfaced to the user so the source of funds is never ambiguous.
+//
+// Flow documented at Docs/Frontend/Components/Page/WithdrawalFlow.md.
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Deterministic accent color per agentId so the holographic ring is stable
-// across re-renders. Five-stop palette keeps the wall visually varied without
-// drifting into rainbow.
+// across re-renders.
 const ACCENT_PALETTE = ["#10b981", "#06b6d4", "#8b5cf6", "#f59e0b", "#ec4899"];
 function accentFor(agentId: number) {
   return ACCENT_PALETTE[agentId % ACCENT_PALETTE.length];
 }
 
 type WithdrawState = "idle" | "signing" | "processing" | "success" | "error";
+type WithdrawSource = "vault" | "eoa";
 
 interface AgentChoice {
   agentId:     number;
@@ -50,23 +63,23 @@ interface AgentChoice {
   avatarUrl:   string | null;
 }
 
+const VAULT_ADDRESS    = CONTRACT_ADDRESSES.AgentEarningsVault as `0x${string}`;
+const VAULT_DEPLOYED   = VAULT_ADDRESS !== "0x0000000000000000000000000000000000000000";
+
 export default function WithdrawPage() {
   const { address: owner } = useAccount();
   const { role, isLoading: roleLoading } = useUserRole(owner);
   const { data: ownerAgentIds, isLoading: idsLoading } = useOwnerAgents(owner);
   const { agents: allAgents, isLoading: allLoading } = useAllAgents();
   const { signMessageAsync } = useSignMessage();
+  const { writeContractAsync } = useWriteContract();
 
-  // Owner's agent ID list — normalized to number[]
   const ownerIds: number[] = useMemo(() => {
     if (!ownerAgentIds) return [];
     return (ownerAgentIds as bigint[]).map(b => Number(b));
   }, [ownerAgentIds]);
 
-  // Direct on-chain read for each owned agent's profile. This is the source of
-  // truth for the agentWallet address (which we need for balance reads) and
-  // ensures the switcher works even when the Supabase indexer behind
-  // useAllAgents lags or doesn't have the agent yet.
+  // Batched profile reads from AgentRegistry — source of truth for agentWallet.
   const profileContracts = useMemo(
     () =>
       ownerIds.map(id => ({
@@ -82,19 +95,12 @@ export default function WithdrawPage() {
     query:     { enabled: ownerIds.length > 0 },
   });
 
-  // Supabase agent_profiles rows for each owned agent — supplies the avatar
-  // image rendered inside the holographic core (display_name + avatar_url).
   const { profiles: agentProfiles } = useAgentProfiles(ownerIds);
 
-  // Resolve the owner's iNFTs into rich AgentChoice objects. Cross-references
-  // allAgents (for friendly name + category) but falls back to a synthesized
-  // entry from the on-chain profile when the indexer doesn't have the agent
-  // yet — fixes the switcher silently dropping agents.
   const myAgents: AgentChoice[] = useMemo(() => {
     return ownerIds
       .map((id, i) => {
         const fromApi  = allAgents.find(a => a.agentId === id);
-        // wagmi useReadContracts result shape: { status, result }
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const onChain  = profileResults?.[i]?.result as any;
         const supaProf = agentProfiles[id];
@@ -114,46 +120,83 @@ export default function WithdrawPage() {
       .filter((a): a is AgentChoice => !!a);
   }, [ownerIds, allAgents, profileResults, agentProfiles]);
 
-  // Selected agent (default: first one)
   const [selectedId, setSelectedId] = useState<number | null>(null);
   useEffect(() => {
     if (selectedId === null && myAgents.length > 0) setSelectedId(myAgents[0].agentId);
   }, [myAgents, selectedId]);
   const selected = myAgents.find(a => a.agentId === selectedId) ?? null;
 
-  // Live on-chain balance of the selected agent's autonomous wallet
-  const { data: balance, isLoading: balanceLoading, refetch: refetchBalance } = useBalance({
+  // ── Dual-source balance reads ───────────────────────────────────────────
+  // EOA balance: live native OG balance on the agent's autonomous wallet.
+  const { data: eoaBalance, isLoading: eoaBalLoading, refetch: refetchEoa } = useBalance({
     address: selected?.agentWallet,
-    chainId: 16602, // 0G Newton
+    chainId: 16602,
     query:   { enabled: !!selected, refetchInterval: 15_000 },
   });
-  const balanceOG = balance ? Number(formatEther(balance.value)) : 0;
+  // Vault balance: agentId-keyed mapping inside AgentEarningsVault.
+  const { data: vaultBalanceRaw, refetch: refetchVault } = useReadContracts({
+    contracts: selected
+      ? [{
+          address:      VAULT_ADDRESS,
+          abi:          CONTRACT_CONFIG.AgentEarningsVault.abi,
+          functionName: "balanceOf" as const,
+          args:         [BigInt(selected.agentId)] as const,
+        }]
+      : [],
+    query: { enabled: !!selected && VAULT_DEPLOYED, refetchInterval: 15_000 },
+  });
+
+  const eoaBalanceOG   = eoaBalance ? Number(formatEther(eoaBalance.value)) : 0;
+  const vaultBalanceWei = (vaultBalanceRaw?.[0]?.result as bigint | undefined) ?? 0n;
+  const vaultBalanceOG  = Number(formatEther(vaultBalanceWei));
 
   // Form state
+  const [source,      setSource]      = useState<WithdrawSource>("vault");
   const [amount,      setAmount]      = useState<string>("");
   const [destination, setDestination] = useState<string>("");
   const [state,       setState]       = useState<WithdrawState>("idle");
   const [error,       setError]       = useState<string | null>(null);
-  const [txHash,      setTxHash]      = useState<string | null>(null);
+  const [txHash,      setTxHash]      = useState<`0x${string}` | null>(null);
   const [txMock,      setTxMock]      = useState<boolean>(false);
   const [mockReason,  setMockReason]  = useState<string | null>(null);
+
+  // Wait for vault tx receipt so the UI can wait for confirmation before
+  // declaring success.
+  const { data: receipt } = useWaitForTransactionReceipt({
+    hash:   source === "vault" && txHash ? txHash : undefined,
+    chainId: 16602,
+    query:   { enabled: source === "vault" && !!txHash },
+  });
+  useEffect(() => {
+    if (receipt && state === "processing" && source === "vault") {
+      setState("success");
+      setTimeout(() => refetchVault(), 1500);
+      setTimeout(() => refetchEoa(), 1500);
+      setTimeout(() => { setState("idle"); setAmount(""); }, 5000);
+    }
+  }, [receipt, state, source, refetchVault, refetchEoa]);
 
   // Default destination = connected owner wallet
   useEffect(() => {
     if (owner && !destination) setDestination(owner);
   }, [owner, destination]);
 
-  // Reset amount when switching agents
+  // Reset amount + auto-pick best source whenever agent or balances change
   useEffect(() => {
     setAmount("");
     setTxHash(null);
     setError(null);
-  }, [selectedId]);
+    if (!VAULT_DEPLOYED)            setSource("eoa");
+    else if (vaultBalanceOG > 0)    setSource("vault");
+    else if (eoaBalanceOG > 0)      setSource("eoa");
+  }, [selectedId, vaultBalanceOG, eoaBalanceOG]);
+
+  const activeBalanceOG = source === "vault" ? vaultBalanceOG : eoaBalanceOG;
+  const activeBalanceLoading = source === "vault" ? false : eoaBalLoading;
 
   const setPercentage = (percent: number) => {
-    if (balanceOG <= 0) return;
-    const v = (balanceOG * percent).toFixed(6);
-    setAmount(v);
+    if (activeBalanceOG <= 0) return;
+    setAmount((activeBalanceOG * percent).toFixed(6));
   };
 
   const amountNum = Number(amount);
@@ -163,14 +206,40 @@ export default function WithdrawPage() {
     !!destination &&
     /^0x[a-fA-F0-9]{40}$/.test(destination) &&
     amountNum > 0 &&
-    amountNum <= balanceOG;
+    amountNum <= activeBalanceOG;
 
   async function handleHarvest() {
     if (!canSubmit || !selected || !owner) return;
     setError(null);
     setTxHash(null);
-    setState("signing");
+    setTxMock(false);
+    setMockReason(null);
 
+    if (source === "vault") {
+      // Direct on-chain call — user signs the actual tx in their wallet.
+      // No backend, no API, no private keys involved.
+      setState("signing");
+      try {
+        const hash = await writeContractAsync({
+          address:      VAULT_ADDRESS,
+          abi:          CONTRACT_CONFIG.AgentEarningsVault.abi,
+          functionName: "withdraw",
+          args:         [BigInt(selected.agentId), destination as `0x${string}`, parseEther(amount)],
+        });
+        setTxHash(hash);
+        setState("processing"); // useWaitForTransactionReceipt promotes to success
+      } catch (err) {
+        const raw = err instanceof Error ? err.message : "Withdraw failed";
+        // Trim verbose viem errors down to the headline
+        setError(raw.split("\n")[0].slice(0, 240));
+        setState("error");
+        setTimeout(() => setState("idle"), 5000);
+      }
+      return;
+    }
+
+    // Legacy EOA path — message signing + backend dispatch.
+    setState("signing");
     try {
       const timestamp = Date.now();
       const message =
@@ -179,11 +248,8 @@ export default function WithdrawPage() {
         `Amount: ${amount} OG\n` +
         `Destination: ${destination}\n` +
         `Timestamp: ${timestamp}`;
-
       const signature = await signMessageAsync({ message });
-
       setState("processing");
-
       const res = await fetch("/api/agent/withdraw", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
@@ -197,29 +263,20 @@ export default function WithdrawPage() {
       });
       const json = await res.json();
       if (!json.ok) throw new Error(json.error ?? "Withdraw failed");
-
       setTxHash(json.txHash);
       setTxMock(!!json.mock);
       setMockReason(json.reason ?? null);
       setState("success");
-      // Real txs: refetch balance shortly after broadcast so the UI reflects
-      // the drain. Mock txs: balance won't have changed so skip the refetch.
-      if (!json.mock) setTimeout(() => refetchBalance(), 4000);
-      // Auto-return to idle so the user can do another harvest. Give a longer
-      // window for mock so the demo banner reads.
-      setTimeout(() => {
-        setState("idle");
-        setAmount("");
-      }, json.mock ? 8000 : 5000);
+      if (!json.mock) setTimeout(() => refetchEoa(), 4000);
+      setTimeout(() => { setState("idle"); setAmount(""); }, json.mock ? 8000 : 5000);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Withdraw failed";
-      setError(msg);
+      setError(err instanceof Error ? err.message : "Withdraw failed");
       setState("error");
       setTimeout(() => setState("idle"), 4000);
     }
   }
 
-  // ── Role guard — only agent owners can hit this page ──────────────────────
+  // ── Role guard ──────────────────────────────────────────────────────────
   if (!roleLoading && role !== null && role !== UserRole.FreelancerOwner) {
     return (
       <div className="max-w-2xl mx-auto rounded-2xl border border-white/10 bg-[#0d1525]/90 p-10 text-center">
@@ -242,7 +299,7 @@ export default function WithdrawPage() {
 
   const isLoading = roleLoading || idsLoading || (ownerIds.length > 0 && profilesLoading) || allLoading;
 
-  // ── Empty state — no agents owned ─────────────────────────────────────────
+  // ── Empty state ─────────────────────────────────────────────────────────
   if (!isLoading && myAgents.length === 0) {
     return (
       <div className="max-w-2xl mx-auto rounded-2xl border border-white/10 bg-[#0d1525]/90 p-10 text-center">
@@ -253,16 +310,10 @@ export default function WithdrawPage() {
           mature agent from the marketplace.
         </p>
         <div className="flex flex-wrap gap-3 justify-center">
-          <Link
-            href="/dashboard/register-agent"
-            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-white text-black text-[13px] font-medium"
-          >
+          <Link href="/dashboard/register-agent" className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-white text-black text-[13px] font-medium">
             Register Agent
           </Link>
-          <Link
-            href="/marketplace/agents-for-sale"
-            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full border border-white/15 text-white/75 text-[13px] font-medium hover:border-white/30"
-          >
+          <Link href="/marketplace/agents-for-sale" className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full border border-white/15 text-white/75 text-[13px] font-medium hover:border-white/30">
             Buy Agents
           </Link>
         </div>
@@ -272,7 +323,6 @@ export default function WithdrawPage() {
 
   return (
     <div className="relative">
-      {/* Ambient gradient driven by the selected agent's accent color */}
       <AnimatePresence mode="wait">
         {selected && (
           <motion.div
@@ -298,9 +348,7 @@ export default function WithdrawPage() {
           Withdraw Agent Earnings
         </h1>
         <p className="text-white/55 text-[15px] max-w-2xl">
-          Extract autonomous OG earnings from your agent&apos;s wallet (ERC-7857) to your
-          owner address. Custody stays with the agent runtime — you authorize each
-          withdrawal by signing a message with your owner wallet.
+          Pull autonomous OG earnings from your agent to your owner address. Vault path is keyless &mdash; you sign the transaction yourself, no backend or private key custody involved.
         </p>
       </div>
 
@@ -312,11 +360,11 @@ export default function WithdrawPage() {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_56px_1fr] gap-6 lg:gap-4 items-stretch">
 
-          {/* ── LEFT — Agent picker + holographic profile ─────────────────── */}
+          {/* LEFT — Agent picker + holographic profile + dual balance */}
           <div className="rounded-2xl border border-white/10 bg-[#0d1525]/90 p-8 flex flex-col items-center">
             <div className="w-full flex items-center justify-between mb-6">
               <span className="text-[10px] font-mono uppercase tracking-widest text-white/40">
-                Source · Agent Wallet
+                Source · Agent
               </span>
               {selected && (
                 <span className={`text-[10px] font-mono uppercase tracking-widest ${selected.isActive ? "text-emerald-400/80" : "text-white/35"}`}>
@@ -335,16 +383,9 @@ export default function WithdrawPage() {
                   transition={{ duration: 0.35 }}
                   className="flex flex-col items-center w-full"
                 >
-                  {/* Holographic core */}
                   <div className="relative w-44 h-44 rounded-full flex items-center justify-center mb-6">
-                    <div
-                      className="absolute inset-0 rounded-full border border-dashed opacity-40 animate-[spin_10s_linear_infinite]"
-                      style={{ borderColor: selected.color }}
-                    />
-                    <div
-                      className="absolute inset-2 rounded-full border opacity-20 animate-[spin_15s_linear_infinite_reverse]"
-                      style={{ borderColor: selected.color }}
-                    />
+                    <div className="absolute inset-0 rounded-full border border-dashed opacity-40 animate-[spin_10s_linear_infinite]" style={{ borderColor: selected.color }} />
+                    <div className="absolute inset-2 rounded-full border opacity-20 animate-[spin_15s_linear_infinite_reverse]" style={{ borderColor: selected.color }} />
                     <div
                       className="relative w-28 h-28 rounded-full overflow-hidden bg-[#050810] border z-10"
                       style={{
@@ -354,12 +395,7 @@ export default function WithdrawPage() {
                     >
                       {selected.avatarUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={selected.avatarUrl}
-                          alt={selected.name}
-                          className="w-full h-full object-cover"
-                          referrerPolicy="no-referrer"
-                        />
+                        <img src={selected.avatarUrl} alt={selected.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
                           <Landmark className="w-10 h-10" style={{ color: selected.color }} />
@@ -371,29 +407,31 @@ export default function WithdrawPage() {
                   <p className="text-xl font-medium text-white mb-1">{selected.name}</p>
                   <div className="flex items-center gap-1.5 mb-5">
                     <Cpu className="w-3 h-3 text-white/35" />
-                    <span className="text-[10px] font-mono uppercase tracking-widest text-white/40">
-                      {selected.category}
-                    </span>
+                    <span className="text-[10px] font-mono uppercase tracking-widest text-white/40">{selected.category}</span>
                   </div>
 
-                  {/* Available balance */}
-                  <div className="w-full rounded-xl border border-white/10 bg-[#050810]/80 px-5 py-4 mb-3">
-                    <p className="text-[10px] font-mono uppercase tracking-widest text-white/35 mb-1">
-                      Available
-                    </p>
-                    <p className="text-3xl font-medium text-white tracking-tight tabular-nums">
-                      {balanceLoading ? (
-                        <span className="text-white/30">—</span>
-                      ) : (
-                        <>
-                          {balanceOG.toLocaleString("en-US", { maximumFractionDigits: 6 })}
-                          <span className="text-base text-white/40 ml-2 font-mono">OG</span>
-                        </>
-                      )}
-                    </p>
+                  {/* Dual balance — vault + EOA side by side */}
+                  <div className="w-full grid grid-cols-2 gap-2 mb-3">
+                    <BalanceTile
+                      label="Vault"
+                      sublabel="keyless"
+                      value={vaultBalanceOG}
+                      active={source === "vault"}
+                      disabled={!VAULT_DEPLOYED}
+                      onClick={() => VAULT_DEPLOYED && setSource("vault")}
+                      icon={<Shield className="w-3 h-3" />}
+                    />
+                    <BalanceTile
+                      label="Wallet"
+                      sublabel="legacy"
+                      value={eoaBalanceOG}
+                      active={source === "eoa"}
+                      onClick={() => setSource("eoa")}
+                      icon={<KeyRound className="w-3 h-3" />}
+                      loading={eoaBalLoading}
+                    />
                   </div>
 
-                  {/* Wallet address */}
                   <p className="text-[10px] font-mono text-white/30 truncate w-full text-center">
                     {selected.agentWallet}
                   </p>
@@ -401,7 +439,7 @@ export default function WithdrawPage() {
               )}
             </AnimatePresence>
 
-            {/* Agent switcher — tile cards (works for 1 or many) */}
+            {/* Agent switcher tile row */}
             {myAgents.length > 0 && (
               <div className="w-full mt-6">
                 <p className="text-[10px] font-mono uppercase tracking-widest text-white/35 mb-2">
@@ -419,21 +457,11 @@ export default function WithdrawPage() {
                         aria-label={`Select ${a.name}`}
                         aria-pressed={active}
                         className={`shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl border transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
-                          active
-                            ? "border-white/30 bg-white/[0.06]"
-                            : "border-white/10 bg-[#050810]/60 hover:border-white/25 hover:bg-white/[0.04]"
+                          active ? "border-white/30 bg-white/[0.06]" : "border-white/10 bg-[#050810]/60 hover:border-white/25 hover:bg-white/[0.04]"
                         }`}
                       >
-                        <span
-                          className="w-2 h-2 rounded-full shrink-0"
-                          style={{
-                            backgroundColor: a.color,
-                            boxShadow: active ? `0 0 10px ${a.color}` : "none",
-                          }}
-                        />
-                        <span className={`text-[12px] font-medium whitespace-nowrap ${active ? "text-white" : "text-white/65"}`}>
-                          {a.name}
-                        </span>
+                        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: a.color, boxShadow: active ? `0 0 10px ${a.color}` : "none" }} />
+                        <span className={`text-[12px] font-medium whitespace-nowrap ${active ? "text-white" : "text-white/65"}`}>{a.name}</span>
                         <span className="text-[10px] font-mono text-white/35">#{a.agentId}</span>
                       </button>
                     );
@@ -443,7 +471,7 @@ export default function WithdrawPage() {
             )}
           </div>
 
-          {/* ── CENTER — flow connector (desktop only) ─────────────────────── */}
+          {/* CENTER — flow connector */}
           <div className="hidden lg:flex flex-col items-center justify-center relative">
             <div className="absolute w-px h-full bg-gradient-to-b from-transparent via-white/15 to-transparent" />
             <AnimatePresence>
@@ -453,10 +481,7 @@ export default function WithdrawPage() {
                   animate={{ top: "100%", opacity: [0, 1, 1, 0] }}
                   transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
                   className="absolute w-1 h-12 rounded-full"
-                  style={{
-                    background: `linear-gradient(to bottom, transparent, ${selected.color})`,
-                    boxShadow: `0 0 10px ${selected.color}`,
-                  }}
+                  style={{ background: `linear-gradient(to bottom, transparent, ${selected.color})`, boxShadow: `0 0 10px ${selected.color}` }}
                 />
               )}
             </AnimatePresence>
@@ -465,8 +490,22 @@ export default function WithdrawPage() {
             </div>
           </div>
 
-          {/* ── RIGHT — Withdrawal terminal ────────────────────────────────── */}
+          {/* RIGHT — Withdrawal terminal */}
           <div className="rounded-2xl border border-white/10 bg-[#0d1525]/90 p-7 flex flex-col gap-5">
+
+            {/* Path explainer */}
+            <div className={`rounded-xl border px-3 py-2 text-[11px] flex items-start gap-2 ${
+              source === "vault"
+                ? "border-emerald-400/25 bg-emerald-400/[0.05] text-emerald-300/80"
+                : "border-amber-400/25 bg-amber-400/[0.05] text-amber-300/80"
+            }`}>
+              {source === "vault" ? <Shield className="w-3.5 h-3.5 mt-0.5 shrink-0" /> : <KeyRound className="w-3.5 h-3.5 mt-0.5 shrink-0" />}
+              <span className="leading-relaxed">
+                {source === "vault"
+                  ? "Vault path · you sign the transaction directly. No private keys, no backend custody."
+                  : "Legacy wallet path · backend signs using AGENT_WALLET_KEYS env. Phase-1 (env-based)."}
+              </span>
+            </div>
 
             {/* Destination */}
             <div>
@@ -485,9 +524,7 @@ export default function WithdrawPage() {
                   placeholder="0x…"
                   className="flex-1 min-w-0 bg-transparent text-[13px] text-white font-mono focus:outline-none disabled:opacity-50"
                 />
-                {destination === owner ? (
-                  <ShieldCheck className="w-4 h-4 text-emerald-400/80 shrink-0" aria-label="Connected wallet" />
-                ) : null}
+                {destination === owner ? <ShieldCheck className="w-4 h-4 text-emerald-400/80 shrink-0" aria-label="Connected wallet" /> : null}
               </div>
               {destination && !/^0x[a-fA-F0-9]{40}$/.test(destination) && (
                 <p className="text-amber-400/80 text-[11px] mt-1.5">Invalid address format.</p>
@@ -498,10 +535,10 @@ export default function WithdrawPage() {
             <div>
               <div className="flex items-center justify-between mb-2">
                 <p className="text-[10px] font-mono uppercase tracking-widest text-white/40">
-                  Extraction Amount
+                  Amount
                 </p>
                 <span className="text-[11px] font-mono text-white/45">
-                  Max: {balanceOG.toLocaleString("en-US", { maximumFractionDigits: 6 })} OG
+                  Max: {activeBalanceOG.toLocaleString("en-US", { maximumFractionDigits: 6 })} OG
                 </span>
               </div>
               <div className="relative">
@@ -514,36 +551,29 @@ export default function WithdrawPage() {
                   placeholder="0.000000"
                   className="w-full bg-[#050810]/80 border border-white/10 rounded-xl py-4 pl-4 pr-16 text-2xl font-mono text-white placeholder-white/15 focus:outline-none focus:border-white/30 transition-colors disabled:opacity-50 tabular-nums"
                 />
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-mono text-white/45">
-                  OG
-                </span>
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-mono text-white/45">OG</span>
               </div>
               <div className="flex gap-2 mt-3">
-                {[
-                  { label: "25%",  v: 0.25 },
-                  { label: "50%",  v: 0.50 },
-                  { label: "MAX",  v: 1    },
-                ].map(opt => (
+                {[{ label: "25%",  v: 0.25 }, { label: "50%",  v: 0.50 }, { label: "MAX",  v: 1 }].map(opt => (
                   <button
                     key={opt.label}
                     onClick={() => setPercentage(opt.v)}
-                    disabled={state !== "idle" || balanceOG <= 0}
-                    className={`flex-1 py-2 rounded-lg border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-[12px] font-mono transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
-                      opt.label === "MAX" ? "text-white font-semibold" : "text-white/65"
-                    }`}
+                    disabled={state !== "idle" || activeBalanceOG <= 0}
+                    className={`flex-1 py-2 rounded-lg border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-[12px] font-mono transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${opt.label === "MAX" ? "text-white font-semibold" : "text-white/65"}`}
                   >
                     {opt.label}
                   </button>
                 ))}
               </div>
-              {amountNum > balanceOG && (
-                <p className="text-amber-400/80 text-[11px] mt-1.5">
-                  Amount exceeds available balance.
-                </p>
+              {activeBalanceLoading && (
+                <p className="text-white/30 text-[11px] mt-1.5">Loading balance…</p>
+              )}
+              {amountNum > activeBalanceOG && (
+                <p className="text-amber-400/80 text-[11px] mt-1.5">Amount exceeds available balance.</p>
               )}
             </div>
 
-            {/* Action button — multi-state */}
+            {/* Action button */}
             <button
               onClick={handleHarvest}
               disabled={!canSubmit}
@@ -565,7 +595,7 @@ export default function WithdrawPage() {
                 {state === "processing" && (
                   <motion.span key="processing" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} className="flex items-center justify-center gap-2 text-black/70">
                     <div className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin" />
-                    Processing On-Chain…
+                    {source === "vault" ? "Waiting for confirmation…" : "Processing On-Chain…"}
                   </motion.span>
                 )}
                 {state === "success" && (
@@ -575,9 +605,9 @@ export default function WithdrawPage() {
                   </motion.span>
                 )}
                 {state === "error" && (
-                  <motion.span key="error" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="flex items-center justify-center gap-2 text-red-700">
-                    <AlertCircle className="w-4 h-4" />
-                    {error ?? "Failed"}
+                  <motion.span key="error" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="flex items-center justify-center gap-2 text-red-700 px-3">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span className="truncate">{error ?? "Failed"}</span>
                   </motion.span>
                 )}
               </AnimatePresence>
@@ -586,7 +616,7 @@ export default function WithdrawPage() {
                 <motion.div
                   initial={{ width: "0%" }}
                   animate={{ width: "100%" }}
-                  transition={{ duration: 1.8, ease: "linear" }}
+                  transition={{ duration: source === "vault" ? 6 : 1.8, ease: "linear" }}
                   className="absolute left-0 top-0 bottom-0 bg-black/10 pointer-events-none"
                 />
               )}
@@ -628,7 +658,7 @@ export default function WithdrawPage() {
               </div>
             )}
 
-            {/* Network info footer */}
+            {/* Network info */}
             <div className="flex justify-between items-center text-[10px] font-mono text-white/30 pt-2 border-t border-white/[0.05]">
               <span className="flex items-center gap-1">
                 <Coins className="w-3 h-3" /> Est. fee · ~0.001 OG
@@ -639,5 +669,46 @@ export default function WithdrawPage() {
         </div>
       )}
     </div>
+  );
+}
+
+// ── BalanceTile ─────────────────────────────────────────────────────────────
+
+function BalanceTile({
+  label, sublabel, value, active, disabled, loading, icon, onClick,
+}: {
+  label:    string;
+  sublabel: string;
+  value:    number;
+  active:   boolean;
+  disabled?: boolean;
+  loading?:  boolean;
+  icon:     React.ReactNode;
+  onClick:  () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-pressed={active}
+      className={`rounded-xl border px-3 py-2.5 text-left transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
+        active
+          ? "border-white/30 bg-white/[0.06]"
+          : "border-white/10 bg-[#050810]/80 hover:border-white/20"
+      }`}
+    >
+      <div className="flex items-center gap-1.5 mb-1">
+        <span className={active ? "text-white" : "text-white/45"}>{icon}</span>
+        <span className={`text-[11px] font-medium ${active ? "text-white" : "text-white/55"}`}>{label}</span>
+        <span className="text-[9px] font-mono uppercase tracking-widest text-white/35">{sublabel}</span>
+      </div>
+      <p className={`text-[16px] font-mono tabular-nums ${active ? "text-white" : "text-white/75"}`}>
+        {loading
+          ? <span className="text-white/30">—</span>
+          : value.toLocaleString("en-US", { maximumFractionDigits: 4 })}
+        <span className="text-[10px] text-white/35 ml-1">OG</span>
+      </p>
+    </button>
   );
 }

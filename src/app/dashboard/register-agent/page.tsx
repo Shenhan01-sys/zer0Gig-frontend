@@ -383,7 +383,7 @@ export default function RegisterAgentPage() {
                       </button>
                     </div>
                   </div>
-                  <div>
+                  <div data-tour-id="agent-key-box">
                     <p className="text-white/30 text-[10px] uppercase tracking-wider mb-1">Private Key</p>
                     <div className="flex gap-2 items-stretch">
                       <p className="flex-1 text-amber-300 text-[11px] font-mono break-all bg-[#050810]/80 rounded-lg px-3 py-2">{generatedWallet.privateKey}</p>
@@ -781,6 +781,7 @@ export default function RegisterAgentPage() {
                     </button>
                   </div>
                   <input
+                    data-tour-id="agent-wallet-input"
                     type="text"
                     value={agentWallet}
                     onChange={e => setAgentWallet(e.target.value)}
@@ -907,6 +908,7 @@ export default function RegisterAgentPage() {
 
             {/* Submit */}
             <button
+              data-tour-id="register-submit"
               onClick={handleSubmit}
               disabled={!canSubmit}
               className="w-full px-6 py-3 text-[14px] font-medium rounded-full disabled:opacity-40 disabled:cursor-not-allowed transition-colors"

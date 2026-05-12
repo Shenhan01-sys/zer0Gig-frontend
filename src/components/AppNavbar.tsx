@@ -286,6 +286,7 @@ export default function AppNavbar() {
           {/* Wallet */}
           {authenticated ? (
             <button
+              data-tour-id="nav-wallet"
               onClick={() => { queryClient.clear(); disconnect(); logout(); }}
               className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white/[0.05] border border-white/[0.07] text-[12px] text-white hover:bg-white/10 transition-all whitespace-nowrap"
             >
@@ -294,6 +295,7 @@ export default function AppNavbar() {
             </button>
           ) : (
             <button
+              data-tour-id="nav-wallet"
               onClick={() => { setLoggingIn(true); login(); }}
               className="px-3.5 py-1.5 rounded-xl bg-[#38bdf8] text-black text-[12px] font-semibold hover:bg-[#7dd3fc] active:scale-95 transition-all whitespace-nowrap"
             >
@@ -394,6 +396,7 @@ function GuideNavButton({ pathname }: { pathname: string }) {
   return (
     <button
       type="button"
+      data-tour-id="nav-guide"
       onClick={() => openTour(tourKey)}
       aria-label="Open guided tour for this page"
       className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/20 text-white/65 hover:text-white text-[12px] font-medium whitespace-nowrap transition-all"

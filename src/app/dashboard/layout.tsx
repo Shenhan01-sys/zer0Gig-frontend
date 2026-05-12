@@ -38,7 +38,7 @@ function DashboardTabs({ tabs }: { tabs: { label: string; href: string }[] }) {
   if (pathname !== "/dashboard") return null;
 
   return (
-    <div className="flex gap-1 mb-8 p-1 bg-[#0d1525]/60 rounded-xl border border-white/10 w-fit">
+    <div data-tour-id="dashboard-tabs" className="flex gap-1 mb-8 p-1 bg-[#0d1525]/60 rounded-xl border border-white/10 w-fit">
       {tabs.map((tab) => {
         const isActive =
           (tab.label === "Overview" && activeTab === "overview") ||
@@ -205,7 +205,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               )}
             </div>
 
-            <div className="flex gap-3 items-center">
+            <div data-tour-id="dashboard-actions" className="flex gap-3 items-center">
               {resolvedRole === UserRole.Client && (
                 <Link
                   href="/dashboard/create-job"

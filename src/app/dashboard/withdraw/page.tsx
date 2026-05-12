@@ -465,7 +465,7 @@ export default function WithdrawPage() {
                   </div>
 
                   {/* Dual balance — vault + EOA side by side */}
-                  <div className="w-full grid grid-cols-2 gap-2 mb-2">
+                  <div data-tour-id="balance-tiles" className="w-full grid grid-cols-2 gap-2 mb-2">
                     <BalanceTile
                       label="Vault"
                       sublabel="keyless"
@@ -490,7 +490,7 @@ export default function WithdrawPage() {
                       can use to fund the vault directly. For demo + before
                       escrow upgrade. */}
                   {VAULT_DEPLOYED && (
-                    <div className="w-full mb-3">
+                    <div data-tour-id="vault-deposit" className="w-full mb-3">
                       {!depositOpen ? (
                         <button
                           type="button"
@@ -603,7 +603,7 @@ export default function WithdrawPage() {
 
             {/* Agent switcher tile row */}
             {myAgents.length > 0 && (
-              <div className="w-full mt-6">
+              <div data-tour-id="agent-switcher" className="w-full mt-6">
                 <p className="text-[10px] font-mono uppercase tracking-widest text-white/35 mb-2">
                   Switch Agent · {myAgents.length}
                 </p>
@@ -670,7 +670,7 @@ export default function WithdrawPage() {
             </div>
 
             {/* Destination */}
-            <div>
+            <div data-tour-id="withdraw-destination">
               <p className="text-[10px] font-mono uppercase tracking-widest text-white/40 mb-2">
                 Destination · Owner Wallet
               </p>
@@ -737,6 +737,7 @@ export default function WithdrawPage() {
 
             {/* Action button */}
             <button
+              data-tour-id="harvest-button"
               onClick={handleHarvest}
               disabled={!canSubmit}
               className="relative w-full py-3.5 rounded-full font-medium transition-all overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed bg-white text-black hover:bg-white/90"

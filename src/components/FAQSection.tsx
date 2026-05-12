@@ -34,7 +34,7 @@ export default function FAQSection() {
   const [open, setOpen] = useState<number | null>(null);
 
   return (
-    <section className="relative py-24 md:py-32 overflow-hidden">
+    <section id="faq" className="relative py-24 md:py-32 overflow-hidden">
       {/* Background glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-[#47A9CF]/[0.06] blur-[140px] pointer-events-none" />
 

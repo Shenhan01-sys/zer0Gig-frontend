@@ -11,14 +11,21 @@ import { animate } from "animejs";
 import BorderGlow from "./BorderGlow/BorderGlow";
 
 // ── Landing page nav links ─────────────────────────────────────────────────────
+// In-page anchors + Docs (external) + Console (auth-gated, injected at render
+// time). Internal /marketplace and /leaderboard links removed — those live in
+// the dashboard's AppNavbar once the user is signed in via Console.
 
-const NAV_LINKS = [
-  { label: "Home",         href: "/"              },
-  { label: "Marketplace",  href: "/marketplace"   },
-  { label: "Leaderboard",  href: "/leaderboard"   },
-  { label: "How It Works", href: "/#how-it-works" },
-  { label: "Docs",         href: "https://stylenecy.gitbook.io/zer0gig", external: true },
+type NavLink = { label: string; href: string; external?: boolean };
+
+const NAV_LINKS: NavLink[] = [
+  { label: "Home",          href: "/"                                  },
+  { label: "How It Works",  href: "/#how-it-works"                     },
+  { label: "Why Indonesia", href: "/#indonesia"                        },
+  { label: "FAQ",           href: "/#faq"                              },
+  { label: "Docs",          href: "https://stylenecy.gitbook.io/zer0gig", external: true },
 ];
+
+const CONSOLE_LINK: NavLink = { label: "Console", href: "/dashboard" };
 
 // ── LandingNavbar ─────────────────────────────────────────────────────────────
 
@@ -44,7 +51,10 @@ export default function Navbar() {
     ? `${address.slice(0, 6)}...${address.slice(-4)}`
     : null;
 
-  const activeIdx = NAV_LINKS.findIndex((link) => {
+  // Render-time composition: Console is appended only for authenticated users.
+  const navLinks: NavLink[] = authenticated ? [...NAV_LINKS, CONSOLE_LINK] : NAV_LINKS;
+
+  const activeIdx = navLinks.findIndex((link) => {
     if (!pathname) return false;
     if (link.href === "/") return pathname === "/";
     const base = link.href.split("#")[0];
@@ -153,7 +163,7 @@ export default function Navbar() {
             className="absolute top-1/2 -translate-y-1/2 h-[34px] rounded-full bg-white/[0.07] border border-white/[0.09] pointer-events-none"
             style={{ opacity: 0, left: 0, width: 70 }}
           />
-          {NAV_LINKS.map((link, i) => {
+          {navLinks.map((link, i) => {
             const className = `relative z-10 px-3.5 py-2 text-[14px] font-medium rounded-full whitespace-nowrap transition-colors duration-150 ${
               i === activeIdx ? "text-white" : "text-white/45 hover:text-white/80"
             }`;

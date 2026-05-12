@@ -3,7 +3,7 @@
 import { Suspense, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { BorderBeam } from "@/components/ui/BorderBeam";
 import NumberTicker from "@/components/ui/NumberTicker";
 import { useAccount } from "wagmi";
@@ -762,6 +762,7 @@ function AgentOwnerOverview({ agents, subs, agentsLoading, displayName }: {
 function DashboardContent() {
   const { address } = useAccount();
   const { user } = usePrivy();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const activeTab = searchParams?.get("tab") ?? "overview";
 
@@ -769,6 +770,15 @@ function DashboardContent() {
   const { data: jobIds, isLoading: jobsLoading } = useClientJobs(address);
   const { data: subIds, isLoading: subsLoading } = useClientSubscriptions(address);
   const { data: ownerAgentIds, isLoading: agentsLoading } = useOwnerAgents(address);
+
+  // Role gate: agents tab is for FreelancerOwner only. Clients trying to land
+  // on ?tab=agents (via stale link, bookmark, or direct URL) get bounced to
+  // their default overview.
+  useEffect(() => {
+    if (activeTab === "agents" && role !== null && role !== UserRole.FreelancerOwner) {
+      router.replace("/dashboard");
+    }
+  }, [activeTab, role, router]);
 
   // DEMO MODE: Use mock data when real on-chain data is empty
   const rawJobs  = (jobIds as bigint[]) || [];
@@ -786,7 +796,11 @@ function DashboardContent() {
     user?.email?.address?.split("@")[0] ||
     (address ? `${address.slice(0, 6)}...${address.slice(-4)}` : "there");
 
-  if (activeTab === "agents")        return <AgentsTab agents={agents} agentsLoading={agentsLoading} />;
+  if (activeTab === "agents") {
+    // Block render for non-owners — the useEffect above will redirect them.
+    if (role !== null && role !== UserRole.FreelancerOwner) return null;
+    return <AgentsTab agents={agents} agentsLoading={agentsLoading} />;
+  }
   if (activeTab === "jobs")          return <JobsTab jobs={jobs} jobsLoading={jobsLoading} />;
   if (activeTab === "subscriptions") return <SubscriptionsTab subs={subs} subsLoading={subsLoading} />;
 

@@ -65,11 +65,10 @@ function blendRoleColor(ownerRatio: number): string {
   return `rgb(${r}, ${g}, ${b})`;
 }
 
-// Auto-rotate config — OrbitControls.autoRotateSpeed. Default value of 2.0
-// gives ~30s per revolution; 0.6 gives ~100s per revolution which reads as
-// a slow, intentional drift rather than a spin. Bump if more visible motion
-// is wanted.
-const AUTO_ROTATE_SPEED = 0.6;
+// Manual rotation step in degrees per animation frame (~60fps). 0.06 deg/frame
+// = ~3.6 deg/sec = 100s per revolution. Tuned to read as a slow, intentional
+// drift rather than a spin. Bump to 0.12 for "obvious motion" demo mode.
+const ROTATION_STEP_DEG = 0.06;
 
 export default function CommunityGlobe() {
   const [stats, setStats] = useState<StatsResponse>(SAMPLE_STATS);
@@ -83,6 +82,9 @@ export default function CommunityGlobe() {
   // We use any here because the lib doesn't fully export its instance type
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const globeRef = useRef<any>(null);
+  // Mirror selectedCountry into a ref so the rAF tick (mounted with [] deps)
+  // can read its current value without restarting the loop on every change.
+  const selectedCountryRef = useRef<string | null>(null);
   const [size, setSize] = useState({ w: 560, h: 560 });
 
   // Fetch aggregated stats
@@ -107,43 +109,86 @@ export default function CommunityGlobe() {
     return () => observer.disconnect();
   }, []);
 
-  // Auto-rotate + camera POV.
+  // Manual longitude-drift rotation via requestAnimationFrame.
   //
-  // react-globe.gl is loaded dynamically (next/dynamic, ssr:false) and three.js
-  // is initialised inside an effect AFTER the React ref is populated. On the
-  // first commit, `globeRef.current.controls()` may return undefined. We poll
-  // every 100ms (up to 5s) until the OrbitControls instance exists, then wire
-  // up auto-rotate + initial point-of-view in one shot.
+  // Earlier attempts used OrbitControls.autoRotate (the "proper" path), but
+  // it depends on react-globe.gl's internal render loop calling controls.update()
+  // every frame AND on the ref being populated by the time the effect runs.
+  // Both were brittle: the ref sometimes wasn't ready (dynamic import +
+  // three.js init), and when it was, autoRotate occasionally didn't render
+  // any visible motion. Manually driving pointOfView every frame is bulletproof.
+  //
+  // On user drag (OrbitControls reads input), we stop pushing — otherwise our
+  // pointOfView call would fight the user's gesture. Drag end -> resume.
+  // On country select (modal open) -> pause. Modal close -> resume.
   useEffect(() => {
     let cancelled  = false;
-    let intervalId: ReturnType<typeof setInterval> | null = null;
+    let rafId:    number | null = null;
+    let lng     = 110;
+    const lat   = 5;
+    const alt   = 2.4;
 
-    const setupControls = () => {
+    let started = false;
+    let userInteracting = false;
+
+    const onStart = () => { userInteracting = true; };
+    const onEnd   = () => { userInteracting = false; };
+
+    const tick = () => {
+      if (cancelled) return;
+      if (!selectedCountryRef.current && !userInteracting && globeRef.current) {
+        lng = (lng + ROTATION_STEP_DEG) % 360;
+        globeRef.current.pointOfView?.({ lat, lng, altitude: alt }, 0);
+      }
+      rafId = requestAnimationFrame(tick);
+    };
+
+    const tryStart = () => {
+      if (started) return true;
       const g = globeRef.current;
       if (!g) return false;
       const controls = g.controls?.();
       if (!controls) return false;
-      controls.autoRotate      = true;
-      controls.autoRotateSpeed = AUTO_ROTATE_SPEED;
-      controls.enableZoom      = false;
-      g.pointOfView?.({ lat: 5, lng: 110, altitude: 2.4 }, 1500);
+      // Disable zoom so users can't accidentally squish the camera, but keep
+      // pan/orbit so they can poke the globe. Wire pointerdown/up to pause
+      // our rAF drift while the user drags.
+      controls.enableZoom = false;
+      controls.addEventListener?.("start", onStart);
+      controls.addEventListener?.("end",   onEnd);
+      // Initial framing
+      g.pointOfView?.({ lat, lng, altitude: alt }, 1500);
+      started = true;
+      rafId   = requestAnimationFrame(tick);
       return true;
     };
 
-    if (setupControls()) return;
-
-    let attempts = 0;
-    intervalId = setInterval(() => {
-      attempts++;
-      if (cancelled || setupControls() || attempts > 50) {
-        if (intervalId) clearInterval(intervalId);
-      }
-    }, 100);
+    if (!tryStart()) {
+      // Poll every 100ms up to 20s — covers slow texture/three.js init.
+      let attempts = 0;
+      const intervalId = setInterval(() => {
+        attempts++;
+        if (cancelled || tryStart() || attempts > 200) clearInterval(intervalId);
+      }, 100);
+      return () => {
+        cancelled = true;
+        clearInterval(intervalId);
+        if (rafId !== null) cancelAnimationFrame(rafId);
+        const controls = globeRef.current?.controls?.();
+        controls?.removeEventListener?.("start", onStart);
+        controls?.removeEventListener?.("end",   onEnd);
+      };
+    }
 
     return () => {
       cancelled = true;
-      if (intervalId) clearInterval(intervalId);
+      if (rafId !== null) cancelAnimationFrame(rafId);
+      const controls = globeRef.current?.controls?.();
+      controls?.removeEventListener?.("start", onStart);
+      controls?.removeEventListener?.("end",   onEnd);
     };
+    // selectedCountry intentionally read inside tick via closure-stable ref
+    // pattern below to avoid restarting the rAF on every modal open/close.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Click → fetch members for that country
@@ -161,11 +206,10 @@ export default function CommunityGlobe() {
       .finally(() => setMembersLoading(false));
   }, [selectedCountry]);
 
-  // Pause/resume auto-rotate when modal opens
+  // Mirror selectedCountry into the rotation effect's ref so tick can pause
+  // when a country modal opens without us having to re-mount the rAF loop.
   useEffect(() => {
-    const controls = globeRef.current?.controls?.();
-    if (!controls) return;
-    controls.autoRotate = !selectedCountry;
+    selectedCountryRef.current = selectedCountry;
   }, [selectedCountry]);
 
   // Build ONE flat dot per country. Color blends cyan→emerald based on the

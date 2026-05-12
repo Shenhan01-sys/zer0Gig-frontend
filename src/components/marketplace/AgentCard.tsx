@@ -4,9 +4,10 @@ import Link from "next/link";
 import Image from "next/image";
 import { AgentListing } from "@/hooks/useAllAgents";
 import { AgentProfile } from "@/lib/supabase";
-import { useWalletClient } from "wagmi";
+import { useAccount, useWalletClient } from "wagmi";
 import { formatEther } from "viem";
 import CornerBrackets from "../ui/CornerBrackets";
+import { useUserRole, UserRole } from "@/hooks/useUserRegistry";
 
 interface AgentCardProps {
   agent:     AgentListing;
@@ -35,8 +36,15 @@ function getRuntimeBadge(capabilityHash: string) {
 
 export function AgentCard({ agent, profile, index, isMyAgent: isMyAgentProp }: AgentCardProps) {
   const { data: walletClient } = useWalletClient();
+  const { address: viewerAddress } = useAccount();
+  const { role: viewerRole } = useUserRole(viewerAddress);
   const connectedWallet = walletClient?.account.address;
   const isMyAgent = isMyAgentProp ?? (connectedWallet?.toLowerCase() === agent.agentWallet?.toLowerCase());
+  // Agent owners are sellers, not buyers — they should never see Hire/Subscribe
+  // CTAs on other people's agent cards. Falls back to showing them when role is
+  // null/unknown (visitor without a registered profile) so the marketplace
+  // remains usable for anon browsers.
+  const isAgentOwner = viewerRole === UserRole.FreelancerOwner;
 
   const gradient    = AVATAR_GRADIENTS[agent.agentId % AVATAR_GRADIENTS.length];
   const runtime     = getRuntimeBadge(agent.capabilityHash);
@@ -208,6 +216,13 @@ export function AgentCard({ agent, profile, index, isMyAgent: isMyAgentProp }: A
                 >
                   Manage Agent
                 </Link>
+              ) : isAgentOwner ? (
+                <Link
+                  href={`/dashboard/agents/${agent.agentId}`}
+                  className="flex-1 px-4 py-2 border border-white/15 text-white/70 hover:text-white hover:border-white/30 text-[13px] font-medium rounded-full text-center transition-colors"
+                >
+                  View Profile
+                </Link>
               ) : (
                 <>
                   <button
@@ -319,7 +334,7 @@ export function AgentCard({ agent, profile, index, isMyAgent: isMyAgentProp }: A
               >
                 {isMyAgent ? "Manage Agent" : "View Full Profile"}
               </Link>
-              {!isMyAgent && (
+              {!isMyAgent && !isAgentOwner && (
                 <Link
                   href={`/dashboard/create-job?agent=${agent.agentId}`}
                   className="flex-1 px-3 py-2 bg-white text-black text-[12px] font-medium rounded-full text-center hover:bg-white/90 transition-colors"

@@ -19,7 +19,7 @@ import GlobalBridgeCinematic from "./GlobalBridgeCinematic";
 export default function IndonesiaBridge() {
   return (
     <>
-      <section className="relative w-full bg-black pt-24 pb-12 px-6 overflow-hidden">
+      <section id="indonesia" className="relative w-full bg-black pt-24 pb-12 px-6 overflow-hidden">
         <div className="relative max-w-4xl mx-auto text-center">
           <motion.div
             initial={{ opacity: 0, y: 10 }}

@@ -11,12 +11,14 @@ import AgentRegistryABI from './abis/AgentRegistry.json';
 import ProgressiveEscrowABI from './abis/ProgressiveEscrow.json';
 import SubscriptionEscrowABI from './abis/SubscriptionEscrow.json';
 import UserRegistryABI from './abis/UserRegistry.json';
+import AgentMarketplaceABI from './abis/AgentMarketplace.json';
 import { type Abi } from 'viem';
 
 export const AGENT_REGISTRY_ABI = AgentRegistryABI.abi as Abi;
 export const PROGRESSIVE_ESCROW_ABI = ProgressiveEscrowABI.abi as Abi;
 export const SUBSCRIPTION_ESCROW_ABI = SubscriptionEscrowABI.abi as Abi;
 export const USER_REGISTRY_ABI = UserRegistryABI.abi as Abi;
+export const AGENT_MARKETPLACE_ABI = AgentMarketplaceABI.abi as Abi;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SKILL IDS (Well-known keccak256 hashes)
@@ -43,6 +45,10 @@ export const CONTRACT_ADDRESSES = {
   ProgressiveEscrow: "0xe9d1d260c08385b3beB68012D425e208b4cd2295",
   SubscriptionEscrow: "0x088400FFf9d37851173e22eef904e710B88F6312",
   UserRegistry: "0x1958bdbb5926674026b9ac630c9A4Cb91718Aee7",
+  // TODO: Replace with deployed address after running scripts/deploy-marketplace.js.
+  // Frontend will compile against this zero address but buyAgent / completeTransfer
+  // calls will revert until a real deployment is wired in.
+  AgentMarketplace: "0x0000000000000000000000000000000000000000",
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -65,6 +71,10 @@ export const CONTRACT_CONFIG = {
   UserRegistry: {
     address: CONTRACT_ADDRESSES.UserRegistry,
     abi: USER_REGISTRY_ABI,
+  },
+  AgentMarketplace: {
+    address: CONTRACT_ADDRESSES.AgentMarketplace,
+    abi: AGENT_MARKETPLACE_ABI,
   },
 } as const;
 

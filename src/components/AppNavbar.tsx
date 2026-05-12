@@ -8,15 +8,16 @@ import { useAccount, useDisconnect } from "wagmi";
 import { usePrivy } from "@privy-io/react-auth";
 import { useQueryClient } from "@tanstack/react-query";
 import { animate } from "animejs";
-import { Store, Zap, Book, Trophy } from "lucide-react";
+import { Store, Zap, Book, Trophy, Tag } from "lucide-react";
 
 // ── App nav links ──────────────────────────────────────────────────────────────
 
 const APP_LINKS = [
-  { label: "Marketplace", href: "/marketplace",  icon: <Store size={16} /> },
-  { label: "Leaderboard", href: "/leaderboard",  icon: <Trophy size={16} /> },
-  { label: "Dashboard",   href: "/dashboard",    icon: <Zap size={16} /> },
-  { label: "Docs",        href: "https://stylenecy.gitbook.io/zer0gig",         icon: <Book size={16} /> },
+  { label: "Marketplace", href: "/marketplace",                   icon: <Store size={16} /> },
+  { label: "Buy Agents",  href: "/marketplace/agents-for-sale",   icon: <Tag size={16} /> },
+  { label: "Leaderboard", href: "/leaderboard",                   icon: <Trophy size={16} /> },
+  { label: "Dashboard",   href: "/dashboard",                     icon: <Zap size={16} /> },
+  { label: "Docs",        href: "https://stylenecy.gitbook.io/zer0gig", icon: <Book size={16} /> },
 ];
 
 // ── Back button config per route ───────────────────────────────────────────────

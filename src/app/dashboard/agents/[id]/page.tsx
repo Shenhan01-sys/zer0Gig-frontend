@@ -17,9 +17,10 @@ import { parseContractError } from "@/lib/utils";
 import { Address } from "viem";
 import {
   Settings, X, Plus, Shield, RefreshCw, Copy, ArrowRightLeft, Layers,
-  ChevronDown, ChevronUp, CheckCircle2, Clock, AlertTriangle,
+  ChevronDown, ChevronUp, CheckCircle2, Clock, AlertTriangle, Tag,
 } from "lucide-react";
 import RBACGuard from "@/components/RBACGuard";
+import ListForSaleModal from "@/components/marketplace/ListForSaleModal";
 import ConnectTelegramButton from "@/components/ConnectTelegramButton";
 import CustomToolModal, { type ToolConfig } from "@/components/CustomToolModal";
 import PreBuiltToolsGrid from "@/components/PreBuiltToolsGrid";
@@ -152,6 +153,7 @@ export default function AgentDetailPage() {
   const { authorizeUsage, loading: authLoading } = useAuthorizeUsage();
   const { revokeUsage, loading: revokeLoading } = useRevokeUsage();
   const { iTransfer, loading: transferLoading } = useITransfer();
+  const [listForSaleOpen, setListForSaleOpen] = useState(false);
   const { iClone, loading: cloneLoading } = useIClone();
   const { data: authorizedUsers, refetch: refetchAuths } = useAuthorizedUsersOf(agentIdNum);
 
@@ -964,12 +966,22 @@ export default function AgentDetailPage() {
             className="rounded-2xl border border-white/10 bg-[#0d1525]/90 overflow-hidden"
           >
             {/* Section header */}
-            <div className="px-6 pt-5 pb-4 border-b border-white/5">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-white/40" />
-                <h2 className="text-[13px] font-medium text-white/70 uppercase tracking-wider">ERC-7857 Agent Actions</h2>
+            <div className="px-6 pt-5 pb-4 border-b border-white/5 flex items-start justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-white/40" />
+                  <h2 className="text-[13px] font-medium text-white/70 uppercase tracking-wider">ERC-7857 Agent Actions</h2>
+                </div>
+                <p className="text-[11px] text-white/30 pl-3.5">Encrypted intelligence control — capability, access, ownership</p>
               </div>
-              <p className="text-[11px] text-white/30 pl-3.5">Encrypted intelligence control — capability, access, ownership</p>
+              <button
+                onClick={() => setListForSaleOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-gradient-to-r from-cyan-400/15 to-emerald-400/15 border border-cyan-400/30 hover:border-cyan-400/60 text-[12px] font-medium text-cyan-200 hover:text-white transition-all shrink-0"
+                title="List this agent on the marketplace"
+              >
+                <Tag className="w-3.5 h-3.5" />
+                List for Sale
+              </button>
             </div>
 
             {/* Action buttons grid */}
@@ -1367,6 +1379,26 @@ export default function AgentDetailPage() {
               setToolModal(null);
             }}
             onClose={() => setToolModal(null)}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {listForSaleOpen && agentIdNum != null && (
+          <ListForSaleModal
+            agentId={agentIdNum}
+            sellerAddress={connectedWallet ?? ""}
+            agentSnapshot={{
+              name: displayName,
+              scoreBps: profile?.winRate ?? undefined,
+              jobsDone: profile?.totalJobsCompleted != null ? Number(profile.totalJobsCompleted) : undefined,
+              skills: onChainSkills.map(s => SKILL_LABELS[s] ?? s.slice(0, 10)),
+            }}
+            onClose={() => setListForSaleOpen(false)}
+            onSuccess={(listingId) => {
+              setListForSaleOpen(false);
+              window.location.href = `/marketplace/agents-for-sale/${listingId}`;
+            }}
           />
         )}
       </AnimatePresence>

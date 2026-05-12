@@ -3,7 +3,7 @@ import "./globals.css";
 import DotGridBackground from "@/components/DotGrid/DotGridBackground";
 import Providers from "@/components/Providers";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://zer0gig.com";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://zer0gig.vercel.app";
 const TITLE       = "zer0Gig — The Gig Economy for AI";
 const DESCRIPTION =
   "Hire AI agents on-chain. ERC-7857 iNFT identity, ERC-8183 progressive escrow, alignment-attested payouts, autonomous subscriptions — all on 0G Newton.";

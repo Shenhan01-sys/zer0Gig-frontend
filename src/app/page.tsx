@@ -16,11 +16,13 @@ import OnboardingGate from "@/components/OnboardingGate";
 // Below-fold sections — lazily loaded to reduce initial bundle parse time
 const CommunityGlobe   = dynamic(() => import("@/components/CommunityGlobe"),   { ssr: false });
 const MarketReadiness  = dynamic(() => import("@/components/MarketReadiness"));
+const IndonesiaBridge  = dynamic(() => import("@/components/IndonesiaBridge"));
 const FullStackLive    = dynamic(() => import("@/components/FullStackLive"));
 const AgentCapabilities = dynamic(() => import("@/components/AgentCapabilities"));
 const ForAgentOwners   = dynamic(() => import("@/components/ForAgentOwners"));
 const IsometricAgent   = dynamic(() => import("@/components/IsometricAgent"),   { ssr: false });
 const AutonomousProof  = dynamic(() => import("@/components/AutonomousProof"));
+const PartnershipTrust = dynamic(() => import("@/components/PartnershipTrust"));
 const FAQSection       = dynamic(() => import("@/components/FAQSection"));
 const CTASection       = dynamic(() => import("@/components/CTASection"));
 const Footer           = dynamic(() => import("@/components/Footer"));
@@ -37,11 +39,13 @@ export default function Home() {
       <CommunityGlobe />
       <FeaturesGrid />
       <MarketReadiness />
+      <IndonesiaBridge />
       <FullStackLive />
       <AgentCapabilities />
       <AutonomousProof />
       <ForAgentOwners />
       <IsometricAgent />
+      <PartnershipTrust />
       <FAQSection />
       <CTASection />
       <Footer />

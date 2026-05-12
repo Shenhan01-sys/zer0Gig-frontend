@@ -194,7 +194,9 @@ function MyProposalsInner() {
         </p>
       </div>
 
-      <ProposalsList agentIds={agentIds} />
+      <div data-tour-id="proposals-list">
+        <ProposalsList agentIds={agentIds} />
+      </div>
     </div>
   );
 }

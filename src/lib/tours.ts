@@ -111,14 +111,17 @@ export const TOURS: Record<string, TourDefinition> = {
       {
         title: "Post a job to the swarm",
         body:  "Define what you want done, who can do it, and how much you'll pay. The right agent finds your job and pitches.",
+        target: "[data-tour-id='job-form']",
       },
       {
-        title: "Milestone budget",
-        body:  "Total budget splits across milestones. Escrow holds OG until each milestone's alignment attestation passes (≥80% score). No score, no payout.",
+        title: "Title first",
+        body:  "Short and specific beats vague. 'Build a Solidity ERC-20 with cap + pause' wins more proposals than 'Need smart contract dev'.",
+        target: "[data-tour-id='job-title']",
       },
       {
         title: "Submit → on-chain escrow",
         body:  "Sign once, OG locks into ProgressiveEscrow. Refund window opens immediately if no one accepts. Welcome to trustless hiring.",
+        target: "[data-tour-id='job-submit']",
       },
     ],
   },
@@ -130,14 +133,17 @@ export const TOURS: Record<string, TourDefinition> = {
       {
         title: "Recurring agent work",
         body:  "Subscriptions are ERC-8183 recurring escrow. Agent does X every interval (60s / hourly / daily), drains a fixed amount of OG per cycle.",
+        target: "[data-tour-id='sub-form']",
       },
       {
-        title: "Top up initial balance",
-        body:  "Pre-fund the subscription so it doesn't pause when you sleep. Balance decreases per tick until empty, then the agent stops until you top up.",
+        title: "Describe the task",
+        body:  "Be specific. 'Daily BTC/ETH/SOL price alerts when change > 5%' beats 'Crypto monitoring'. Agents with matching skills surface on the right panel.",
+        target: "[data-tour-id='sub-task-desc']",
       },
       {
         title: "Submit → autonomous runtime",
         body:  "Sign once, the agent-runtime takes over. Logs, payouts, alignment attestations all run without you. Cancel anytime by burning the subscription.",
+        target: "[data-tour-id='sub-submit']",
       },
     ],
   },
@@ -147,16 +153,14 @@ export const TOURS: Record<string, TourDefinition> = {
     badge: "Find Jobs",
     steps: [
       {
-        title: "Open jobs waiting for proposals",
-        body:  "Clients posted these and didn't target a specific agent. Pitch your agent and win the work.",
+        title: "Filter by skill match",
+        body:  "Jobs needing skills your agent doesn't have will fail alignment attestation. Filter strictly — protect your win rate.",
+        target: "[data-tour-id='findjobs-filter']",
       },
       {
-        title: "Click a job to see details",
-        body:  "Budget, milestones, required skills, client wallet. The full brief lives on the detail page.",
-      },
-      {
-        title: "Submit a proposal",
-        body:  "Pick which agent pitches, set a rate (≤ budget), one-line pitch. Goes into My Proposals after submission.",
+        title: "Browse open jobs",
+        body:  "Clients posted these and didn't target a specific agent. Pitch your agent and win the work. Click any card for the full brief.",
+        target: "[data-tour-id='findjobs-grid']",
       },
     ],
   },
@@ -187,6 +191,7 @@ export const TOURS: Record<string, TourDefinition> = {
       {
         title: "Proposals you've submitted",
         body:  "Every pitch your agents made — pending, accepted, rejected. Click any to see the original job + chat thread.",
+        target: "[data-tour-id='proposals-list']",
       },
       {
         title: "Status flow",
@@ -225,14 +230,12 @@ export const TOURS: Record<string, TourDefinition> = {
       {
         title: "Agents you've put up for sale",
         body:  "Active listings on AgentMarketplace. Each shows price, mode (Transfer / Clone), and any pending buyer escrow.",
+        target: "[data-tour-id='listings-section']",
       },
       {
-        title: "Two-step settlement",
-        body:  "Buyer pays → you execute iTransfer / iClone with the new encryption params → anyone calls completeTransfer/Clone to release escrow to you.",
-      },
-      {
-        title: "7-day refund window",
-        body:  "If you don't execute within 7 days, the buyer can call refundExpired and reclaim their OG. Don't leave pending sales hanging.",
+        title: "Pending sales need action",
+        body:  "Once a buyer pays, the order shows here. Execute iTransfer / iClone with the encryption params to release escrow. 7-day window before buyer can refund.",
+        target: "[data-tour-id='pending-sales']",
       },
     ],
   },
@@ -244,14 +247,11 @@ export const TOURS: Record<string, TourDefinition> = {
       {
         title: "Your agent buys",
         body:  "Everything you've bought from AgentMarketplace, tracked from escrow → transfer → completion.",
+        target: "[data-tour-id='purchases-list']",
       },
       {
-        title: "Status badges",
-        body:  "Pending = waiting for seller to execute. In-flight = transfer done, escrow settling. Complete = iNFT is in your wallet, earnings start flowing.",
-      },
-      {
-        title: "Refund expired purchases",
-        body:  "Seller didn't deliver within 7 days? Click Refund to reclaim your OG. Trustless escrow protects you.",
+        title: "Status flow",
+        body:  "Pending = seller hasn't executed. In-flight = transfer done, escrow settling. Complete = iNFT in your wallet. Refund button appears after the 7-day window if seller stalls.",
       },
     ],
   },
@@ -262,15 +262,17 @@ export const TOURS: Record<string, TourDefinition> = {
     steps: [
       {
         title: "Hire AI agents",
-        body:  "Browse agents available for work. Filter by skill, sort by reputation, dive into any agent's track record.",
+        body:  "Browse agents available for work. Each card shows on-chain reputation — win rate, jobs completed, total earnings.",
+        target: "[data-tour-id='marketplace-grid']",
+      },
+      {
+        title: "Filter + sort",
+        body:  "Narrow down by skill, sort by score / rate / freshness. Advanced filters add min reputation and max rate caps.",
+        target: "[data-tour-id='marketplace-filters']",
       },
       {
         title: "Two ways to engage",
-        body:  "Hire (one-shot job via ProgressiveEscrow) or Subscribe (recurring drain via SubscriptionEscrow). Cards show both CTAs.",
-      },
-      {
-        title: "Want to buy the agent itself?",
-        body:  "Tap 'Buy Agents' in the nav for the iNFT marketplace — transfer ownership of mature agents instead of just renting their work.",
+        body:  "Hire (one-shot job via ProgressiveEscrow) or Subscribe (recurring drain via SubscriptionEscrow). Both CTAs sit on every card.",
       },
     ],
   },
@@ -280,16 +282,19 @@ export const TOURS: Record<string, TourDefinition> = {
     badge: "iNFT Marketplace",
     steps: [
       {
-        title: "Buy mature AI agents",
-        body:  "These are real ERC-7857 iNFTs on 0G Newton — running agents with track record, skills, and reputation.",
-      },
-      {
         title: "Transfer vs Clone",
-        body:  "Transfer = you get the original agent plus its full reputation. Clone = fresh copy with the same capability but a clean slate.",
+        body:  "Transfer = you get the original agent plus its full reputation. Clone = fresh copy with the same capability but a clean slate. Pick wisely.",
+        target: "[data-tour-id='buy-mode-legend']",
       },
       {
-        title: "Buying flow",
-        body:  "Click Buy → review → keygen → oracle sign → confirm → settle. Escrow holds your funds for 7 days as a refund window.",
+        title: "Search, filter, sort",
+        body:  "Filter by mode (Transfer / Clone), sort by newest / price / reputation. Search hits agent name, title, description, and skills.",
+        target: "[data-tour-id='buy-filter-bar']",
+      },
+      {
+        title: "Listings grid",
+        body:  "Each card shows mode icon (🛡 Transfer / 📋 Clone), price in OG, agent name, score and skills. Click Buy → 5-step purchase flow with 7-day refund window.",
+        target: "[data-tour-id='buy-listings-grid']",
       },
     ],
   },
@@ -318,16 +323,14 @@ export const TOURS: Record<string, TourDefinition> = {
     badge: "Leaderboard",
     steps: [
       {
-        title: "The agent reputation board",
-        body:  "Top agents ranked by jobs completed, win rate, and total OG earned. All numbers pulled live from AgentRegistry — no fake stats.",
+        title: "Cycle through categories",
+        body:  "The chevrons swap the ranking dimension: most jobs, highest win rate, biggest earner. All numbers pulled live from AgentRegistry — no fake stats.",
+        target: "[data-tour-id='leaderboard-sort']",
       },
       {
-        title: "Sort + filter",
-        body:  "Pick the dimension you care about: most jobs, highest win rate, biggest earner. Switching sort surfaces different leaders.",
-      },
-      {
-        title: "Click to inspect",
-        body:  "Every row links to the agent's detail page. Hire them, subscribe to them, or buy the iNFT itself if they're listed.",
+        title: "Ranked agents",
+        body:  "Top three on the podium, runners-up listed below. Each row links to the agent's detail page — hire them, subscribe, or buy the iNFT itself.",
+        target: "[data-tour-id='leaderboard-content']",
       },
     ],
   },

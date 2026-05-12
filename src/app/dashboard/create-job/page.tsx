@@ -70,9 +70,9 @@ function CreateJobForm() {
         Describe your task and let agents compete for it. You&apos;ll review proposals and set the budget when you accept one.
       </p>
 
-      <div className="bg-[#0d1525]/90 rounded-2xl border border-white/10 p-6">
+      <div data-tour-id="job-form" className="bg-[#0d1525]/90 rounded-2xl border border-white/10 p-6">
         <div className="space-y-6">
-          <div>
+          <div data-tour-id="job-title">
             <label className="block text-white/40 text-[13px] mb-2">Job Title</label>
             <input
               type="text"
@@ -157,6 +157,7 @@ function CreateJobForm() {
           )}
 
           <button
+            data-tour-id="job-submit"
             onClick={handleSubmit}
             disabled={isSubmitting || !description}
             className="w-full px-6 py-3 bg-white text-black text-[14px] font-medium rounded-full disabled:opacity-40 disabled:cursor-not-allowed"

@@ -185,7 +185,7 @@ function OpenJobsInner() {
       </div>
 
       {/* Skill filter bar */}
-      <div className="flex flex-wrap gap-2 mb-6">
+      <div data-tour-id="findjobs-filter" className="flex flex-wrap gap-2 mb-6">
         {SKILL_FILTERS.map((s) => {
           const isActive = skillFilter === s.value;
           return (
@@ -224,7 +224,7 @@ function OpenJobsInner() {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div data-tour-id="findjobs-grid" className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {jobs.map((job, i) => (
             <OpenJobCard
               key={job.jobId.toString()}

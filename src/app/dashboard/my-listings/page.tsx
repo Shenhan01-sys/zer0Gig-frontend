@@ -141,7 +141,7 @@ function Section({
   cancellingId?: string | null;
 }) {
   return (
-    <div>
+    <div data-tour-id="listings-section">
       <h2 className="text-[12px] font-medium text-white/50 uppercase tracking-widest mb-3">{title}</h2>
       <div className="space-y-2">
         {listings.map(l => (
@@ -165,7 +165,7 @@ function PendingSalesSection({ sellerWallet }: { sellerWallet: Address }) {
   if (!orderIds || (orderIds as bigint[]).length === 0) return null;
 
   return (
-    <div className="mb-8">
+    <div data-tour-id="pending-sales" className="mb-8">
       <h2 className="text-[12px] font-medium text-white/50 uppercase tracking-widest mb-3 inline-flex items-center gap-2">
         <Hourglass className="w-3.5 h-3.5" />
         Pending Sales — buyers waiting for you

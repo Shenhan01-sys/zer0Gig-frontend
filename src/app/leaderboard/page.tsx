@@ -299,7 +299,7 @@ export default function LeaderboardPage() {
         </div>
 
         {/* ── Category navigator ──────────────────────────────────────── */}
-        <div className="w-full max-w-2xl px-6 flex items-center justify-between gap-4 mb-12 sm:mb-16 z-40">
+        <div data-tour-id="leaderboard-sort" className="w-full max-w-2xl px-6 flex items-center justify-between gap-4 mb-12 sm:mb-16 z-40">
           <button
             onClick={() => paginate(-1)}
             className="p-3 bg-[#181822] border border-white/10 rounded-full hover:bg-white/10 hover:scale-110 transition-all shadow-lg shrink-0"
@@ -330,7 +330,7 @@ export default function LeaderboardPage() {
         </div>
 
         {/* ── Sliding content ─────────────────────────────────────────── */}
-        <div className="relative w-full max-w-5xl px-6">
+        <div data-tour-id="leaderboard-content" className="relative w-full max-w-5xl px-6">
           {/* Loading skeleton */}
           {isLoading && (
             <div className="space-y-6">

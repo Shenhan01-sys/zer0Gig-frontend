@@ -260,8 +260,8 @@ export default function CreateSubscriptionPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* LEFT — Form (7/12) */}
-        <div className="lg:col-span-7 space-y-5">
-          <div className="rounded-2xl border border-white/[0.08] bg-[#0a0f1a]/80 backdrop-blur-sm p-6">
+        <div className="lg:col-span-7 space-y-5" data-tour-id="sub-form">
+          <div data-tour-id="sub-task-desc" className="rounded-2xl border border-white/[0.08] bg-[#0a0f1a]/80 backdrop-blur-sm p-6">
             <label className="block text-[12px] text-white/40 uppercase tracking-wider mb-3">Task Description</label>
             <textarea
               value={taskDescription}
@@ -532,6 +532,7 @@ export default function CreateSubscriptionPage() {
           </AnimatePresence>
 
           <button
+            data-tour-id="sub-submit"
             onClick={handleCreate}
             disabled={!canSubmit}
             className="w-full px-6 py-4 bg-white text-black text-[15px] font-semibold rounded-xl disabled:opacity-40 disabled:cursor-not-allowed hover:bg-white/90 transition-colors shadow-lg shadow-white/10"

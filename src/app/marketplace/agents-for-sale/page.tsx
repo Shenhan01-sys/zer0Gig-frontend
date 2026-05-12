@@ -83,7 +83,7 @@ export default function AgentsForSalePage() {
         </motion.div>
 
         {/* Mode legend */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
+        <div data-tour-id="buy-mode-legend" className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
           <ModeCard
             mode="transfer"
             title="Transfer Mode"
@@ -101,7 +101,7 @@ export default function AgentsForSalePage() {
         </div>
 
         {/* Filter bar */}
-        <div className="flex flex-wrap items-center gap-3 mb-8 p-3 rounded-2xl border border-white/10 bg-[#0d1525]/60">
+        <div data-tour-id="buy-filter-bar" className="flex flex-wrap items-center gap-3 mb-8 p-3 rounded-2xl border border-white/10 bg-[#0d1525]/60">
           <div className="flex items-center gap-2 flex-1 min-w-[200px]">
             <Search className="w-4 h-4 text-white/40 ml-1" />
             <input
@@ -159,7 +159,7 @@ export default function AgentsForSalePage() {
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div data-tour-id="buy-listings-grid" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filtered.map((listing, i) => (
               <ListingCard key={listing.id} listing={listing} index={i} />
             ))}

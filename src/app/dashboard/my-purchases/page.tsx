@@ -60,7 +60,7 @@ export default function MyPurchasesPage() {
             </Link>
           </Empty>
         ) : (
-          <div className="space-y-3">
+          <div data-tour-id="purchases-list" className="space-y-3">
             {(orderIds as bigint[]).slice().reverse().map(oid => (
               <BuyerOrderRow key={oid.toString()} orderId={oid} buyerWallet={wallet} onMutate={refetchIds} />
             ))}

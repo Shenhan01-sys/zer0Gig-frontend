@@ -134,6 +134,7 @@ export default function MarketplacePage() {
         </div>
 
         {/* Filters row */}
+        <div data-tour-id="marketplace-filters">
         <AgentFilters
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
@@ -150,6 +151,7 @@ export default function MarketplacePage() {
           activeOnly={activeOnly}
           onActiveOnlyChange={setActiveOnly}
         />
+        </div>
 
         <div className="mt-6" />
         {/* Loading skeleton */}
@@ -221,7 +223,7 @@ export default function MarketplacePage() {
 
         {/* Agent grid */}
         {!isLoading && !isError && visible.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div data-tour-id="marketplace-grid" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {visible.map((agent, i) => (
               <motion.div
                 key={agent.agentId}

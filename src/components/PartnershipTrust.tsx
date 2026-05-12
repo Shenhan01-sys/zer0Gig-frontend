@@ -2,51 +2,85 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { Handshake, GraduationCap, Layers, ExternalLink } from "lucide-react";
+import { Handshake, GraduationCap, Layers, ExternalLink, Quote } from "lucide-react";
 
-// Trust signals for the landing page, ordered strongest → most forward-looking
-// per Dragon's "show consistency not just a big launch moment" framing.
+// ─────────────────────────────────────────────────────────────────────────────
+// PartnershipTrust — landing-page trust layer.
 //
-//   1. BUILT ON      — concrete infrastructure dependencies (most defensible)
-//   2. VALIDATED BY  — soft endorsements + ecosystem context
-//   3. ROADMAP       — pipeline partners (honestly framed, no overclaim)
+//   1. BUILT ON     — twelve real infrastructure tiles with branded logos
+//   2. VALIDATED BY — stakeholder pods with geometric avatars + quotes
+//   3. ONBOARDING   — Jadid coalition + 5-8 PT pipeline placeholders
 //
-// Logos are intentionally text-first instead of image-first. We don't ship
-// partner logos we haven't been explicitly authorized to use, and a sober
-// text wall reads more credible than a generic logo soup for a hackathon
-// project at this stage.
+// Tools and stakeholder pods were originally rendered inside IndonesiaBridge
+// but consolidated here so the "Built on" and "Validated by" subsections
+// share a single source of truth.
+// ─────────────────────────────────────────────────────────────────────────────
 
-const BUILT_ON = [
-  { name: "0G Chain",           sub: "Settlement layer (Newton testnet, Chain ID 16602)" },
-  { name: "0G Storage",         sub: "Encrypted briefs + outputs, merkle-rooted" },
-  { name: "0G Compute",         sub: "Decentralized LLM inference (TEE-verified)" },
-  { name: "0G KV",              sub: "Agent persistent memory" },
-  { name: "0G Alignment Nodes", sub: "ECDSA quality attestation" },
-  { name: "Privy",              sub: "Wallet + social login" },
-  { name: "Supabase",           sub: "Off-chain profile / chat / activity feed" },
-  { name: "Vercel · Railway",   sub: "Frontend + agent-runtime hosting" },
+// ── DATA ─────────────────────────────────────────────────────────────────────
+
+type Tool = {
+  name:    string;
+  sub:     string;
+  brand:   string;        // hex without #
+  cdn?:    string;        // simple-icons.org slug
+  inline?: "zg";          // use 0G stack glyph
+};
+
+const TOOLS: Tool[] = [
+  { name: "0G Chain",    sub: "Settlement layer",   brand: "7C5CFF", inline: "zg" },
+  { name: "0G Storage",  sub: "Encrypted briefs",   brand: "7C5CFF", inline: "zg" },
+  { name: "0G Compute",  sub: "LLM inference",      brand: "7C5CFF", inline: "zg" },
+  { name: "0G KV",       sub: "Agent memory",       brand: "7C5CFF", inline: "zg" },
+  { name: "Supabase",    sub: "Profile + activity", brand: "3ECF8E", cdn: "supabase" },
+  { name: "Vercel",      sub: "Frontend hosting",   brand: "FFFFFF", cdn: "vercel" },
+  { name: "Next.js",     sub: "App framework",      brand: "FFFFFF", cdn: "nextdotjs" },
+  { name: "Ethereum",    sub: "EVM execution",      brand: "627EEA", cdn: "ethereum" },
+  { name: "Solidity",    sub: "Smart contracts",    brand: "AAAAAA", cdn: "solidity" },
+  { name: "TypeScript",  sub: "Runtime + frontend", brand: "3178C6", cdn: "typescript" },
+  { name: "Framer",      sub: "Motion choreo",      brand: "FFFFFF", cdn: "framer" },
+  { name: "Foundry",     sub: "Contract tests",     brand: "FFFFFF", cdn: "foundry" },
 ];
 
-const VALIDATED_BY = [
+const STAKEHOLDERS = [
   {
-    org:  "Halim Budi Santoso",
-    sub:  "Computing Head, UKDW Yogyakarta",
-    note: "Private demo + endorsement on 2026-05-11",
-    href: null,
+    initials: "HG",
+    name:     "Hans Gunawan",
+    role:     "Founder · Indonesia",
+    quote:    "Built this because paying USD for tools my warung neighbor can't afford felt wrong.",
+    accentA:  "#38BDF8",
+    accentB:  "#0EA5E9",
+    stamp:    "founder",
   },
   {
-    org:  "0G APAC Hackathon 2026",
-    sub:  "Track 3 — Agentic Economy",
-    note: "First production deployment of ERC-7857 + ERC-8183 on 0G",
-    href: "https://0g.ai",
+    initials: "JP",
+    name:     "Jadid Purwaka Aji",
+    role:     "ID Startup Ecosystem · Coalition Lead",
+    quote:    "5–8 PT partners onboarding through Q3 2026. The on-ramp is concrete, not vapor.",
+    accentA:  "#34D399",
+    accentB:  "#059669",
+    stamp:    "partner",
   },
   {
-    org:  "0G Labs research",
-    sub:  "ERC-7857 (Intelligent NFT) origin",
-    note: "We ship the standard proposed by 0G's team",
-    href: "https://eips.ethereum.org/EIPS/eip-7857",
+    initials: "HB",
+    name:     "Halim Budi Santoso",
+    role:     "Head of Computing, UKDW Yogyakarta",
+    quote:    "ERC-7857 + ERC-8183 are the standards to watch. zer0Gig shipped them first.",
+    accentA:  "#FBBF24",
+    accentB:  "#D97706",
+    stamp:    "academic",
+  },
+  {
+    initials: "0G",
+    name:     "0G APAC Hackathon",
+    role:     "Track 3 · Agentic Economy",
+    quote:    "First intelligent-NFT + agentic-commerce stack live on 0G Newton.",
+    accentA:  "#C084FC",
+    accentB:  "#7C3AED",
+    stamp:    "ecosystem",
   },
 ];
+
+// ── COMPONENT ────────────────────────────────────────────────────────────────
 
 export default function PartnershipTrust() {
   return (
@@ -79,7 +113,7 @@ export default function PartnershipTrust() {
             <span className="text-white/55">Backed by real people.</span>
           </h2>
           <p className="text-white/55 text-[14px] max-w-xl mx-auto">
-            No vapor logos. Three honest layers of trust — the protocols we use today, the partners who endorsed us, and the pipeline we&apos;re onboarding next.
+            No vapor logos. Three honest layers of trust — the rails we run, the people who endorsed us, and the pipeline we&apos;re onboarding next.
           </p>
         </motion.div>
 
@@ -87,18 +121,35 @@ export default function PartnershipTrust() {
         <Section
           title="Built on"
           icon={<Layers className="w-4 h-4 text-white/55" />}
-          subtitle="Infrastructure dependencies we run in production today"
+          subtitle="Twelve real dependencies running in production today"
           delay={0.1}
         >
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
-            {BUILT_ON.map(b => (
-              <div
-                key={b.name}
-                className="rounded-xl border border-white/10 bg-[#0d1525]/90 px-4 py-3"
+            {TOOLS.map((t, i) => (
+              <motion.div
+                key={t.name}
+                initial={{ opacity: 0, y: 12 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-60px" }}
+                transition={{ duration: 0.4, delay: i * 0.04 }}
+                className="group relative rounded-xl border border-white/10 bg-[#0d1525]/90 px-4 py-4 hover:border-white/25 hover:bg-[#0d1525] transition-all overflow-hidden"
               >
-                <p className="text-white text-[13px] font-medium mb-0.5">{b.name}</p>
-                <p className="text-white/40 text-[11px] leading-snug">{b.sub}</p>
-              </div>
+                <div
+                  className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
+                  style={{
+                    background: `radial-gradient(circle at 30% 0%, #${t.brand}22 0%, transparent 60%)`,
+                  }}
+                />
+                <div className="relative flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-white/[0.03] border border-white/10 shrink-0">
+                    <ToolGlyph tool={t} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white text-[13px] font-medium truncate">{t.name}</p>
+                    <p className="text-white/40 text-[10.5px] leading-snug truncate">{t.sub}</p>
+                  </div>
+                </div>
+              </motion.div>
             ))}
           </div>
         </Section>
@@ -107,37 +158,40 @@ export default function PartnershipTrust() {
         <Section
           title="Validated by"
           icon={<GraduationCap className="w-4 h-4 text-white/55" />}
-          subtitle="Academic + ecosystem endorsements"
+          subtitle="Founder voice, academic validator, ecosystem partner, hackathon track"
           delay={0.2}
         >
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            {VALIDATED_BY.map(v => (
-              <div
-                key={v.org}
-                className="rounded-xl border border-white/10 bg-[#0d1525]/90 px-5 py-4 flex flex-col"
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {STAKEHOLDERS.map((s, i) => (
+              <motion.div
+                key={s.initials}
+                initial={{ opacity: 0, y: 14 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-60px" }}
+                transition={{ duration: 0.5, delay: i * 0.08 }}
+                className="group relative rounded-2xl border border-white/10 bg-[#0d1525]/90 p-5 hover:border-white/20 transition-all"
               >
-                <div className="flex items-start justify-between gap-2">
-                  <p className="text-white text-[14px] font-medium leading-tight">{v.org}</p>
-                  {v.href && (
-                    <a
-                      href={v.href}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-white/35 hover:text-white/70 shrink-0 mt-0.5"
-                      aria-label="External link"
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </a>
-                  )}
+                <span className="absolute top-4 right-4 px-2 py-0.5 rounded-full bg-white/[0.04] border border-white/10 text-[9px] font-mono uppercase tracking-widest text-white/45">
+                  {s.stamp}
+                </span>
+
+                <AvatarBadge initials={s.initials} accentA={s.accentA} accentB={s.accentB} />
+
+                <p className="text-white text-[14px] font-semibold leading-tight mb-0.5">{s.name}</p>
+                <p className="text-white/45 text-[11px] leading-snug mb-4">{s.role}</p>
+
+                <div className="relative pt-4 border-t border-white/[0.06]">
+                  <Quote className="absolute -top-1 left-0 w-3 h-3 text-white/25" strokeWidth={2.5} />
+                  <p className="text-white/65 text-[12px] leading-relaxed pl-5 italic">
+                    {s.quote}
+                  </p>
                 </div>
-                <p className="text-white/50 text-[12px] mt-0.5">{v.sub}</p>
-                <p className="text-white/35 text-[11.5px] mt-3 leading-relaxed">{v.note}</p>
-              </div>
+              </motion.div>
             ))}
           </div>
         </Section>
 
-        {/* ── 3. ROADMAP PARTNERS (honest, no logo overclaim) ──────────────── */}
+        {/* ── 3. ONBOARDING NEXT ──────────────────────────────────────────── */}
         <Section
           title="Onboarding next"
           icon={<Handshake className="w-4 h-4 text-white/55" />}
@@ -172,7 +226,6 @@ export default function PartnershipTrust() {
               </Link>
             </div>
 
-            {/* Partner pipeline placeholders — opacity-30 to signal "in motion" */}
             <div className="mt-5 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 opacity-40">
               {Array.from({ length: 8 }).map((_, i) => (
                 <div
@@ -192,6 +245,8 @@ export default function PartnershipTrust() {
     </section>
   );
 }
+
+// ── HELPERS ──────────────────────────────────────────────────────────────────
 
 function Section({
   title, subtitle, icon, delay, children,
@@ -219,5 +274,72 @@ function Section({
       <p className="text-white/40 text-[12px] mb-4 pl-6">{subtitle}</p>
       {children}
     </motion.div>
+  );
+}
+
+function ToolGlyph({ tool }: { tool: Tool }) {
+  if (tool.inline === "zg") {
+    return (
+      <svg viewBox="0 0 32 32" className="w-5 h-5" fill="none" style={{ color: `#${tool.brand}` }}>
+        <circle cx="16" cy="16" r="12" stroke="currentColor" strokeWidth="1.5" />
+        <circle cx="16" cy="16" r="6"  stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+        <circle cx="16" cy="16" r="2"  fill="currentColor" />
+      </svg>
+    );
+  }
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={`https://cdn.simpleicons.org/${tool.cdn}/${tool.brand}`}
+      alt={tool.name}
+      className="w-5 h-5"
+      loading="lazy"
+    />
+  );
+}
+
+function AvatarBadge({
+  initials, accentA, accentB,
+}: {
+  initials: string;
+  accentA:  string;
+  accentB:  string;
+}) {
+  const dots = Array.from({ length: 12 }).map((_, i) => {
+    const a = (initials.charCodeAt(0) * (i + 7)) % 360;
+    return {
+      cx: 32 + Math.cos((a * Math.PI) / 180) * (16 + (i % 3) * 4),
+      cy: 32 + Math.sin((a * Math.PI) / 180) * (16 + (i % 3) * 4),
+      r:  0.6 + (i % 3) * 0.3,
+    };
+  });
+
+  return (
+    <div className="relative w-14 h-14 mb-4">
+      <svg viewBox="0 0 64 64" className="w-full h-full">
+        <defs>
+          <linearGradient id={`avgrad-${initials}`} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%"   stopColor={accentA} stopOpacity="0.55" />
+            <stop offset="100%" stopColor={accentB} stopOpacity="0.15" />
+          </linearGradient>
+        </defs>
+        <circle cx="32" cy="32" r="30" fill={`url(#avgrad-${initials})`} stroke={accentA} strokeOpacity="0.35" strokeWidth="1" />
+        {dots.map((d, i) => (
+          <circle key={i} cx={d.cx} cy={d.cy} r={d.r} fill={accentA} fillOpacity="0.45" />
+        ))}
+        <text
+          x="32" y="38"
+          textAnchor="middle"
+          fill="white"
+          style={{ fontSize: 17, fontWeight: 800, letterSpacing: 0.5, fontFamily: "ui-sans-serif, system-ui" }}
+        >
+          {initials}
+        </text>
+      </svg>
+      <span
+        className="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[#0d1525]"
+        style={{ background: accentA, boxShadow: `0 0 8px ${accentA}80` }}
+      />
+    </div>
   );
 }

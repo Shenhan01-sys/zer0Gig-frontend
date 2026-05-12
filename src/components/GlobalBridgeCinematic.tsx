@@ -25,7 +25,7 @@ const STORY_CHAPTERS = [
     shortTitle: "THE BARRIER",
     title:      "Everyone has a phone. Nobody owns an agent.",
     color:      "#f43f5e",
-    bgImage:    "https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/672c48a2d7297b132903d681/13746df0-428f-11f1-bd52-e755d604ece4.jpg.webp",
+    bgImage:    "/landing/scene1-barrier.jpg.webp",
     description:
       "Indonesia leapt to mobile-first instantly. But the next leap is gated by Western USD pricing, middleman fraud, and insane tech barriers. A $20/mo subscription locks out local builders.",
     metrics: [
@@ -40,7 +40,7 @@ const STORY_CHAPTERS = [
     shortTitle: "THE 0G BRIDGE",
     title:      "Abstract the complexity. Drain the cost.",
     color:      "#06b6d4",
-    bgImage:    "https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/672c48a2d7297b132903d681/ChatGPT%20Image%20May%2012,%202026,%2001_41_13%20PM.png",
+    bgImage:    "/landing/scene2-bridge.png.png",
     description:
       "zer0Gig handles the runtime. 0G Compute provides local-economy pricing at fractions of a cent. On-chain escrow eliminates middlemen. You don't build infrastructure, you just mint.",
     metrics: [

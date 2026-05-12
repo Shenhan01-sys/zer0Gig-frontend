@@ -19,6 +19,23 @@ const STEPS = [
   { id: 3, label: "Confirm",  icon: Sparkles },
 ] as const;
 
+// Clients don't need to pick an AI model — that's an agent-owner concern.
+// They get DEFAULT_MODEL_ID under the hood so the Supabase row stays
+// well-formed, but the picker is hidden from the flow.
+function visibleStepsFor(role: Role | null) {
+  return role === "client" ? STEPS.filter(s => s.id !== 2) : STEPS;
+}
+function nextStepFrom(current: number, role: Role | null): number {
+  const v = visibleStepsFor(role);
+  const i = v.findIndex(s => s.id === current);
+  return v[Math.min(i + 1, v.length - 1)].id;
+}
+function prevStepFrom(current: number, role: Role | null): number {
+  const v = visibleStepsFor(role);
+  const i = v.findIndex(s => s.id === current);
+  return v[Math.max(i - 1, 0)].id;
+}
+
 export default function OnboardingPage() {
   const router = useRouter();
   const { ready, authenticated, user, login } = usePrivy();
@@ -35,33 +52,26 @@ export default function OnboardingPage() {
 
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [alreadyExists, setAlreadyExists] = useState(false);
 
-  // Auto-advance once wallet connects on step 0
+  // Auto-advance once wallet connects on step 0. If the wallet already has a
+  // Supabase signup row, bypass the entire flow and drop the user straight
+  // onto the landing page — they've already onboarded.
   useEffect(() => {
-    if (step === 0 && ready && authenticated && walletAddress) {
-      // Check whether wallet already onboarded
-      (async () => {
-        try {
-          const res = await fetch(`/api/onboarding/signup?wallet=${walletAddress}`);
-          const json = await res.json();
-          if (json.ok && json.exists) {
-            setAlreadyExists(true);
-            const p = json.profile;
-            if (p) {
-              setDisplayName(p.display_name ?? "");
-              setRole((p.role as Role) ?? null);
-              setCountryCode(p.country_code ?? "");
-              setModelId(p.preferred_model ?? DEFAULT_MODEL_ID);
-            }
-          }
-        } catch {
-          // ignore
+    if (step !== 0 || !ready || !authenticated || !walletAddress) return;
+    (async () => {
+      try {
+        const res = await fetch(`/api/onboarding/signup?wallet=${walletAddress}`);
+        const json = await res.json();
+        if (json.ok && json.exists) {
+          router.replace("/?welcome=1");
+          return;
         }
-        setStep(1);
-      })();
-    }
-  }, [step, ready, authenticated, walletAddress]);
+      } catch {
+        // Network failure — fall through to step 1 so the user can still onboard.
+      }
+      setStep(1);
+    })();
+  }, [step, ready, authenticated, walletAddress, router]);
 
   const filteredCountries = useMemo(() => {
     const q = countryQuery.trim().toLowerCase();
@@ -111,31 +121,35 @@ export default function OnboardingPage() {
       {/* Step indicator */}
       <div className="px-6 py-8 flex items-center justify-center">
         <ol className="flex items-center gap-2 sm:gap-3">
-          {STEPS.map((s, i) => {
-            const Icon = s.icon;
-            const active = i === step;
-            const done = i < step;
-            return (
-              <li key={s.id} className="flex items-center gap-2 sm:gap-3">
-                <div
-                  className={`w-9 h-9 rounded-full border flex items-center justify-center transition-all
-                    ${active ? "bg-white text-black border-white" :
-                      done   ? "bg-emerald-500/10 text-emerald-400 border-emerald-400/40" :
-                               "bg-[#0d1525]/90 text-white/40 border-white/10"}
-                  `}
-                >
-                  {done ? <Check className="w-4 h-4" /> : <Icon className="w-4 h-4" />}
-                </div>
-                <span className={`hidden sm:inline text-[12px] font-medium tracking-wide
-                  ${active ? "text-white" : done ? "text-emerald-400" : "text-white/35"}`}>
-                  {s.label}
-                </span>
-                {i < STEPS.length - 1 && (
-                  <span className={`w-6 sm:w-10 h-px ${done ? "bg-emerald-400/40" : "bg-white/10"}`} aria-hidden />
-                )}
-              </li>
-            );
-          })}
+          {(() => {
+            const visible = visibleStepsFor(role);
+            const currentIdx = visible.findIndex(s => s.id === step);
+            return visible.map((s, i) => {
+              const Icon   = s.icon;
+              const active = s.id === step;
+              const done   = currentIdx !== -1 && i < currentIdx;
+              return (
+                <li key={s.id} className="flex items-center gap-2 sm:gap-3">
+                  <div
+                    className={`w-9 h-9 rounded-full border flex items-center justify-center transition-all
+                      ${active ? "bg-white text-black border-white" :
+                        done   ? "bg-emerald-500/10 text-emerald-400 border-emerald-400/40" :
+                                 "bg-[#0d1525]/90 text-white/40 border-white/10"}
+                    `}
+                  >
+                    {done ? <Check className="w-4 h-4" /> : <Icon className="w-4 h-4" />}
+                  </div>
+                  <span className={`hidden sm:inline text-[12px] font-medium tracking-wide
+                    ${active ? "text-white" : done ? "text-emerald-400" : "text-white/35"}`}>
+                    {s.label}
+                  </span>
+                  {i < visible.length - 1 && (
+                    <span className={`w-6 sm:w-10 h-px ${done ? "bg-emerald-400/40" : "bg-white/10"}`} aria-hidden />
+                  )}
+                </li>
+              );
+            });
+          })()}
         </ol>
       </div>
 
@@ -169,15 +183,6 @@ export default function OnboardingPage() {
 
             {step === 1 && (
               <StepCard key="1">
-                {alreadyExists && (
-                  <div className="mb-6 rounded-xl border border-cyan-400/30 bg-cyan-400/[0.04] px-4 py-3">
-                    <p className="text-cyan-300 text-[13px] font-medium">Welcome back!</p>
-                    <p className="text-cyan-300/70 text-[12px] mt-0.5">
-                      We've prefilled your previous answers — feel free to update them.
-                    </p>
-                  </div>
-                )}
-
                 <h1 className="text-3xl sm:text-4xl font-medium mb-2">Tell us about you.</h1>
                 <p className="text-white/55 text-[15px] mb-8">
                   Initials are fine. We use this on the leaderboard and the community globe.
@@ -235,8 +240,8 @@ export default function OnboardingPage() {
                 </Field>
 
                 <Nav
-                  onBack={() => setStep(0)}
-                  onNext={() => setStep(2)}
+                  onBack={() => setStep(prevStepFrom(1, role))}
+                  onNext={() => setStep(nextStepFrom(1, role))}
                   canNext={canNextFromProfile}
                 />
               </StepCard>
@@ -261,8 +266,8 @@ export default function OnboardingPage() {
                 </div>
 
                 <Nav
-                  onBack={() => setStep(1)}
-                  onNext={() => setStep(3)}
+                  onBack={() => setStep(prevStepFrom(2, role))}
+                  onNext={() => setStep(nextStepFrom(2, role))}
                   canNext={!!modelId}
                 />
               </StepCard>
@@ -281,6 +286,7 @@ export default function OnboardingPage() {
                   role={role}
                   countryCode={countryCode}
                   modelId={modelId}
+                  hideModel={role === "client"}
                 />
 
                 {submitError && (
@@ -289,7 +295,7 @@ export default function OnboardingPage() {
 
                 <div className="mt-8 flex flex-wrap gap-3 justify-between">
                   <button
-                    onClick={() => setStep(2)}
+                    onClick={() => setStep(prevStepFrom(3, role))}
                     className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full border border-white/15 text-white/70 hover:text-white hover:border-white/30 transition-colors text-[13px]"
                     disabled={submitting}
                   >
@@ -446,13 +452,14 @@ function ModelCard({
 }
 
 function SummaryGrid({
-  walletAddress, displayName, role, countryCode, modelId,
+  walletAddress, displayName, role, countryCode, modelId, hideModel,
 }: {
   walletAddress: string;
   displayName: string;
   role: Role | null;
   countryCode: string;
   modelId: string;
+  hideModel?: boolean;
 }) {
   const country = COUNTRIES.find(c => c.code === countryCode);
   const model   = OG_MODELS.find(m => m.id === modelId);
@@ -462,8 +469,10 @@ function SummaryGrid({
     { label: "Name",       value: displayName || "—" },
     { label: "Role",       value: role === "client" ? "Client" : role === "agent_owner" ? "Agent Owner" : "—" },
     { label: "Country",    value: country ? `${country.flag}  ${country.name}` : "—" },
-    { label: "AI Model",   value: model ? model.name : "—" },
-    { label: "Model Tier", value: model ? model.tier : "—" },
+    ...(hideModel ? [] : [
+      { label: "AI Model",   value: model ? model.name : "—" },
+      { label: "Model Tier", value: model ? model.tier : "—" },
+    ]),
   ];
 
   return (

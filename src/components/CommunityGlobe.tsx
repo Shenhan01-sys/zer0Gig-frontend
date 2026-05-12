@@ -65,8 +65,11 @@ function blendRoleColor(ownerRatio: number): string {
   return `rgb(${r}, ${g}, ${b})`;
 }
 
-// Auto-rotate config
-const AUTO_ROTATE_SPEED = 0.35;
+// Auto-rotate config — OrbitControls.autoRotateSpeed. Default value of 2.0
+// gives ~30s per revolution; 0.6 gives ~100s per revolution which reads as
+// a slow, intentional drift rather than a spin. Bump if more visible motion
+// is wanted.
+const AUTO_ROTATE_SPEED = 0.6;
 
 export default function CommunityGlobe() {
   const [stats, setStats] = useState<StatsResponse>(SAMPLE_STATS);
@@ -104,16 +107,43 @@ export default function CommunityGlobe() {
     return () => observer.disconnect();
   }, []);
 
-  // Auto-rotate + camera POV
+  // Auto-rotate + camera POV.
+  //
+  // react-globe.gl is loaded dynamically (next/dynamic, ssr:false) and three.js
+  // is initialised inside an effect AFTER the React ref is populated. On the
+  // first commit, `globeRef.current.controls()` may return undefined. We poll
+  // every 100ms (up to 5s) until the OrbitControls instance exists, then wire
+  // up auto-rotate + initial point-of-view in one shot.
   useEffect(() => {
-    if (!globeRef.current) return;
-    const controls = globeRef.current.controls?.();
-    if (!controls) return;
-    controls.autoRotate = true;
-    controls.autoRotateSpeed = AUTO_ROTATE_SPEED;
-    controls.enableZoom = false; // keep section pixel-perfect
-    // Initial zoom — pull the camera slightly back so the globe sits inside the card
-    globeRef.current.pointOfView?.({ lat: 5, lng: 110, altitude: 2.4 }, 1500);
+    let cancelled  = false;
+    let intervalId: ReturnType<typeof setInterval> | null = null;
+
+    const setupControls = () => {
+      const g = globeRef.current;
+      if (!g) return false;
+      const controls = g.controls?.();
+      if (!controls) return false;
+      controls.autoRotate      = true;
+      controls.autoRotateSpeed = AUTO_ROTATE_SPEED;
+      controls.enableZoom      = false;
+      g.pointOfView?.({ lat: 5, lng: 110, altitude: 2.4 }, 1500);
+      return true;
+    };
+
+    if (setupControls()) return;
+
+    let attempts = 0;
+    intervalId = setInterval(() => {
+      attempts++;
+      if (cancelled || setupControls() || attempts > 50) {
+        if (intervalId) clearInterval(intervalId);
+      }
+    }, 100);
+
+    return () => {
+      cancelled = true;
+      if (intervalId) clearInterval(intervalId);
+    };
   }, []);
 
   // Click → fetch members for that country

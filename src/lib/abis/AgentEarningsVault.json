@@ -1,40 +1,90 @@
 {
-  "_format": "hh-sol-artifact-1",
-  "contractName": "AgentEarningsVault",
-  "sourceName": "src/AgentEarningsVault.sol",
   "abi": [
     {
-      "inputs": [{ "internalType": "address", "name": "agentRegistry", "type": "address" }],
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "agentRegistry",
+          "type": "address"
+        }
+      ],
       "stateMutability": "nonpayable",
       "type": "constructor"
     },
     {
       "inputs": [
-        { "internalType": "uint256", "name": "requested", "type": "uint256" },
-        { "internalType": "uint256", "name": "available", "type": "uint256" }
+        {
+          "internalType": "uint256",
+          "name": "requested",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "available",
+          "type": "uint256"
+        }
       ],
       "name": "InsufficientBalance",
       "type": "error"
     },
     {
       "inputs": [
-        { "internalType": "address", "name": "caller", "type": "address" },
-        { "internalType": "address", "name": "owner", "type": "address" }
+        {
+          "internalType": "address",
+          "name": "caller",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "owner",
+          "type": "address"
+        }
       ],
       "name": "NotOwner",
       "type": "error"
     },
-    { "inputs": [], "name": "ReentrancyGuardReentrantCall", "type": "error" },
-    { "inputs": [], "name": "TransferFailed", "type": "error" },
-    { "inputs": [], "name": "ZeroAddress", "type": "error" },
-    { "inputs": [], "name": "ZeroAmount", "type": "error" },
+    {
+      "inputs": [],
+      "name": "TransferFailed",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ZeroAddress",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ZeroAmount",
+      "type": "error"
+    },
     {
       "anonymous": false,
       "inputs": [
-        { "indexed": true,  "internalType": "uint256", "name": "agentId",    "type": "uint256" },
-        { "indexed": true,  "internalType": "address", "name": "from",       "type": "address" },
-        { "indexed": false, "internalType": "uint256", "name": "amount",     "type": "uint256" },
-        { "indexed": false, "internalType": "uint256", "name": "newBalance", "type": "uint256" }
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "agentId",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "from",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "newBalance",
+          "type": "uint256"
+        }
       ],
       "name": "Deposited",
       "type": "event"
@@ -42,24 +92,67 @@
     {
       "anonymous": false,
       "inputs": [
-        { "indexed": true,  "internalType": "uint256", "name": "agentId",    "type": "uint256" },
-        { "indexed": true,  "internalType": "address", "name": "owner",      "type": "address" },
-        { "indexed": true,  "internalType": "address", "name": "to",         "type": "address" },
-        { "indexed": false, "internalType": "uint256", "name": "amount",     "type": "uint256" },
-        { "indexed": false, "internalType": "uint256", "name": "newBalance", "type": "uint256" }
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "agentId",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "owner",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "newBalance",
+          "type": "uint256"
+        }
       ],
       "name": "Withdrawn",
       "type": "event"
     },
     {
-      "inputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
       "name": "balanceOf",
-      "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
       "stateMutability": "view",
       "type": "function"
     },
     {
-      "inputs": [{ "internalType": "uint256", "name": "agentId", "type": "uint256" }],
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "agentId",
+          "type": "uint256"
+        }
+      ],
       "name": "deposit",
       "outputs": [],
       "stateMutability": "payable",
@@ -68,29 +161,59 @@
     {
       "inputs": [],
       "name": "registry",
-      "outputs": [{ "internalType": "contract IAgentRegistry", "name": "", "type": "address" }],
+      "outputs": [
+        {
+          "internalType": "contract IAgentRegistry",
+          "name": "",
+          "type": "address"
+        }
+      ],
       "stateMutability": "view",
       "type": "function"
     },
     {
       "inputs": [],
       "name": "totalDepositedWei",
-      "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
       "stateMutability": "view",
       "type": "function"
     },
     {
       "inputs": [],
       "name": "totalWithdrawnWei",
-      "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
       "stateMutability": "view",
       "type": "function"
     },
     {
       "inputs": [
-        { "internalType": "uint256", "name": "agentId", "type": "uint256" },
-        { "internalType": "address", "name": "to",      "type": "address" },
-        { "internalType": "uint256", "name": "amount",  "type": "uint256" }
+        {
+          "internalType": "uint256",
+          "name": "agentId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
       ],
       "name": "withdraw",
       "outputs": [],
@@ -99,14 +222,31 @@
     },
     {
       "inputs": [
-        { "internalType": "uint256", "name": "agentId", "type": "uint256" },
-        { "internalType": "address", "name": "to",      "type": "address" }
+        {
+          "internalType": "uint256",
+          "name": "agentId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        }
       ],
       "name": "withdrawAll",
-      "outputs": [{ "internalType": "uint256", "name": "amount", "type": "uint256" }],
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
       "stateMutability": "nonpayable",
       "type": "function"
     },
-    { "stateMutability": "payable", "type": "receive" }
+    {
+      "stateMutability": "payable",
+      "type": "receive"
+    }
   ]
 }

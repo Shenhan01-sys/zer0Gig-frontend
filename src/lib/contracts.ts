@@ -52,11 +52,11 @@ export const CONTRACT_ADDRESSES = {
   // Scan: https://scan-testnet.0g.ai/address/0x02476780C4d2ae3AE7F54aFba35F25Df4F20d018
   AgentMarketplace: "0x02476780C4d2ae3AE7F54aFba35F25Df4F20d018",
   // Keyless agent earnings custody. Owner-of-iNFT gated withdrawals — no
-  // private keys held anywhere. Address filled in after deployment via
-  //   cd Project/contracts
-  //   npx hardhat run scripts/deploy-vault.js --network newton
-  // Then paste the printed address here and redeploy frontend.
-  AgentEarningsVault: "0x0000000000000000000000000000000000000000",
+  // private keys held anywhere.
+  // Deployed: 2026-05-12 by 0x48379F4d1427209311E9FF0bcC4a354953ea631B
+  // References AgentRegistry above.
+  // Scan: https://scan-testnet.0g.ai/address/0x46aFcE8f7881b664bc7940d2b463f2b719B040f1
+  AgentEarningsVault: "0x46aFcE8f7881b664bc7940d2b463f2b719B040f1",
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────────────

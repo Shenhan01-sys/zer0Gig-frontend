@@ -1,140 +1,830 @@
 {
   "abi": [
     {
-      "type": "constructor",
       "inputs": [
-        { "name": "_agentRegistry", "type": "address" },
-        { "name": "_treasury",      "type": "address" }
+        {
+          "internalType": "address",
+          "name": "_agentRegistry",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_treasury",
+          "type": "address"
+        }
       ],
-      "stateMutability": "nonpayable"
+      "stateMutability": "nonpayable",
+      "type": "constructor"
     },
     {
-      "type": "function",
-      "name": "buyAgent",
-      "inputs": [
-        { "name": "agentId",            "type": "uint256" },
-        { "name": "seller",             "type": "address" },
-        { "name": "mode",               "type": "uint8"   },
-        { "name": "newCapabilityHash",  "type": "bytes32" },
-        { "name": "newSealedKey",       "type": "bytes"   },
-        { "name": "oracleProof",        "type": "bytes"   }
-      ],
-      "outputs": [{ "name": "orderId", "type": "uint256" }],
-      "stateMutability": "payable"
-    },
-    {
-      "type": "function",
-      "name": "completeTransfer",
-      "inputs": [{ "name": "orderId", "type": "uint256" }],
-      "outputs": [],
-      "stateMutability": "nonpayable"
-    },
-    {
-      "type": "function",
-      "name": "completeClone",
-      "inputs": [
-        { "name": "orderId",     "type": "uint256" },
-        { "name": "newAgentId",  "type": "uint256" }
-      ],
-      "outputs": [],
-      "stateMutability": "nonpayable"
-    },
-    {
-      "type": "function",
-      "name": "refundExpired",
-      "inputs": [{ "name": "orderId", "type": "uint256" }],
-      "outputs": [],
-      "stateMutability": "nonpayable"
-    },
-    {
-      "type": "function",
-      "name": "getOrder",
-      "inputs": [{ "name": "orderId", "type": "uint256" }],
-      "outputs": [{
-        "name": "",
-        "type": "tuple",
-        "components": [
-          { "name": "buyer",        "type": "address" },
-          { "name": "seller",       "type": "address" },
-          { "name": "agentId",      "type": "uint256" },
-          { "name": "finalAgentId", "type": "uint256" },
-          { "name": "amountWei",    "type": "uint96"  },
-          { "name": "createdAt",    "type": "uint64"  },
-          { "name": "expiresAt",    "type": "uint64"  },
-          { "name": "mode",         "type": "uint8"   },
-          { "name": "status",       "type": "uint8"   }
-        ]
-      }],
-      "stateMutability": "view"
-    },
-    {
-      "type": "function",
-      "name": "getBuyerOrders",
-      "inputs": [{ "name": "buyer", "type": "address" }],
-      "outputs": [{ "name": "", "type": "uint256[]" }],
-      "stateMutability": "view"
-    },
-    {
-      "type": "function",
-      "name": "getSellerOrders",
-      "inputs": [{ "name": "seller", "type": "address" }],
-      "outputs": [{ "name": "", "type": "uint256[]" }],
-      "stateMutability": "view"
-    },
-    {
-      "type": "function",
-      "name": "protocolFeeBps",
       "inputs": [],
-      "outputs": [{ "name": "", "type": "uint16" }],
-      "stateMutability": "view"
+      "name": "AgentAlreadyTransferred",
+      "type": "error"
     },
     {
-      "type": "function",
-      "name": "escrowDuration",
       "inputs": [],
-      "outputs": [{ "name": "", "type": "uint32" }],
-      "stateMutability": "view"
+      "name": "AlreadySettled",
+      "type": "error"
     },
     {
-      "type": "event",
+      "inputs": [],
+      "name": "CloneNotCompleted",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidAgent",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidFee",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "MarketplacePaused",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NotBuyer",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NotExpired",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NotOwner",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "TransferFailed",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "TransferNotCompleted",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ValueTooLarge",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "WrongMode",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ZeroAddress",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ZeroValue",
+      "type": "error"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "orderId",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "buyer",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "seller",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "agentId",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint96",
+          "name": "amountWei",
+          "type": "uint96"
+        },
+        {
+          "indexed": false,
+          "internalType": "enum AgentMarketplace.Mode",
+          "name": "mode",
+          "type": "uint8"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "newCapabilityHash",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes",
+          "name": "newSealedKey",
+          "type": "bytes"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes",
+          "name": "oracleProof",
+          "type": "bytes"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint64",
+          "name": "expiresAt",
+          "type": "uint64"
+        }
+      ],
       "name": "BuyRequested",
-      "anonymous": false,
-      "inputs": [
-        { "name": "orderId",           "type": "uint256", "indexed": true },
-        { "name": "buyer",             "type": "address", "indexed": true },
-        { "name": "seller",            "type": "address", "indexed": true },
-        { "name": "agentId",           "type": "uint256", "indexed": false },
-        { "name": "amountWei",         "type": "uint96",  "indexed": false },
-        { "name": "mode",              "type": "uint8",   "indexed": false },
-        { "name": "newCapabilityHash", "type": "bytes32", "indexed": false },
-        { "name": "newSealedKey",      "type": "bytes",   "indexed": false },
-        { "name": "oracleProof",       "type": "bytes",   "indexed": false },
-        { "name": "expiresAt",         "type": "uint64",  "indexed": false }
-      ]
+      "type": "event"
     },
     {
-      "type": "event",
-      "name": "SaleCompleted",
       "anonymous": false,
       "inputs": [
-        { "name": "orderId",      "type": "uint256", "indexed": true },
-        { "name": "seller",       "type": "address", "indexed": true },
-        { "name": "buyer",        "type": "address", "indexed": true },
-        { "name": "sellerPayout", "type": "uint96",  "indexed": false },
-        { "name": "protocolFee",  "type": "uint96",  "indexed": false },
-        { "name": "finalAgentId", "type": "uint256", "indexed": false },
-        { "name": "mode",         "type": "uint8",   "indexed": false }
-      ]
+        {
+          "indexed": false,
+          "internalType": "uint32",
+          "name": "oldDuration",
+          "type": "uint32"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint32",
+          "name": "newDuration",
+          "type": "uint32"
+        }
+      ],
+      "name": "EscrowDurationUpdated",
+      "type": "event"
     },
     {
-      "type": "event",
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "bool",
+          "name": "isPaused",
+          "type": "bool"
+        }
+      ],
+      "name": "Paused",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint16",
+          "name": "oldBps",
+          "type": "uint16"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint16",
+          "name": "newBps",
+          "type": "uint16"
+        }
+      ],
+      "name": "ProtocolFeeUpdated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "orderId",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "buyer",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint96",
+          "name": "amountWei",
+          "type": "uint96"
+        }
+      ],
       "name": "RefundIssued",
+      "type": "event"
+    },
+    {
       "anonymous": false,
       "inputs": [
-        { "name": "orderId",   "type": "uint256", "indexed": true },
-        { "name": "buyer",     "type": "address", "indexed": true },
-        { "name": "amountWei", "type": "uint96",  "indexed": false }
-      ]
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "orderId",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "seller",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "buyer",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint96",
+          "name": "sellerPayout",
+          "type": "uint96"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint96",
+          "name": "protocolFee",
+          "type": "uint96"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "finalAgentId",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "enum AgentMarketplace.Mode",
+          "name": "mode",
+          "type": "uint8"
+        }
+      ],
+      "name": "SaleCompleted",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "oldTreasury",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "newTreasury",
+          "type": "address"
+        }
+      ],
+      "name": "TreasuryUpdated",
+      "type": "event"
+    },
+    {
+      "inputs": [],
+      "name": "MAX_FEE_BPS",
+      "outputs": [
+        {
+          "internalType": "uint16",
+          "name": "",
+          "type": "uint16"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "agentOrders",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "agentRegistry",
+      "outputs": [
+        {
+          "internalType": "contract IAgentRegistry",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "agentId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "seller",
+          "type": "address"
+        },
+        {
+          "internalType": "enum AgentMarketplace.Mode",
+          "name": "mode",
+          "type": "uint8"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "newCapabilityHash",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes",
+          "name": "newSealedKey",
+          "type": "bytes"
+        },
+        {
+          "internalType": "bytes",
+          "name": "oracleProof",
+          "type": "bytes"
+        }
+      ],
+      "name": "buyAgent",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "orderId",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "buyerOrders",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "orderId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "newAgentId",
+          "type": "uint256"
+        }
+      ],
+      "name": "completeClone",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "orderId",
+          "type": "uint256"
+        }
+      ],
+      "name": "completeTransfer",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "escrowDuration",
+      "outputs": [
+        {
+          "internalType": "uint32",
+          "name": "",
+          "type": "uint32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "agentId",
+          "type": "uint256"
+        }
+      ],
+      "name": "getAgentOrders",
+      "outputs": [
+        {
+          "internalType": "uint256[]",
+          "name": "",
+          "type": "uint256[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "buyer",
+          "type": "address"
+        }
+      ],
+      "name": "getBuyerOrders",
+      "outputs": [
+        {
+          "internalType": "uint256[]",
+          "name": "",
+          "type": "uint256[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "orderId",
+          "type": "uint256"
+        }
+      ],
+      "name": "getOrder",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "buyer",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "seller",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "agentId",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "finalAgentId",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint96",
+              "name": "amountWei",
+              "type": "uint96"
+            },
+            {
+              "internalType": "uint64",
+              "name": "createdAt",
+              "type": "uint64"
+            },
+            {
+              "internalType": "uint64",
+              "name": "expiresAt",
+              "type": "uint64"
+            },
+            {
+              "internalType": "enum AgentMarketplace.Mode",
+              "name": "mode",
+              "type": "uint8"
+            },
+            {
+              "internalType": "enum AgentMarketplace.Status",
+              "name": "status",
+              "type": "uint8"
+            }
+          ],
+          "internalType": "struct AgentMarketplace.Order",
+          "name": "",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "seller",
+          "type": "address"
+        }
+      ],
+      "name": "getSellerOrders",
+      "outputs": [
+        {
+          "internalType": "uint256[]",
+          "name": "",
+          "type": "uint256[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "nextOrderId",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "orders",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "buyer",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "seller",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "agentId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "finalAgentId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint96",
+          "name": "amountWei",
+          "type": "uint96"
+        },
+        {
+          "internalType": "uint64",
+          "name": "createdAt",
+          "type": "uint64"
+        },
+        {
+          "internalType": "uint64",
+          "name": "expiresAt",
+          "type": "uint64"
+        },
+        {
+          "internalType": "enum AgentMarketplace.Mode",
+          "name": "mode",
+          "type": "uint8"
+        },
+        {
+          "internalType": "enum AgentMarketplace.Status",
+          "name": "status",
+          "type": "uint8"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "owner",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "paused",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "protocolFeeBps",
+      "outputs": [
+        {
+          "internalType": "uint16",
+          "name": "",
+          "type": "uint16"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "orderId",
+          "type": "uint256"
+        }
+      ],
+      "name": "refundExpired",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "sellerOrders",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint32",
+          "name": "newDuration",
+          "type": "uint32"
+        }
+      ],
+      "name": "setEscrowDuration",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bool",
+          "name": "_paused",
+          "type": "bool"
+        }
+      ],
+      "name": "setPaused",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint16",
+          "name": "newBps",
+          "type": "uint16"
+        }
+      ],
+      "name": "setProtocolFee",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "newTreasury",
+          "type": "address"
+        }
+      ],
+      "name": "setTreasury",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "totalOrders",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "transferOwnership",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "treasury",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
     }
   ]
 }

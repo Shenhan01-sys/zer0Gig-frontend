@@ -25,7 +25,14 @@ import { privateKeyToAccount } from "viem/accounts";
 // before issuing the signature.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const ORACLE_KEY = process.env.ORACLE_SIGNER_KEY ?? process.env.ALIGNMENT_SIGNER_KEY;
+// Reuse the same key as /api/oracle/sign (the iTransfer / iClone signer).
+// Falls back to PLATFORM_PRIVATE_KEY (used by /api/oracle/sign-alignment) so
+// any one of the three existing oracle envs unblocks marketplace settlement.
+const ORACLE_KEY =
+  process.env.ORACLE_PRIVATE_KEY
+  ?? process.env.ORACLE_SIGNER_KEY
+  ?? process.env.ALIGNMENT_SIGNER_KEY
+  ?? process.env.PLATFORM_PRIVATE_KEY;
 
 export async function POST(req: Request) {
   if (!ORACLE_KEY) {

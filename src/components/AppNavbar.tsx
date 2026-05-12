@@ -75,10 +75,20 @@ export default function AppNavbar() {
     ? `${address.slice(0, 6)}...${address.slice(-4)}`
     : null;
 
-  const activeIdx = APP_LINKS.findIndex((link) => {
-    if (link.href === "/dashboard") return pathname === "/dashboard" || pathname.startsWith("/dashboard/");
-    return pathname.startsWith(link.href);
-  });
+  // Pick the LONGEST matching href so nested routes (e.g. /marketplace/agents-for-sale)
+  // activate the deeper nav point ("Buy Agents") instead of the shallower parent
+  // ("Marketplace"). External http(s) links never match.
+  const activeIdx = APP_LINKS.reduce<{ idx: number; len: number }>((best, link, i) => {
+    if (link.href.startsWith("http")) return best;
+    const isMatch =
+      link.href === "/dashboard"
+        ? (pathname === "/dashboard" || pathname.startsWith("/dashboard/"))
+        : (pathname === link.href || pathname.startsWith(link.href + "/") || pathname === link.href);
+    if (isMatch && link.href.length > best.len) {
+      return { idx: i, len: link.href.length };
+    }
+    return best;
+  }, { idx: -1, len: 0 }).idx;
 
   const backConfig   = getBackConfig(pathname);
   const sectionLabel = getSectionLabel(pathname);
@@ -202,7 +212,7 @@ export default function AppNavbar() {
         <div className="flex-1" />
 
         {/* ── Center: Nav links ──────────────────────────────────────────── */}
-        <div ref={linksContainerRef} className="hidden md:flex items-center relative">
+        <div ref={linksContainerRef} className="hidden md:flex items-center gap-2 lg:gap-3 relative">
           <div
             ref={indicatorRef}
             className="absolute top-1/2 -translate-y-1/2 h-[32px] rounded-xl bg-white/[0.07] border border-white/[0.08] pointer-events-none"
@@ -215,7 +225,7 @@ export default function AppNavbar() {
               ref={(el) => { linkRefs.current[i] = el; }}
               onMouseEnter={() => setHoveredIdx(i)}
               onMouseLeave={() => setHoveredIdx(null)}
-              className={`relative z-10 px-3.5 py-1.5 text-[13px] font-medium rounded-xl whitespace-nowrap transition-colors duration-150 flex items-center gap-1.5 ${
+              className={`relative z-10 px-4 py-1.5 text-[13px] font-medium rounded-xl whitespace-nowrap transition-colors duration-150 flex items-center gap-1.5 ${
                 i === activeIdx ? "text-white" : "text-white/40 hover:text-white/75"
               }`}
             >

@@ -147,19 +147,17 @@ function Section({
 
 function Row({ listing, onCancel, isCancelling }: { listing: Listing; onCancel?: (id: string) => void; isCancelling: boolean }) {
   const isTransfer = listing.mode === "transfer";
-  const color = isTransfer ? "#38bdf8" : "#34d399";
+  // Status colors stay minimal — only emerald for "sold" (success outcome).
+  // Active / cancelled / other render in neutral white tints.
   const statusColor =
-    listing.status === "active"     ? "text-emerald-300 border-emerald-400/40 bg-emerald-400/[0.06]" :
-    listing.status === "sold"        ? "text-cyan-300 border-cyan-400/40 bg-cyan-400/[0.06]" :
-    listing.status === "cancelled"   ? "text-white/50 border-white/15 bg-white/[0.04]" :
-                                       "text-amber-300 border-amber-400/40 bg-amber-400/[0.06]";
+    listing.status === "active"     ? "text-white/75 border-white/20 bg-white/[0.05]" :
+    listing.status === "sold"        ? "text-emerald-300 border-emerald-400/40 bg-emerald-400/[0.06]" :
+    listing.status === "cancelled"   ? "text-white/40 border-white/10 bg-white/[0.02]" :
+                                       "text-white/55 border-white/15 bg-white/[0.04]";
 
   return (
     <div className="flex items-center gap-4 rounded-2xl border border-white/10 bg-[#0d1525]/90 p-4">
-      <span
-        className="text-[10px] uppercase font-mono tracking-widest px-2 py-0.5 rounded-full border shrink-0"
-        style={{ borderColor: `${color}55`, color }}
-      >
+      <span className="text-[10px] uppercase font-mono tracking-widest px-2 py-0.5 rounded-full border border-white/15 text-white/55 bg-white/[0.03] shrink-0">
         {isTransfer ? "TRANSFER" : "CLONE"}
       </span>
 

@@ -976,7 +976,7 @@ export default function AgentDetailPage() {
               </div>
               <button
                 onClick={() => setListForSaleOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-gradient-to-r from-cyan-400/15 to-emerald-400/15 border border-cyan-400/30 hover:border-cyan-400/60 text-[12px] font-medium text-cyan-200 hover:text-white transition-all shrink-0"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-white/15 hover:border-white/30 bg-white/[0.03] hover:bg-white/[0.06] text-[12px] font-medium text-white/75 hover:text-white transition-all shrink-0"
                 title="List this agent on the marketplace"
               >
                 <Tag className="w-3.5 h-3.5" />

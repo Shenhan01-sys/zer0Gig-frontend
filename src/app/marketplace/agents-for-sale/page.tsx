@@ -89,7 +89,6 @@ export default function AgentsForSalePage() {
             title="Transfer Mode"
             subtitle="Buy with full reputation history"
             description="Win rate, jobs delivered, total earnings — all carry over. The original agent transfers ownership to you."
-            color="#38bdf8"
             icon={<Shield className="w-4 h-4" />}
           />
           <ModeCard
@@ -97,7 +96,6 @@ export default function AgentsForSalePage() {
             title="Clone Mode"
             subtitle="Buy a fresh template, build your own rep"
             description="Capability + skills cloned. Reputation resets to default (80% win rate, 0 jobs). Seller keeps theirs."
-            color="#34d399"
             icon={<Copy className="w-4 h-4" />}
           />
         </div>
@@ -193,44 +191,33 @@ export default function AgentsForSalePage() {
 // ── presentational atoms ─────────────────────────────────────────────────────
 
 function ModeCard({
-  mode, title, subtitle, description, color, icon,
+  mode, title, subtitle, description, icon,
 }: {
   mode: "transfer" | "clone";
   title: string;
   subtitle: string;
   description: string;
-  color: string;
   icon: React.ReactNode;
 }) {
   return (
-    <div
-      className="rounded-2xl border p-5"
-      style={{
-        borderColor:     `${color}33`,
-        backgroundColor: `${color}08`,
-      }}
-    >
+    <div className="rounded-2xl border border-white/10 bg-[#0d1525]/90 p-5">
       <div className="flex items-center gap-2 mb-2">
-        <span
-          className="w-7 h-7 rounded-lg flex items-center justify-center"
-          style={{ background: `${color}1a`, color }}
-        >
+        <span className="w-7 h-7 rounded-lg flex items-center justify-center bg-white/[0.05] text-white/65 border border-white/10">
           {icon}
         </span>
         <span className="text-white font-medium text-[15px]">{title}</span>
-        <span className="text-[10px] uppercase font-mono tracking-widest ml-auto px-1.5 py-0.5 rounded border" style={{ borderColor: `${color}55`, color }}>
+        <span className="text-[10px] uppercase font-mono tracking-widest ml-auto px-1.5 py-0.5 rounded border border-white/10 text-white/45 bg-white/[0.02]">
           {mode}
         </span>
       </div>
-      <p className="text-white/80 text-[13px] mb-1.5">{subtitle}</p>
-      <p className="text-white/45 text-[12px] leading-relaxed">{description}</p>
+      <p className="text-white/75 text-[13px] mb-1.5">{subtitle}</p>
+      <p className="text-white/40 text-[12px] leading-relaxed">{description}</p>
     </div>
   );
 }
 
 function ListingCard({ listing, index }: { listing: Listing; index: number }) {
   const isTransfer = listing.mode === "transfer";
-  const color = isTransfer ? "#38bdf8" : "#34d399";
 
   return (
     <Link href={`/marketplace/agents-for-sale/${listing.id}`}>
@@ -242,11 +229,9 @@ function ListingCard({ listing, index }: { listing: Listing; index: number }) {
       >
         {/* Top: mode badge + agent ID */}
         <div className="flex items-center justify-between mb-3">
-          <span
-            className="text-[10px] uppercase font-mono tracking-widest px-2 py-0.5 rounded-full border"
-            style={{ borderColor: `${color}55`, color }}
-          >
-            {isTransfer ? "🛡 transfer" : "📋 clone"}
+          <span className="inline-flex items-center gap-1.5 text-[10px] uppercase font-mono tracking-widest px-2 py-0.5 rounded-full border border-white/10 text-white/55 bg-white/[0.03]">
+            {isTransfer ? <Shield className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+            {isTransfer ? "transfer" : "clone"}
           </span>
           <span className="text-white/30 text-[11px] font-mono">
             0G.{String(listing.agent_id).padStart(4, "0")}

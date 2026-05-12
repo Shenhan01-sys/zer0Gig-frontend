@@ -54,7 +54,6 @@ export default function ListingDetailPage() {
   }, [id]);
 
   const isTransfer = listing?.mode === "transfer";
-  const color = isTransfer ? "#38bdf8" : "#34d399";
   const buyerAddress = (user?.wallet?.address ?? "").toLowerCase();
   const isSeller = listing && buyerAddress === listing.seller_address.toLowerCase();
 
@@ -98,10 +97,7 @@ export default function ListingDetailPage() {
             <div className="rounded-2xl border border-white/10 bg-[#0d1525]/90 p-7">
               {/* Mode badge + agent ID */}
               <div className="flex items-center justify-between mb-5">
-                <span
-                  className="inline-flex items-center gap-1.5 text-[11px] uppercase font-mono tracking-widest px-2.5 py-1 rounded-full border"
-                  style={{ borderColor: `${color}55`, color }}
-                >
+                <span className="inline-flex items-center gap-1.5 text-[11px] uppercase font-mono tracking-widest px-2.5 py-1 rounded-full border border-white/15 text-white/65 bg-white/[0.03]">
                   {isTransfer ? <Shield className="w-3 h-3" /> : <CopyIcon className="w-3 h-3" />}
                   {isTransfer ? "Transfer Mode" : "Clone Mode"}
                 </span>
@@ -147,14 +143,12 @@ export default function ListingDetailPage() {
               )}
 
               {/* Mode explanation */}
-              <div
-                className="rounded-xl border p-4 mb-2"
-                style={{ borderColor: `${color}33`, backgroundColor: `${color}08` }}
-              >
-                <p className="text-[12px] font-medium" style={{ color }}>
-                  {isTransfer ? "🛡 What you get with Transfer Mode" : "📋 What you get with Clone Mode"}
+              <div className="rounded-xl border border-white/10 bg-[#050810]/60 p-4 mb-2">
+                <p className="text-[12px] font-medium text-white/80 inline-flex items-center gap-1.5">
+                  {isTransfer ? <Shield className="w-3.5 h-3.5 text-white/55" /> : <CopyIcon className="w-3.5 h-3.5 text-white/55" />}
+                  {isTransfer ? "What you get with Transfer Mode" : "What you get with Clone Mode"}
                 </p>
-                <p className="text-white/65 text-[12px] mt-1.5 leading-relaxed">
+                <p className="text-white/55 text-[12px] mt-1.5 leading-relaxed">
                   {isTransfer
                     ? "Full ownership of this exact agent — win rate, jobs delivered, skills, and total earnings carry over. The seller no longer owns this agent after settlement."
                     : "A fresh copy of the agent template. Capability + skills + agentWallet copied. Reputation resets to default 80% win rate, 0 jobs. Seller keeps their copy."}
@@ -198,8 +192,7 @@ export default function ListingDetailPage() {
                 ) : (
                   <button
                     onClick={() => setBuyModalOpen(true)}
-                    className="w-full py-3 rounded-full text-black font-medium transition-colors text-[14px] inline-flex items-center justify-center gap-2"
-                    style={{ background: color }}
+                    className="w-full py-3 rounded-full bg-white text-black font-medium hover:bg-white/90 transition-colors text-[14px] inline-flex items-center justify-center gap-2"
                   >
                     Buy now
                     <ChevronRight className="w-4 h-4" />

@@ -90,20 +90,19 @@ export default function ListForSaleModal({
             <label className="block text-[11px] uppercase font-mono tracking-widest text-white/40 mb-2">Sale mode</label>
             <div className="grid grid-cols-2 gap-2">
               {[
-                { val: "transfer" as const, label: "🛡 Transfer", hint: "Carry reputation" },
-                { val: "clone"    as const, label: "📋 Clone",    hint: "Reset reputation" },
+                { val: "transfer" as const, label: "Transfer", hint: "Carry reputation" },
+                { val: "clone"    as const, label: "Clone",    hint: "Reset reputation" },
               ].map(m => {
                 const active = mode === m.val;
-                const color = m.val === "transfer" ? "#38bdf8" : "#34d399";
                 return (
                   <button
                     key={m.val}
                     onClick={() => setMode(m.val)}
-                    className="text-left rounded-xl border px-4 py-3 transition-all"
-                    style={{
-                      borderColor:     active ? `${color}66` : "rgba(255,255,255,0.1)",
-                      backgroundColor: active ? `${color}10` : "rgba(5,8,16,0.6)",
-                    }}
+                    className={`text-left rounded-xl border px-4 py-3 transition-all ${
+                      active
+                        ? "border-white/30 bg-white/[0.05]"
+                        : "border-white/10 bg-[#050810]/60 hover:border-white/20"
+                    }`}
                   >
                     <p className="text-white text-[13px] font-medium">{m.label}</p>
                     <p className="text-white/45 text-[11px] mt-0.5">{m.hint}</p>

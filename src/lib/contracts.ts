@@ -45,10 +45,10 @@ export const CONTRACT_ADDRESSES = {
   ProgressiveEscrow: "0xe9d1d260c08385b3beB68012D425e208b4cd2295",
   SubscriptionEscrow: "0x088400FFf9d37851173e22eef904e710B88F6312",
   UserRegistry: "0x1958bdbb5926674026b9ac630c9A4Cb91718Aee7",
-  // TODO: Replace with deployed address after running scripts/deploy-marketplace.js.
-  // Frontend will compile against this zero address but buyAgent / completeTransfer
-  // calls will revert until a real deployment is wired in.
-  AgentMarketplace: "0x0000000000000000000000000000000000000000",
+  // Deployed: 2026-05-12 by 0x48379F4d1427209311E9FF0bcC4a354953ea631B
+  // Treasury: same as deployer · references AgentRegistry above
+  // Scan: https://scan-testnet.0g.ai/address/0x02476780C4d2ae3AE7F54aFba35F25Df4F20d018
+  AgentMarketplace: "0x02476780C4d2ae3AE7F54aFba35F25Df4F20d018",
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────────────

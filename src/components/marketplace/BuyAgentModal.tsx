@@ -2,11 +2,10 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { X, Check, Wallet, FileSignature, ShoppingCart, Hourglass, AlertCircle } from "lucide-react";
+import { X, Check, Wallet, FileSignature, ShoppingCart, Hourglass } from "lucide-react";
 import { usePrivy } from "@privy-io/react-auth";
 import { keccak256, toBytes, type Hex } from "viem";
 import { useBuyAgent } from "@/hooks/useAgentMarketplace";
-import { CONTRACT_ADDRESSES } from "@/lib/contracts";
 
 interface Listing {
   id: string;
@@ -45,7 +44,6 @@ export default function BuyAgentModal({
   const [orderTxHash, setOrderTxHash] = useState<string | null>(null);
 
   const isTransfer = listing.mode === "transfer";
-  const isContractDeployed = CONTRACT_ADDRESSES.AgentMarketplace !== "0x0000000000000000000000000000000000000000";
 
   const handleBuy = async () => {
     setError(null);
@@ -78,11 +76,6 @@ export default function BuyAgentModal({
 
       // ── Step 3: Buyer pays the marketplace contract ─────────────────────
       setStep("confirming");
-      if (!isContractDeployed) {
-        throw new Error(
-          "AgentMarketplace contract not deployed yet. Run scripts/deploy-marketplace.js and update CONTRACT_ADDRESSES.AgentMarketplace.",
-        );
-      }
       const hash = await buyAgent(
         BigInt(listing.agent_id),
         listing.seller_address as `0x${string}`,
@@ -181,18 +174,6 @@ export default function BuyAgentModal({
 
         {/* Footer */}
         <div className="px-6 pb-6 space-y-3">
-          {!isContractDeployed && (
-            <div className="rounded-xl border border-amber-400/30 bg-amber-400/[0.06] px-4 py-3 flex gap-2.5 items-start">
-              <AlertCircle className="w-4 h-4 text-amber-300 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="text-amber-200 text-[12px] font-medium">Marketplace contract not deployed</p>
-                <p className="text-amber-200/70 text-[11px] mt-0.5">
-                  Run `scripts/deploy-marketplace.js` and update `CONTRACT_ADDRESSES.AgentMarketplace` to enable buy.
-                </p>
-              </div>
-            </div>
-          )}
-
           {error && (
             <div className="rounded-xl border border-red-400/30 bg-red-400/[0.06] px-4 py-3 text-red-300 text-[12px]">
               {error}

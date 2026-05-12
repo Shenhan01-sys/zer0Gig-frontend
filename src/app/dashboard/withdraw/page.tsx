@@ -13,6 +13,7 @@ import { formatEther } from "viem";
 import type { Address } from "viem";
 import { useOwnerAgents } from "@/hooks/useAgentRegistry";
 import { useAllAgents } from "@/hooks/useAllAgents";
+import { useAgentProfiles } from "@/hooks/useAgentProfile";
 import { useUserRole, UserRole } from "@/hooks/useUserRegistry";
 import { CONTRACT_CONFIG } from "@/lib/contracts";
 
@@ -46,6 +47,7 @@ interface AgentChoice {
   category:    string;
   isActive:    boolean;
   color:       string;
+  avatarUrl:   string | null;
 }
 
 export default function WithdrawPage() {
@@ -80,6 +82,10 @@ export default function WithdrawPage() {
     query:     { enabled: ownerIds.length > 0 },
   });
 
+  // Supabase agent_profiles rows for each owned agent — supplies the avatar
+  // image rendered inside the holographic core (display_name + avatar_url).
+  const { profiles: agentProfiles } = useAgentProfiles(ownerIds);
+
   // Resolve the owner's iNFTs into rich AgentChoice objects. Cross-references
   // allAgents (for friendly name + category) but falls back to a synthesized
   // entry from the on-chain profile when the indexer doesn't have the agent
@@ -91,20 +97,22 @@ export default function WithdrawPage() {
         // wagmi useReadContracts result shape: { status, result }
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const onChain  = profileResults?.[i]?.result as any;
+        const supaProf = agentProfiles[id];
         const wallet   = (fromApi?.agentWallet as `0x${string}` | undefined)
                       ?? (onChain?.agentWallet as `0x${string}` | undefined);
         if (!wallet || wallet === "0x0000000000000000000000000000000000000000") return null;
         return {
           agentId:     id,
-          name:        fromApi?.name ?? `Agent #${id}`,
+          name:        supaProf?.display_name ?? fromApi?.name ?? `Agent #${id}`,
           agentWallet: wallet,
           category:    fromApi?.tags?.[0] ?? fromApi?.skills?.[0] ?? "AI Agent",
           isActive:    fromApi?.isActive ?? true,
           color:       accentFor(id),
+          avatarUrl:   supaProf?.avatar_url ?? null,
         };
       })
       .filter((a): a is AgentChoice => !!a);
-  }, [ownerIds, allAgents, profileResults]);
+  }, [ownerIds, allAgents, profileResults, agentProfiles]);
 
   // Selected agent (default: first one)
   const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -332,13 +340,25 @@ export default function WithdrawPage() {
                       style={{ borderColor: selected.color }}
                     />
                     <div
-                      className="relative w-28 h-28 rounded-full flex items-center justify-center bg-[#050810] border z-10"
+                      className="relative w-28 h-28 rounded-full overflow-hidden bg-[#050810] border z-10"
                       style={{
                         borderColor: `${selected.color}55`,
                         boxShadow: `0 0 40px ${selected.color}40, inset 0 0 20px ${selected.color}20`,
                       }}
                     >
-                      <Landmark className="w-10 h-10" style={{ color: selected.color }} />
+                      {selected.avatarUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={selected.avatarUrl}
+                          alt={selected.name}
+                          className="w-full h-full object-cover"
+                          referrerPolicy="no-referrer"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Landmark className="w-10 h-10" style={{ color: selected.color }} />
+                        </div>
+                      )}
                     </div>
                   </div>
 

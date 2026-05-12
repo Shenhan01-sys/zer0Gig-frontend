@@ -51,9 +51,9 @@ export function useCreateSubscription() {
     checkInRate: bigint,
     alertRate: bigint,
     gracePeriodSeconds: bigint,
-    x402Enabled: boolean,
-    x402VerificationMode: number,
-    clientX402Sig: `0x${string}`,
+    sessionVoucherEnabled: boolean,
+    voucherMode: number,
+    clientVoucherSig: `0x${string}`,
     webhookUrl: string,
     value: bigint
   ): Promise<`0x${string}` | undefined> => {
@@ -75,7 +75,7 @@ export function useCreateSubscription() {
         address: CONTRACT_CONFIG.SubscriptionEscrow.address as Address,
         abi: CONTRACT_CONFIG.SubscriptionEscrow.abi,
         functionName: "createSubscription",
-        args: [agentId, taskHash, Number(intervalSeconds), checkInRate, alertRate, Number(gracePeriodSeconds), x402Enabled, x402VerificationMode, clientX402Sig, webhookHash],
+        args: [agentId, taskHash, Number(intervalSeconds), checkInRate, alertRate, Number(gracePeriodSeconds), sessionVoucherEnabled, voucherMode, clientVoucherSig, webhookHash],
         value,
       });
       tx.broadcast(toastId, hash);

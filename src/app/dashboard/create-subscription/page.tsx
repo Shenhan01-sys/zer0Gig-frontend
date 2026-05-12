@@ -182,8 +182,8 @@ export default function CreateSubscriptionPage() {
   const [alertRateOG, setAlertRateOG] = useState("");
   const [budgetOG, setBudgetOG] = useState("");
   const [webhookUrl, setWebhookUrl] = useState("");
-  const [x402Enabled, setX402Enabled] = useState(false);
-  const [x402Mode, setX402Mode] = useState<0 | 1>(0);
+  const [sessionVoucherEnabled, setSessionVoucherEnabled] = useState(false);
+  const [voucherMode, setVoucherMode] = useState<0 | 1>(0);
   const [intervalPreset, setIntervalPreset] = useState<number>(3600);
   const [customInterval, setCustomInterval] = useState("");
   const [gracePeriodPreset, setGracePeriodPreset] = useState<number>(86400);
@@ -212,14 +212,14 @@ export default function CreateSubscriptionPage() {
         parseEther(checkInRateOG),
         parseEther(alertRateOG || "0"),
         BigInt(gracePeriodPreset),
-        x402Enabled,
-        x402Mode,
-        // x402 voucher signing is not yet wired end-to-end.
+        sessionVoucherEnabled,
+        voucherMode,
+        // OKX APP session-voucher signing is not yet wired end-to-end.
         // Contract treats empty bytes as "no voucher stored" — see
         // SubscriptionEscrow.createSubscription guard:
-        //   if (x402Enabled && clientX402Sig.length > 0) { ... }
+        //   if (sessionVoucherEnabled && clientVoucherSig.length > 0) { ... }
         // Real EIP-712 voucher signing lands together with runtime
-        // verification path (see contracts docs · OKX session voucher).
+        // verification path (see docs · OKX_session_voucher_design.md).
         "0x",
         webhookUrl,
         parseEther(budgetOG)
@@ -363,31 +363,31 @@ export default function CreateSubscriptionPage() {
             <label className="flex items-start gap-3 cursor-pointer select-none">
               <input
                 type="checkbox"
-                checked={x402Enabled}
-                onChange={(e) => setX402Enabled(e.target.checked)}
+                checked={sessionVoucherEnabled}
+                onChange={(e) => setSessionVoucherEnabled(e.target.checked)}
                 className="mt-0.5 w-5 h-5 rounded border-white/20 bg-[#050810] accent-[#38bdf8] cursor-pointer flex-shrink-0"
               />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <div className="flex items-center gap-2">
-                      <p className="text-white text-[14px] font-semibold leading-snug">Enable x402 Protocol</p>
+                      <p className="text-white text-[14px] font-semibold leading-snug">Enable OKX APP Session Voucher</p>
                       <span className="text-[9px] font-mono uppercase tracking-widest px-1.5 py-0.5 rounded border border-amber-400/30 bg-amber-400/[0.06] text-amber-300">
                         preview
                       </span>
                     </div>
                     <p className="text-white/35 text-[12px] leading-relaxed mt-0.5">
-                      Agent makes paid API calls billed to this subscription. Runtime verification path is on the roadmap (OKX APP <code className="text-white/55">session</code> voucher) — toggle now flags the subscription for future activation; no per-call drain happens yet.
+                      Replay-proof monotonic vouchers per <code className="text-white/55">OKX APP v1.0 session</code> intent — batch many ticks into one on-chain settlement. Client signs an EIP-712 template once; agent submits monotonically sequenced vouchers gated by alignment attestation. Runtime verification lands post-demo; toggle flags the subscription for future activation.
                     </p>
                   </div>
-                  {x402Enabled && (
+                  {sessionVoucherEnabled && (
                     <div className="flex gap-1.5 flex-shrink-0">
-                      {[{ value: 0, label: "Agent-Side" }, { value: 1, label: "On-Chain" }].map((opt) => (
+                      {[{ value: 0, label: "Delegated" }, { value: 1, label: "Explicit Confirm" }].map((opt) => (
                         <button
                           key={opt.value}
-                          onClick={(e) => { e.preventDefault(); setX402Mode(opt.value as 0 | 1); }}
+                          onClick={(e) => { e.preventDefault(); setVoucherMode(opt.value as 0 | 1); }}
                           className={`px-4 py-1.5 rounded-lg text-[12px] font-medium transition-all border ${
-                            x402Mode === opt.value
+                            voucherMode === opt.value
                               ? "border-[#38bdf8]/40 bg-[#38bdf8]/10 text-[#38bdf8]"
                               : "border-white/[0.08] text-white/40 hover:border-white/[0.15]"
                           }`}
@@ -401,9 +401,9 @@ export default function CreateSubscriptionPage() {
               </div>
             </label>
 
-            {/* Mode cards — smooth reveal when x402 is enabled */}
+            {/* Mode cards — smooth reveal when session voucher is enabled */}
             <AnimatePresence>
-              {x402Enabled && (
+              {sessionVoucherEnabled && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
@@ -419,9 +419,9 @@ export default function CreateSubscriptionPage() {
                         badgeColor: "#38bdf8",
                         badgeBg: "rgba(56,189,248,0.1)",
                         badgeBorder: "rgba(56,189,248,0.2)",
-                        title: "Agent-Side",
+                        title: "Delegated Signing",
                         titleColor: "text-white/80",
-                        desc: "Agent self-reports API usage. Fast and simple — trust agent's own logs. Best for internal tools and low-stakes API calls.",
+                        desc: "Client signs an EIP-712 template once at creation; agent submits monotonic vouchers on the client's behalf. Smoother UX, higher trust. Best for autonomous high-frequency billing.",
                       },
                       {
                         mode: 1 as const,
@@ -429,22 +429,22 @@ export default function CreateSubscriptionPage() {
                         badgeColor: "#a855f7",
                         badgeBg: "rgba(168,85,247,0.1)",
                         badgeBorder: "rgba(168,85,247,0.2)",
-                        title: "On-Chain",
+                        title: "Explicit Confirm",
                         titleColor: "text-white/80",
-                        desc: "Verified by 0G Alignment Nodes (175K). Cryptographically provable and censorship-resistant. Best for financial and mission-critical tools.",
+                        desc: "Client confirms each batch settlement via Telegram push or wallet prompt. Lower trust, more friction. Gated by 0G alignment-node ECDSA (175K). Best for financial and mission-critical tools.",
                       },
                     ].map((card) => (
                       <button
                         key={card.mode}
-                        onClick={() => setX402Mode(card.mode)}
+                        onClick={() => setVoucherMode(card.mode)}
                         className={`w-full rounded-xl border px-4 py-3 text-left transition-all duration-150 ${
-                          x402Mode === card.mode
+                          voucherMode === card.mode
                             ? `border-[${card.badgeColor}]/30 bg-[${card.badgeColor}]/5`
                             : "border-white/[0.06] bg-[#050810]/40 hover:border-white/[0.12]"
                         }`}
                         style={{
-                          borderColor: x402Mode === card.mode ? `${card.badgeColor}30` : undefined,
-                          backgroundColor: x402Mode === card.mode ? `${card.badgeColor}08` : undefined,
+                          borderColor: voucherMode === card.mode ? `${card.badgeColor}30` : undefined,
+                          backgroundColor: voucherMode === card.mode ? `${card.badgeColor}08` : undefined,
                         }}
                       >
                         <div className="flex items-start gap-3">
@@ -461,7 +461,7 @@ export default function CreateSubscriptionPage() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
                               <p className={`text-[13px] font-semibold ${card.titleColor}`}>{card.title}</p>
-                              {x402Mode === card.mode && (
+                              {voucherMode === card.mode && (
                                 <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-[#38bdf8]/10 text-[#38bdf8] border border-[#38bdf8]/20">
                                   Selected
                                 </span>

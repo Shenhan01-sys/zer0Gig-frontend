@@ -7,7 +7,7 @@ const logos = [
   "OpenZeppelin",
   "0G Storage",
   "Alignment Nodes",
-  "x402 Protocol",
+  "OKX APP",
   "ECIES",
   "Hardhat",
   "ethers.js",

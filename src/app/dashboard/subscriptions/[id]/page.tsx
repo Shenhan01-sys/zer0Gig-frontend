@@ -186,8 +186,10 @@ export default function SubscriptionDetailPage() {
   const gracePeriodEnds    = subData.gracePeriodEnds    as bigint;
   const gracePeriodSeconds = subData.gracePeriodSeconds as bigint;
   const proposedInterval   = subData.proposedInterval   as bigint;
-  const x402Enabled        = subData.x402Enabled        as boolean;
-  const x402VerificationMode = Number(subData.x402VerificationMode);
+  // Contract still exposes the original field names; we surface them as the OKX APP
+  // session voucher schema (preview — runtime verification path is post-demo).
+  const sessionVoucherEnabled = subData.x402Enabled as boolean;
+  const voucherMode = Number(subData.x402VerificationMode);
 
   return (
     <motion.div
@@ -442,11 +444,11 @@ export default function SubscriptionDetailPage() {
                 : "Never"
             }
           />
-          <InfoRow label="x402 Enabled" value={x402Enabled ? "Yes" : "No"} />
-          {x402Enabled && (
+          <InfoRow label="Session Voucher" value={sessionVoucherEnabled ? "Enabled (OKX APP)" : "No"} />
+          {sessionVoucherEnabled && (
             <InfoRow
-              label="x402 Mode"
-              value={x402VerificationMode === 0 ? "Agent-Side" : "On-Chain"}
+              label="Voucher Mode"
+              value={voucherMode === 0 ? "Delegated Signing" : "Explicit Confirm"}
             />
           )}
           <InfoRow label="Webhook" value="—" />

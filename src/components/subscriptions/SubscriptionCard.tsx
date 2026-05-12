@@ -93,8 +93,8 @@ export default function SubscriptionCard({ subscriptionId, index }: Subscription
     mockSub.gracePeriodEnds,          // 14: gracePeriodEnds
     mockSub.gracePeriodSeconds,       // 15: gracePeriodSeconds
     mockSub.proposedInterval,         // 16: proposedInterval
-    mockSub.x402Enabled,              // 17: x402Enabled
-    mockSub.x402VerificationMode,     // 18: x402VerificationMode
+    mockSub.sessionVoucherEnabled,    // 17: sessionVoucherEnabled (OKX APP session voucher)
+    mockSub.voucherMode,              // 18: voucherMode (0 = Delegated, 1 = Explicit Confirm)
     BigInt(0),                        // 19: (unused)
     mockSub.webhookUrl,               // 20: webhookUrl
   ] : mockSub) : (hasRealSub ? sub : undefined) as unknown;

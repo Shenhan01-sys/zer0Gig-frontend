@@ -146,7 +146,16 @@ export default function GuidedTour({ tourKey, steps, badge }: GuidedTourProps) {
   const [open,    setOpen]    = useState(false);
   const [index,   setIndex]   = useState(0);
   const [mounted, setMounted] = useState(false);
-  const [placement, setPlacement] = useState<Placement>({ cardTop: 0, cardLeft: 0 });
+  // Initialize with the corner fallback so the card doesn't flash from
+  // the top-left (0,0) before the effect resolves a target. SSR-safe via
+  // typeof window check.
+  const [placement, setPlacement] = useState<Placement>(() => {
+    if (typeof window === "undefined") return { cardTop: 0, cardLeft: 0 };
+    return {
+      cardTop:  window.innerHeight - CARD_HEIGHT - CARD_MARGIN,
+      cardLeft: window.innerWidth  - CARD_WIDTH  - CARD_MARGIN,
+    };
+  });
   const cardRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => { setMounted(true); }, []);
@@ -194,28 +203,85 @@ export default function GuidedTour({ tourKey, steps, badge }: GuidedTourProps) {
 
   const current = steps[index];
 
-  // Resolve target + compute placement on step / window changes. Recomputes on
-  // resize + scroll so the spotlight tracks live UI changes.
+  // Resolve target + compute placement, with aggressive polling + MutationObserver
+  // for targets that appear asynchronously (e.g. balance-tiles on the withdraw
+  // page only mount after on-chain reads complete, which takes 2-3s well after
+  // the tour fires).
+  //
+  // Strategy:
+  //   1. If step has a target, immediately querySelector. If found, scroll
+  //      into view + place. If not, fall back to corner placement (so user
+  //      sees something) AND start polling.
+  //   2. Poll every 150ms up to 10s. When target appears, recompute.
+  //   3. MutationObserver on document.body so async-rendered targets get
+  //      picked up the instant they hit the DOM.
+  //   4. Track resize + scroll so spotlight follows live UI shifts.
   useEffect(() => {
     if (!open || !current) return;
 
-    const recompute = () => {
+    let cancelled = false;
+    let pollId: number | null = null;
+    let mo:     MutationObserver | null = null;
+    let scrolled = false;
+
+    const tryResolve = () => {
+      if (cancelled) return;
+      const el = current.target
+        ? document.querySelector<HTMLElement>(current.target)
+        : null;
+
+      // Set placement based on what we have. If target expected but missing,
+      // computePlacement(null, ...) returns the corner fallback so the user
+      // sees a card immediately.
+      setPlacement(computePlacement(el, current.placement, current.padding));
+
+      if (el) {
+        // Scroll into view once on first successful resolve
+        if (!scrolled) {
+          scrolled = true;
+          el.scrollIntoView({ block: "center", behavior: "smooth" });
+          // Recompute after scroll settles so rect reflects new position
+          window.setTimeout(() => {
+            if (cancelled) return;
+            const elNow = current.target ? document.querySelector<HTMLElement>(current.target) : null;
+            setPlacement(computePlacement(elNow, current.placement, current.padding));
+          }, 380);
+        }
+        // Stop polling — found it
+        if (pollId !== null) { window.clearInterval(pollId); pollId = null; }
+        if (mo) { mo.disconnect(); mo = null; }
+      }
+    };
+
+    // First attempt
+    tryResolve();
+
+    // If target expected but missing, set up polling + observer
+    if (current.target && !document.querySelector(current.target)) {
+      pollId = window.setInterval(tryResolve, 150);
+      // Stop polling after 10s no matter what
+      window.setTimeout(() => {
+        if (pollId !== null) { window.clearInterval(pollId); pollId = null; }
+      }, 10_000);
+
+      mo = new MutationObserver(tryResolve);
+      mo.observe(document.body, { childList: true, subtree: true });
+    }
+
+    // Live tracking for resize/scroll once the target is found
+    const onChange = () => {
       const el = current.target ? document.querySelector<HTMLElement>(current.target) : null;
       setPlacement(computePlacement(el, current.placement, current.padding));
     };
+    window.addEventListener("resize", onChange);
+    window.addEventListener("scroll", onChange, { passive: true });
 
-    // Scroll target into view first, then recompute after a beat so the
-    // bounding rect reflects the post-scroll position.
-    const el = current.target ? document.querySelector<HTMLElement>(current.target) : null;
-    if (el) el.scrollIntoView({ block: "center", behavior: "smooth" });
-    const t = window.setTimeout(recompute, el ? 350 : 0);
-
-    window.addEventListener("resize", recompute);
-    window.addEventListener("scroll", recompute, { passive: true });
     return () => {
-      window.clearTimeout(t);
-      window.removeEventListener("resize", recompute);
-      window.removeEventListener("scroll", recompute);
+      cancelled = true;
+      if (pollId !== null) window.clearInterval(pollId);
+      if (mo) mo.disconnect();
+      window.removeEventListener("resize", onChange);
+      window.removeEventListener("scroll", onChange);
     };
   }, [open, index, current]);
 

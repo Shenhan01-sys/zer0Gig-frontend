@@ -8,9 +8,12 @@ import { useAccount, useDisconnect } from "wagmi";
 import { usePrivy } from "@privy-io/react-auth";
 import { useQueryClient } from "@tanstack/react-query";
 import { animate } from "animejs";
-import { Store, Zap, Book, Trophy, Tag, Coins } from "lucide-react";
+import { Store, Zap, Book, Trophy, Tag, Coins, HelpCircle } from "lucide-react";
 import { useAccount as useAccountForRole } from "wagmi";
 import { useUserRole, UserRole } from "@/hooks/useUserRegistry";
+import RouteAwareTour from "./RouteAwareTour";
+import { openTour } from "./GuidedTour";
+import { tourKeyForPath } from "@/lib/tours";
 
 // ── App nav links ──────────────────────────────────────────────────────────────
 
@@ -276,6 +279,10 @@ export default function AppNavbar() {
               fighting the primary nav links. */}
           <HarvestNavButton pathname={pathname} />
 
+          {/* Guide — re-opens the current page's tour. Hidden on routes that
+              don't have a tour configured. */}
+          <GuideNavButton pathname={pathname} />
+
           {/* Wallet */}
           {authenticated ? (
             <button
@@ -369,7 +376,31 @@ export default function AppNavbar() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Single mount for the guided tour overlay. RouteAwareTour reads the
+          pathname and renders the right tour from the registry. Lives here
+          so every page that renders AppNavbar gets the tour automatically. */}
+      <RouteAwareTour />
     </nav>
+  );
+}
+
+// ── Guide nav button ─────────────────────────────────────────────────────────
+// Tiny help-circle pill that re-opens the current page's tour. Hidden on
+// routes that have no tour configured (avoids dead clicks).
+function GuideNavButton({ pathname }: { pathname: string }) {
+  const tourKey = tourKeyForPath(pathname);
+  if (!tourKey) return null;
+  return (
+    <button
+      type="button"
+      onClick={() => openTour(tourKey)}
+      aria-label="Open guided tour for this page"
+      className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/20 text-white/65 hover:text-white text-[12px] font-medium whitespace-nowrap transition-all"
+    >
+      <HelpCircle className="w-3.5 h-3.5" />
+      Guide
+    </button>
   );
 }
 

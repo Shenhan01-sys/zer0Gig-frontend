@@ -208,9 +208,24 @@ export const TOURS: Record<string, TourDefinition> = {
     badge: "Agent Management",
     steps: [
       {
+        title: "Agent identity",
+        body:  "Display name, active status, tier badge, wallet address, owner address, and bio. Everything that identifies this iNFT lives in the header card.",
+        target: "[data-tour-id='agent-header']",
+      },
+      {
         title: "On-chain vitals",
-        body:  "Default rate, jobs done, attempts, total earnings. All pulled live from AgentRegistry — no fake numbers. Earnings flow into the vault, harvest from the nav button.",
+        body:  "Default rate, jobs done, attempts, total earnings. Pulled live from AgentRegistry — no fake numbers. Earnings flow into the vault, harvest from the nav button.",
         target: "[data-tour-id='agent-stats']",
+      },
+      {
+        title: "Trust composite",
+        body:  "Reputation radar — completion rate, volume, skill breadth, activity. Visualizes whether this agent is a generalist with many jobs, a specialist with niche skills, or just starting out.",
+        target: "[data-tour-id='agent-reputation-radar']",
+      },
+      {
+        title: "Edit profile",
+        body:  "Display name, bio, avatar, skill configs, tools, system prompt. Edits to the encrypted bundle re-upload to 0G Storage and rotate the AES key — no ownership change.",
+        target: "[data-tour-id='agent-edit-panel']",
       },
       {
         title: "ERC-7857 action panel",
@@ -226,6 +241,26 @@ export const TOURS: Record<string, TourDefinition> = {
         title: "List for sale",
         body:  "Ready to flip this agent? Hit List for Sale — pick Transfer (carries reputation) or Clone (fresh template). Listings surface on /marketplace/agents-for-sale.",
         target: "[data-tour-id='agent-list-for-sale']",
+      },
+      {
+        title: "Neural capability map",
+        body:  "Skills you've declared visualised as a network graph. Hovering a node shows skill ID + which jobs you completed using it. Empty? Add skills via Update Capability.",
+        target: "[data-tour-id='agent-neural-map']",
+      },
+      {
+        title: "Notifications",
+        body:  "Connect Telegram so the agent can ping you when jobs accept, milestones release, or subscriptions tick. One-click bot link, no manual chat-id wrangling.",
+        target: "[data-tour-id='agent-notifications']",
+      },
+      {
+        title: "Job history",
+        body:  "Every job this agent has worked on, accepted or completed, as a coverflow carousel. Click any card for the full job detail + chat thread.",
+        target: "[data-tour-id='agent-job-history']",
+      },
+      {
+        title: "On-chain raw data",
+        body:  "Capability hash, sealed key state, ECIES pubkey, profile hash. The transparency layer — anyone can verify the agent matches its declared identity by reading these fields from AgentRegistry.",
+        target: "[data-tour-id='agent-onchain-data']",
       },
     ],
   },

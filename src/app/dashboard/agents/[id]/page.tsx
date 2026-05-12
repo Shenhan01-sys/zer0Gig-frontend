@@ -574,6 +574,7 @@ export default function AgentDetailPage() {
 
         {/* Header card */}
         <motion.div
+          data-tour-id="agent-header"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
@@ -675,6 +676,7 @@ export default function AgentDetailPage() {
 
           return (
             <motion.div
+              data-tour-id="agent-reputation-radar"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.15 }}
@@ -720,6 +722,7 @@ export default function AgentDetailPage() {
         <AnimatePresence>
           {isEditing && (
             <motion.div
+              data-tour-id="agent-edit-panel"
               variants={editPanelVariants}
               initial="hidden"
               animate="visible"
@@ -1237,6 +1240,7 @@ export default function AgentDetailPage() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.12 }}
+          data-tour-id="agent-onchain-data"
           className="rounded-2xl border border-white/10 bg-[#0d1525]/90 p-6"
         >
           <h2 className="text-[13px] font-medium text-white/50 uppercase tracking-wider mb-4">On-Chain Data (ERC-7857)</h2>
@@ -1274,6 +1278,7 @@ export default function AgentDetailPage() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: 0.15 }}
+            data-tour-id="agent-notifications"
             className="rounded-2xl border border-white/10 bg-[#0d1525]/90 p-5"
           >
             <h2 className="text-[13px] font-medium text-white/50 uppercase tracking-wider mb-3">Notifications</h2>
@@ -1283,6 +1288,7 @@ export default function AgentDetailPage() {
 
         {/* Job history — interactive coverflow carousel */}
         <motion.div
+          data-tour-id="agent-job-history"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.2 }}
@@ -1311,6 +1317,7 @@ export default function AgentDetailPage() {
           initial={{ opacity: 0, x: 16 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.45, delay: 0.25 }}
+          data-tour-id="agent-neural-map"
           className="rounded-2xl border border-white/10 bg-[#060913] overflow-hidden"
         >
           <div className="px-5 pt-4 pb-3 border-b border-white/[0.06]">

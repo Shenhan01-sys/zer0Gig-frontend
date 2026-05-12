@@ -655,7 +655,7 @@ export default function AgentDetailPage() {
           </div>
 
           {/* Stats row */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div data-tour-id="agent-stats" className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <StatCard label="Default Rate" value={formatOG(defaultRateWei)} />
             <StatCard label="Jobs Done" value={Number(profile.totalJobsCompleted || 0).toString()} />
             <StatCard label="Attempted" value={Number(profile.totalJobsAttempted || 0).toString()} />
@@ -964,6 +964,7 @@ export default function AgentDetailPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: 0.1 }}
             className="rounded-2xl border border-white/10 bg-[#0d1525]/90 overflow-hidden"
+            data-tour-id="agent-actions-panel"
           >
             {/* Section header */}
             <div className="px-6 pt-5 pb-4 border-b border-white/5 flex items-start justify-between gap-4">
@@ -975,6 +976,7 @@ export default function AgentDetailPage() {
                 <p className="text-[11px] text-white/30 pl-3.5">Encrypted intelligence control — capability, access, ownership</p>
               </div>
               <button
+                data-tour-id="agent-list-for-sale"
                 onClick={() => setListForSaleOpen(true)}
                 className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-white/15 hover:border-white/30 bg-white/[0.03] hover:bg-white/[0.06] text-[12px] font-medium text-white/75 hover:text-white transition-all shrink-0"
                 title="List this agent on the marketplace"
@@ -985,7 +987,7 @@ export default function AgentDetailPage() {
             </div>
 
             {/* Action buttons grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-white/5">
+            <div data-tour-id="agent-action-tabs" className="grid grid-cols-2 md:grid-cols-4 gap-px bg-white/5">
               {ACTION_TABS.map(tab => (
                 <button
                   key={tab.id}

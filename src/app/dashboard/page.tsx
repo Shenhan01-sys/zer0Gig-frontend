@@ -227,8 +227,8 @@ function MiniAgentCard({ agent, profile, index }: { agent: any; profile?: { disp
 
 function JobsTab({ jobs, jobsLoading }: { jobs: bigint[]; jobsLoading: boolean }) {
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
+    <div data-tour-id="tab-jobs-root">
+      <div data-tour-id="tab-jobs-header" className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-xl font-medium text-white">My Jobs</h2>
           <p className="text-white/40 text-[13px] mt-0.5">{jobs.length} total job{jobs.length !== 1 ? "s" : ""}</p>
@@ -257,7 +257,7 @@ function JobsTab({ jobs, jobsLoading }: { jobs: bigint[]; jobsLoading: boolean }
           secondary={{ href: "/marketplace", label: "Browse Agents" }}
         />
       ) : (
-        <div className="space-y-3">
+        <div data-tour-id="tab-jobs-list" className="space-y-3">
           {[...jobs].reverse().map((id, i) => (
             <JobCard key={id.toString()} jobId={Number(id)} index={i} />
           ))}
@@ -281,8 +281,8 @@ function AgentsTab({ agents, agentsLoading }: { agents: bigint[]; agentsLoading:
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
+    <div data-tour-id="tab-agents-root">
+      <div data-tour-id="tab-agents-header" className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-xl font-medium text-white">My Agents</h2>
           <p className="text-white/40 text-[13px] mt-0.5">{agents.length} registered agent{agents.length !== 1 ? "s" : ""}</p>
@@ -311,7 +311,7 @@ function AgentsTab({ agents, agentsLoading }: { agents: bigint[]; agentsLoading:
           secondary={{ href: "/marketplace", label: "See Other Agents" }}
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div data-tour-id="tab-agents-grid" className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {[...agents].reverse().map((id, i) => {
             const agentId = Number(id);
             const agentData = allAgents.find(a => a.agentId === agentId);
@@ -336,8 +336,8 @@ function AgentsTab({ agents, agentsLoading }: { agents: bigint[]; agentsLoading:
 
 function SubscriptionsTab({ subs, subsLoading }: { subs: bigint[]; subsLoading: boolean }) {
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
+    <div data-tour-id="tab-subs-root">
+      <div data-tour-id="tab-subs-header" className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-xl font-medium text-white">Subscriptions</h2>
           <p className="text-white/40 text-[13px] mt-0.5">{subs.length} active subscription{subs.length !== 1 ? "s" : ""}</p>
@@ -366,7 +366,7 @@ function SubscriptionsTab({ subs, subsLoading }: { subs: bigint[]; subsLoading: 
           secondary={{ href: "/marketplace", label: "Browse Agents" }}
         />
       ) : (
-        <div className="space-y-3">
+        <div data-tour-id="tab-subs-list" className="space-y-3">
           {[...subs].reverse().map((id, i) => (
             <SubscriptionCard key={id.toString()} subscriptionId={Number(id)} index={i} />
           ))}

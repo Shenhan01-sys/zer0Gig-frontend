@@ -795,7 +795,7 @@ function JobDetailInner({ jobId }: { jobId: number }) {
         </div>
 
         {/* Stats row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div data-tour-id="job-stats" className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div className="bg-[#050810]/60 rounded-xl px-3 py-2.5">
             <p className="text-[11px] text-white/30 uppercase tracking-wide mb-0.5">Agent</p>
             <p className="text-[15px] text-white font-medium">
@@ -954,7 +954,7 @@ function JobDetailInner({ jobId }: { jobId: number }) {
           )}
 
           {/* Milestone Timeline */}
-          <div className="rounded-2xl border border-white/10 bg-[#0d1525]/90 p-6">
+          <div data-tour-id="job-milestones" className="rounded-2xl border border-white/10 bg-[#0d1525]/90 p-6">
             <h2 className="text-[13px] font-medium text-white/50 uppercase tracking-wider mb-6">
               Milestones
             </h2>
@@ -1023,7 +1023,7 @@ function JobDetailInner({ jobId }: { jobId: number }) {
       </div>
 
       {/* Right column — live chat */}
-      <div className="w-[360px] flex-shrink-0 sticky top-28 h-[calc(100vh-9rem)]">
+      <div data-tour-id="job-chat" className="w-[360px] flex-shrink-0 sticky top-28 h-[calc(100vh-9rem)]">
         <JobChat jobId={jobId} className="h-full" />
       </div>
     </div>

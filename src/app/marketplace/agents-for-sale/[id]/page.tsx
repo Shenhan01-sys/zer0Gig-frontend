@@ -114,7 +114,7 @@ export default function ListingDetailPage() {
               )}
 
               {/* Stats */}
-              <div className="grid grid-cols-3 gap-3 mb-6">
+              <div data-tour-id="listing-stats" className="grid grid-cols-3 gap-3 mb-6">
                 <Stat label="Reputation" value={listing.agent_score_bps != null ? `${(listing.agent_score_bps / 100).toFixed(0)}/100` : "—"} />
                 <Stat label="Jobs Done"  value={listing.agent_jobs_done != null ? String(listing.agent_jobs_done) : "—"} />
                 <Stat label="Skills"     value={listing.agent_skills?.length ? String(listing.agent_skills.length) : "—"} />
@@ -143,7 +143,7 @@ export default function ListingDetailPage() {
               )}
 
               {/* Mode explanation */}
-              <div className="rounded-xl border border-white/10 bg-[#050810]/60 p-4 mb-2">
+              <div data-tour-id="listing-mode-explanation" className="rounded-xl border border-white/10 bg-[#050810]/60 p-4 mb-2">
                 <p className="text-[12px] font-medium text-white/80 inline-flex items-center gap-1.5">
                   {isTransfer ? <Shield className="w-3.5 h-3.5 text-white/55" /> : <CopyIcon className="w-3.5 h-3.5 text-white/55" />}
                   {isTransfer ? "What you get with Transfer Mode" : "What you get with Clone Mode"}
@@ -158,7 +158,7 @@ export default function ListingDetailPage() {
 
             {/* Right column — price + buy */}
             <div className="space-y-4 sticky top-28">
-              <div className="rounded-2xl border border-white/15 bg-gradient-to-b from-[#0d1525] to-[#050810] p-6">
+              <div data-tour-id="listing-buy-panel" className="rounded-2xl border border-white/15 bg-gradient-to-b from-[#0d1525] to-[#050810] p-6">
                 <p className="text-[10px] uppercase font-mono tracking-widest text-white/40 mb-2">Price</p>
                 <p className="text-white text-4xl font-semibold tabular-nums mb-1">
                   {listing.price_og.toFixed(3)}

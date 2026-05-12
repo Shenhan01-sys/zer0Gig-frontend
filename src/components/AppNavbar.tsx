@@ -13,7 +13,8 @@ import { useAccount as useAccountForRole } from "wagmi";
 import { useUserRole, UserRole } from "@/hooks/useUserRegistry";
 import RouteAwareTour from "./RouteAwareTour";
 import { openTour } from "./GuidedTour";
-import { tourKeyForPath } from "@/lib/tours";
+import { tourKeyForLocation } from "@/lib/tours";
+import { useSearchParams } from "next/navigation";
 
 // ── App nav links ──────────────────────────────────────────────────────────────
 
@@ -391,7 +392,9 @@ export default function AppNavbar() {
 // Tiny help-circle pill that re-opens the current page's tour. Hidden on
 // routes that have no tour configured (avoids dead clicks).
 function GuideNavButton({ pathname }: { pathname: string }) {
-  const tourKey = tourKeyForPath(pathname);
+  const searchParams = useSearchParams();
+  const tab          = searchParams?.get("tab") ?? null;
+  const tourKey      = tourKeyForLocation(pathname, tab);
   if (!tourKey) return null;
   return (
     <button

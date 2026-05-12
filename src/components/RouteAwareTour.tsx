@@ -1,27 +1,30 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useMemo } from "react";
 import GuidedTour from "./GuidedTour";
-import { TOURS, tourKeyForPath } from "@/lib/tours";
+import { TOURS, tourKeyForLocation } from "@/lib/tours";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// RouteAwareTour — single mount point that picks the right tour based on the
-// current pathname. Drop into any layout component that wraps multiple
-// pages and every page that has a matching entry in PATH_TO_TOUR gets its
-// tour automatically (auto-open on first visit + re-openable via the
-// Guide button in AppNavbar).
+// RouteAwareTour — single mount point that picks the right tour based on
+// the current pathname AND ?tab= query (so /dashboard?tab=subscriptions
+// loads a different tour than /dashboard).
 //
-// Returns null if the current route has no tour configured.
+// Mount once in AppNavbar — every page rendering the navbar gets the right
+// tour automatically, auto-opens on first visit, re-opens via the Guide
+// button. Returns null on routes with no configured tour.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function RouteAwareTour() {
-  const pathname = usePathname() ?? "";
-  const key = useMemo(() => tourKeyForPath(pathname), [pathname]);
+  const pathname     = usePathname() ?? "";
+  const searchParams = useSearchParams();
+  const tab          = searchParams?.get("tab") ?? null;
+  const key          = useMemo(() => tourKeyForLocation(pathname, tab), [pathname, tab]);
   if (!key) return null;
   const def = TOURS[key];
   if (!def) return null;
-  // Remount when key changes so the auto-open effect fires for each new page
+  // Remount when key changes so the auto-open effect fires for each new
+  // tour (including tab switches within /dashboard).
   return (
     <GuidedTour
       key={key}

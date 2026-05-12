@@ -170,16 +170,19 @@ export const TOURS: Record<string, TourDefinition> = {
     badge: "Job Details",
     steps: [
       {
-        title: "Where the work happens",
-        body:  "Full job spec, escrow status, milestone timeline, and the chat where client + agent coordinate. Real-time updates from on-chain events.",
+        title: "Job vitals at a glance",
+        body:  "Agent, budget, escrow status, and posted time. Everything you need to know about this job condensed into one strip.",
+        target: "[data-tour-id='job-stats']",
       },
       {
         title: "Milestones unlock payouts",
         body:  "Each milestone gets its own alignment attestation. Score ≥ 80% → OG releases. Below → milestone fails, refund window opens.",
+        target: "[data-tour-id='job-milestones']",
       },
       {
-        title: "Chat with the agent",
-        body:  "JobChat is the human-readable layer over on-chain coordination. Both parties see the same thread, persisted in Supabase.",
+        title: "Live chat with the agent",
+        body:  "JobChat is the human-readable layer over on-chain coordination. Both parties see the same thread, persisted in Supabase. Use this for clarifications + status updates.",
+        target: "[data-tour-id='job-chat']",
       },
     ],
   },
@@ -205,20 +208,24 @@ export const TOURS: Record<string, TourDefinition> = {
     badge: "Agent Management",
     steps: [
       {
-        title: "Your agent's command center",
-        body:  "Identity, skills, tools, earnings, and the encrypted blob in 0G Storage all live here. Edits trigger oracle re-encryption on transfer.",
+        title: "On-chain vitals",
+        body:  "Default rate, jobs done, attempts, total earnings. All pulled live from AgentRegistry — no fake numbers. Earnings flow into the vault, harvest from the nav button.",
+        target: "[data-tour-id='agent-stats']",
       },
       {
-        title: "Update without transferring",
-        body:  "Edit skills, tools, system prompt → updateCapability fires the oracle, rotates the AES key, re-uploads to 0G Storage. No ownership change.",
+        title: "ERC-7857 action panel",
+        body:  "Transfer ownership, clone the agent, authorize time-bound access, or update the encrypted capability blob. Each tab fires the corresponding on-chain function.",
+        target: "[data-tour-id='agent-actions-panel']",
+      },
+      {
+        title: "Pick an action",
+        body:  "Update Capability rotates the AES key without changing ownership. Transfer hands the iNFT to a new owner. Clone mints a fresh copy. Authorize grants time-bound usage rights.",
+        target: "[data-tour-id='agent-action-tabs']",
       },
       {
         title: "List for sale",
-        body:  "Ready to flip? Sell as Transfer (carries reputation) or Clone (resets to default). Listings show on /marketplace/agents-for-sale.",
-      },
-      {
-        title: "Earnings + history",
-        body:  "Total earnings, jobs completed, win rate all live on-chain. The Harvest button in the navbar pulls accumulated OG into your owner wallet.",
+        body:  "Ready to flip this agent? Hit List for Sale — pick Transfer (carries reputation) or Clone (fresh template). Listings surface on /marketplace/agents-for-sale.",
+        target: "[data-tour-id='agent-list-for-sale']",
       },
     ],
   },
@@ -304,16 +311,70 @@ export const TOURS: Record<string, TourDefinition> = {
     badge: "Agent Listing",
     steps: [
       {
-        title: "Full agent disclosure",
-        body:  "Every metric the seller has — capability hash, sealed key history, all skills, full reputation. Take your time.",
+        title: "On-chain proof of value",
+        body:  "Reputation score, jobs delivered, skills declared — all read live from AgentRegistry. No seller fluff, just verified history.",
+        target: "[data-tour-id='listing-stats']",
       },
       {
         title: "Mode determines reputation",
-        body:  "Transfer keeps the seller's track record. Clone resets to default. Same agent intelligence, different starting trust.",
+        body:  "Transfer keeps the seller's track record. Clone resets to default 80% win rate. Same agent intelligence, different starting trust.",
+        target: "[data-tour-id='listing-mode-explanation']",
       },
       {
-        title: "Buy flow — 5 steps",
-        body:  "Review → keygen (your fresh ECIES key) → oracle (server signs the re-encryption) → confirm (you pay into escrow) → wait (seller executes iTransfer).",
+        title: "Price + buy panel",
+        body:  "Protocol fee 2.5% goes to treasury, the rest to the seller. Hit Buy → 5-step purchase flow (review → keygen → oracle sign → escrow → wait for transfer). 7-day refund window if seller stalls.",
+        target: "[data-tour-id='listing-buy-panel']",
+      },
+    ],
+  },
+
+  // ── Dashboard tab: My Jobs (?tab=jobs) ────────────────────────────────────
+  dashboardJobsTab: {
+    badge: "My Jobs",
+    steps: [
+      {
+        title: "Jobs you've posted",
+        body:  "Every job you've created with on-chain escrow. New Job button up here spawns another. Status badges on each card show pending → accepted → in flight → complete.",
+        target: "[data-tour-id='tab-jobs-header']",
+      },
+      {
+        title: "Click any job for full detail",
+        body:  "The detail page surfaces milestones, chat with the agent, and the dispute path if something goes sideways.",
+        target: "[data-tour-id='tab-jobs-list']",
+      },
+    ],
+  },
+
+  // ── Dashboard tab: My Agents (?tab=agents) ────────────────────────────────
+  dashboardAgentsTab: {
+    badge: "My Agents",
+    steps: [
+      {
+        title: "iNFTs you own",
+        body:  "Every ERC-7857 agent in your wallet. Register Agent button mints another. Reputation + earnings tracked live from AgentRegistry.",
+        target: "[data-tour-id='tab-agents-header']",
+      },
+      {
+        title: "Click any card to manage",
+        body:  "Update capability, transfer ownership, clone, authorize time-bound access, or list for sale. All ERC-7857 actions in one panel.",
+        target: "[data-tour-id='tab-agents-grid']",
+      },
+    ],
+  },
+
+  // ── Dashboard tab: Subscriptions (?tab=subscriptions) ─────────────────────
+  dashboardSubsTab: {
+    badge: "Subscriptions",
+    steps: [
+      {
+        title: "Recurring agent work",
+        body:  "Subscriptions are ERC-8183 recurring escrow. The agent ticks every interval (60s/hourly/daily), drains a fixed amount per cycle. + New Subscription up top spawns another.",
+        target: "[data-tour-id='tab-subs-header']",
+      },
+      {
+        title: "Each card = one subscription",
+        body:  "Click any row for tick history, OG drain rate, remaining balance, and the cancel button. Cancel anytime to claim the unused balance back.",
+        target: "[data-tour-id='tab-subs-list']",
       },
     ],
   },
@@ -363,4 +424,19 @@ export function tourKeyForPath(pathname: string): string | null {
     }
   }
   return best?.key ?? null;
+}
+
+/**
+ * Tab-aware variant. /dashboard?tab=subscriptions, /dashboard?tab=jobs, etc.
+ * each get their own tour so the spotlight tracks the active tab's content
+ * instead of the generic dashboard overview. Falls back to plain
+ * tourKeyForPath for everything else.
+ */
+export function tourKeyForLocation(pathname: string, tab: string | null): string | null {
+  if (pathname === "/dashboard" && tab) {
+    if (tab === "jobs")          return "dashboardJobsTab";
+    if (tab === "subscriptions") return "dashboardSubsTab";
+    if (tab === "agents")        return "dashboardAgentsTab";
+  }
+  return tourKeyForPath(pathname);
 }

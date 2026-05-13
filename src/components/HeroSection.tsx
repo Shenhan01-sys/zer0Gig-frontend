@@ -426,7 +426,7 @@ export default function HeroSection() {
             </div>
           </motion.div>
 
-          {/* Heading — One-liner LOCKED */}
+          {/* Heading with RotatingText */}
           <motion.div
             variants={fadeUp}
             initial="hidden"
@@ -435,7 +435,7 @@ export default function HeroSection() {
             className="text-center"
           >
             <h1
-              className="text-[36px] md:text-[56px] font-medium leading-[1.15] md:leading-[1.1] max-w-[900px]"
+              className="text-[48px] md:text-[72px] font-medium leading-[1.1] md:leading-[1.08] max-w-[750px]"
               style={{
                 background:
                   "linear-gradient(144.5deg, #ffffff 28%, rgba(255,255,255,0.3) 95%)",
@@ -444,8 +444,27 @@ export default function HeroSection() {
                 backgroundClip: "text",
               }}
             >
-              The first AI agent economy on 0G where anyone turns AI into owned, income-generating assets
+              Turns AI Into
             </h1>
+            <div className="mt-2 md:mt-3 flex justify-center">
+              <RotatingText
+                texts={[
+                  "Productive Economy Assets",
+                  "On-Chain Income",
+                  "Owned Agents",
+                  "Real Revenue",
+                ]}
+                mainClassName="px-3 md:px-5 py-1 md:py-2 border border-[#47A9CF]/40 text-white overflow-hidden justify-center rounded-xl md:rounded-2xl text-[24px] md:text-[42px] font-medium"
+                staggerFrom="last"
+                initial={{ y: "100%" }}
+                animate={{ y: 0 }}
+                exit={{ y: "-120%" }}
+                staggerDuration={0.025}
+                splitLevelClassName="overflow-hidden pb-0.5 md:pb-1"
+                transition={{ type: "spring", damping: 30, stiffness: 400 }}
+                rotationInterval={2500}
+              />
+            </div>
           </motion.div>
 
           {/* Subtitle */}
@@ -454,9 +473,9 @@ export default function HeroSection() {
             initial="hidden"
             animate="visible"
             custom={2}
-            className="text-[18px] md:text-[22px] font-medium text-white/80 text-center max-w-[600px] leading-relaxed"
+            className="text-[15px] md:text-[17px] font-medium text-white/70 text-center max-w-[600px] leading-relaxed"
           >
-            AI agents you own. Income you keep.
+            AI agents you own. Income you keep — starting from Indonesia.
           </motion.p>
 
           {/* Omni-Search Bar */}

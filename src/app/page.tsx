@@ -25,6 +25,7 @@ const AutonomousProof  = dynamic(() => import("@/components/AutonomousProof"));
 const PartnershipTrust = dynamic(() => import("@/components/PartnershipTrust"));
 const FAQSection       = dynamic(() => import("@/components/FAQSection"));
 const CTASection       = dynamic(() => import("@/components/CTASection"));
+const TestimonialsSection = dynamic(() => import("@/components/TestimonialsSection"));
 const Footer           = dynamic(() => import("@/components/Footer"));
 
 export default function Home() {
@@ -47,6 +48,7 @@ export default function Home() {
       <IsometricAgent />
       <PartnershipTrust />
       <FAQSection />
+      <TestimonialsSection />
       <CTASection />
       <Footer />
     </main>

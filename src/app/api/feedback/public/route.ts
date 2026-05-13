@@ -11,7 +11,6 @@ export async function GET(_req: NextRequest) {
     const { data, error } = await supabase
       .from("user_feedback")
       .select("name, country, status, rating, message, created_at")
-      .eq("is_displayed", true)
       .order("created_at", { ascending: false })
       .limit(20);
 

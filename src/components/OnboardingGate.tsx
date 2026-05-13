@@ -38,19 +38,19 @@ export default function OnboardingGate() {
       if (sessionStorage.getItem("zerogig:onboarding-skipped") === "1") return;
     } catch {}
 
-    // Check if visitor has passed the partner waitlist gate (either submitted
-    // the form or clicked 'Continue as Individual'). If not — route there first.
-    let waitlistPassed = false;
+    // Check if visitor has passed the partnership gate (either submitted the
+    // form or clicked 'Continue as Individual'). If not — route there first.
+    let partnershipPassed = false;
     try {
-      waitlistPassed = sessionStorage.getItem("zerogig:waitlist:passed") === "1";
+      partnershipPassed = sessionStorage.getItem("zerogig:partnership:passed") === "1";
     } catch {}
 
     const wallet = (user?.wallet?.address ?? "").toLowerCase();
 
-    // Not authenticated yet — push through the waitlist first, then onboarding.
+    // Not authenticated yet — push through the partnership gate first, then onboarding.
     if (!authenticated || !wallet) {
       fired.current = true;
-      router.replace(waitlistPassed ? "/onboarding" : "/waitlist");
+      router.replace(partnershipPassed ? "/onboarding" : "/partnership");
       return;
     }
 
@@ -64,8 +64,8 @@ export default function OnboardingGate() {
         if (json.ok && !json.exists) {
           fired.current = true;
           // Even for already-authenticated wallets that haven't signed up,
-          // still send them through the waitlist gate first.
-          router.replace(waitlistPassed ? "/onboarding" : "/waitlist");
+          // still send them through the partnership gate first.
+          router.replace(partnershipPassed ? "/onboarding" : "/partnership");
         }
       } catch {
         // Network failure — leave the landing visible rather than redirect to a

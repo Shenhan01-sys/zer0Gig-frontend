@@ -6,16 +6,16 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Building2, Mail, Phone, Globe2, Briefcase, Users, Sparkles,
-  ArrowRight, CheckCircle2, AlertCircle, ChevronRight,
+  ArrowRight, CheckCircle2, AlertCircle, ChevronRight, Handshake,
 } from "lucide-react";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// /waitlist — PT / company partnership application form.
+// /partnership — PT / company partnership application form.
 //
 // Sits in front of /onboarding for first-time visitors. Two paths:
-//   1. Company representative: fills out the form, submits to
-//      /api/waitlist/submit, sets the waitlist-passed sessionStorage flag,
-//      then continues to /onboarding to register as the individual rep.
+//   1. Company representative: fills the form, submits to
+//      /api/partnership/submit, sets the partnership-passed sessionStorage
+//      flag, then continues to /onboarding to register as the individual rep.
 //   2. Individual user: clicks 'Continue as Individual' which sets the same
 //      sessionStorage flag and routes straight to /onboarding.
 //
@@ -42,13 +42,13 @@ const PARTNERSHIP_TYPES = [
 
 type State = "idle" | "submitting" | "success" | "error";
 
-const FLAG_KEY = "zerogig:waitlist:passed";
+const FLAG_KEY = "zerogig:partnership:passed";
 
 function markPassed() {
   try { sessionStorage.setItem(FLAG_KEY, "1"); } catch {}
 }
 
-export default function WaitlistPage() {
+export default function PartnershipPage() {
   const router = useRouter();
 
   // Form state
@@ -77,7 +77,7 @@ export default function WaitlistPage() {
     setError(null);
     setState("submitting");
     try {
-      const res = await fetch("/api/waitlist/submit", {
+      const res = await fetch("/api/partnership/submit", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify({
@@ -124,7 +124,7 @@ export default function WaitlistPage() {
         <Link href="/" className="text-white/80 hover:text-white text-sm tracking-wide transition-colors">
           ← zer0Gig
         </Link>
-        <p className="text-white/40 text-xs font-mono uppercase tracking-widest">Partner Waitlist</p>
+        <p className="text-white/40 text-xs font-mono uppercase tracking-widest">Partnership</p>
       </header>
 
       <div className="relative z-10 flex-1 flex items-start justify-center px-6 py-12">
@@ -181,15 +181,15 @@ export default function WaitlistPage() {
                   className="mb-10"
                 >
                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[11px] text-white/55 mb-4 font-mono uppercase tracking-widest">
-                    <Sparkles className="w-3.5 h-3.5" />
-                    Partner Waitlist
+                    <Handshake className="w-3.5 h-3.5" />
+                    Partnership Program
                   </div>
                   <h1 className="text-3xl sm:text-4xl md:text-5xl font-medium text-white mb-3 tracking-tight">
                     Partner with zer0Gig.
                   </h1>
                   <p className="text-white/55 text-[15px] max-w-2xl leading-relaxed">
                     Coalition for Indonesian PTs onboarding to the agentic economy on 0G.
-                    Apply for partnership review or, if you&apos;re just signing up as
+                    Apply for partnership or, if you&apos;re just signing up as
                     an individual builder, skip ahead to onboarding.
                   </p>
                 </motion.div>
@@ -208,7 +208,7 @@ export default function WaitlistPage() {
                     </div>
                     <div>
                       <p className="text-white text-[14px] font-medium">I&apos;m signing up as an individual</p>
-                      <p className="text-white/45 text-[12px]">Skip the partner form and continue to personal onboarding.</p>
+                      <p className="text-white/45 text-[12px]">Skip the partnership form and continue to personal onboarding.</p>
                     </div>
                   </div>
                   <ChevronRight className="w-4 h-4 text-white/35 group-hover:text-white/75 transition-colors shrink-0" />

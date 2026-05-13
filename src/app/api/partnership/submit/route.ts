@@ -7,12 +7,12 @@ const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const VALID_SIZE = new Set(["1-10", "11-50", "51-200", "201-1000", "1000+"]);
 const VALID_TYPE = new Set(["agent-ops", "custom-dev", "integration", "reseller", "other"]);
 
-// POST /api/waitlist/submit — PT / company partnership application.
+// POST /api/partnership/submit — PT / company partnership application.
 //
 // Validates the form, writes to partner_waitlist via service role (bypasses
-// RLS). Returns 200 + row id on success. Idempotent on (contact_email) is NOT
-// enforced — companies can have multiple reps applying separately, dedup
-// handled in the admin review pipeline rather than at submission time.
+// RLS). Returns 200 + row id on success. The Supabase table keeps its
+// `partner_waitlist` name for backwards-compat with existing rows; only the
+// frontend route renames waitlist -> partnership.
 export async function POST(req: Request) {
   if (!url || !serviceKey) {
     return NextResponse.json(

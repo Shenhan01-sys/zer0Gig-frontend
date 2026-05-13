@@ -387,11 +387,11 @@ export default function OnboardingPage() {
                 {/* Indonesia-only: city autocomplete + kecamatan free text */}
                 {countryCode === "ID" && (
                   <>
-                    <Field label="Kota / Kabupaten">
+                    <Field label="City / Regency">
                       <input
                         value={cityQuery || city}
                         onChange={e => { setCityQuery(e.target.value); if (city) setCity(""); }}
-                        placeholder="Cari kota — Jakarta, Bandung, Surabaya…"
+                        placeholder="Search city — Jakarta, Bandung, Surabaya…"
                         className="w-full bg-[#050810]/80 border border-white/10 rounded-xl px-4 py-3 text-[15px] focus:border-white/30 focus:outline-none transition-colors mb-3"
                       />
                       <div className="max-h-56 overflow-y-auto rounded-xl border border-white/10 bg-[#0d1525]/90 divide-y divide-white/[0.04]">
@@ -415,11 +415,11 @@ export default function OnboardingPage() {
                         )}
                       </div>
                       <p className="text-white/30 text-[11px] mt-1.5">
-                        Kotamu gak ada di list? Tulis aja namanya — kita simpan apa adanya.
+                        Your city isn't on the list? Just type its name — we'll save it as-is.
                       </p>
                     </Field>
 
-                    <Field label="Kecamatan (opsional)">
+                    <Field label="Sub-district (optional)">
                       <input
                         value={kecamatan}
                         onChange={e => setKecamatan(e.target.value.slice(0, 80))}
@@ -427,7 +427,7 @@ export default function OnboardingPage() {
                         className="w-full bg-[#050810]/80 border border-white/10 rounded-xl px-4 py-3 text-[15px] focus:border-white/30 focus:outline-none transition-colors"
                       />
                       <p className="text-white/30 text-[11px] mt-1.5">
-                        Lokasi spesifik bantu kami plot kamu di peta Indonesia.
+                        A specific location helps us plot you on the Indonesia map.
                       </p>
                     </Field>
                   </>
@@ -516,51 +516,11 @@ export default function OnboardingPage() {
               <StepCard key="4">
                 <h1 className="text-3xl sm:text-4xl font-medium mb-2">Activate your account.</h1>
                 <p className="text-white/55 text-[15px] mb-8">
-                  Register your role on-chain and claim 0.5 OG starter credits to begin.
+                  Claim starter credits first, then register on-chain so the dashboard knows your workspace.
                 </p>
 
-                {/* On-chain registration */}
+                {/* Faucet claim — FIRST, no dependencies */}
                 <div className="rounded-xl border border-white/10 bg-[#050810]/60 p-5 mb-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-white font-medium text-[15px]">On-chain registration</p>
-                    {onChainRegState === "done" && (
-                      <span className="text-emerald-400 text-[12px] font-medium flex items-center gap-1">
-                        <Check className="w-3.5 h-3.5" /> Done
-                      </span>
-                    )}
-                  </div>
-                  {onChainRegState === "done" ? (
-                    <p className="text-white/40 text-[13px]">Your role is recorded on the 0G Newton testnet.</p>
-                  ) : (
-                    <>
-                      <p className="text-white/40 text-[13px] mb-4">
-                        Record your role permanently on-chain so the dashboard knows your workspace.
-                      </p>
-                      <button
-                        onClick={handleRegisterOnChain}
-                        disabled={isPending || isConfirming || onChainRegState === "switching"}
-                        className="w-full px-4 py-2.5 rounded-full bg-white text-black text-[13px] font-medium hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
-                      >
-                        {onChainRegState === "switching" ? "Switching network…" :
-                         isPending ? "Confirm in wallet…" :
-                         isConfirming ? "Recording on-chain…" :
-                         "Register on-chain"}
-                      </button>
-                      {regError && (
-                        <p className="text-red-400 text-[12px] mt-3">
-                          {regError instanceof Error ? regError.message : String(regError)}
-                        </p>
-                      )}
-                    </>
-                  )}
-                </div>
-
-                {/* Faucet claim */}
-                <div className={`rounded-xl border p-5 mb-4 transition-all ${
-                  onChainRegState === "done"
-                    ? "border-white/10 bg-[#050810]/60"
-                    : "border-white/[0.04] bg-[#050810]/30 opacity-50"
-                }`}>
                   <div className="flex items-center justify-between mb-3">
                     <p className="text-white font-medium text-[15px]">Starter credits</p>
                     {faucetState === "done" && (
@@ -586,17 +546,57 @@ export default function OnboardingPage() {
                   ) : (
                     <>
                       <p className="text-white/40 text-[13px] mb-4">
-                        Claim 0.5 OG from the community faucet to cover your first transactions.
+                        Claim 0.5 OG from the community faucet to cover gas for your first on-chain transaction.
                       </p>
                       <button
                         onClick={handleClaimFaucet}
-                        disabled={onChainRegState !== "done" || faucetState === "claiming"}
-                        className="w-full px-4 py-2.5 rounded-full bg-[#0d1525]/90 border border-white/20 text-white text-[13px] font-medium hover:border-white/40 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                        disabled={faucetState === "claiming"}
+                        className="w-full px-4 py-2.5 rounded-full bg-white text-black text-[13px] font-medium hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
                       >
                         {faucetState === "claiming" ? "Claiming…" : "Claim 0.5 OG"}
                       </button>
                       {faucetError && (
                         <p className="text-red-400 text-[12px] mt-3">{faucetError}</p>
+                      )}
+                    </>
+                  )}
+                </div>
+
+                {/* On-chain registration — SECOND, requires faucet */}
+                <div className={`rounded-xl border p-5 mb-4 transition-all ${
+                  faucetState === "done"
+                    ? "border-white/10 bg-[#050810]/60"
+                    : "border-white/[0.04] bg-[#050810]/30 opacity-50"
+                }`}>
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-white font-medium text-[15px]">Register your account</p>
+                    {onChainRegState === "done" && (
+                      <span className="text-emerald-400 text-[12px] font-medium flex items-center gap-1">
+                        <Check className="w-3.5 h-3.5" /> Done
+                      </span>
+                    )}
+                  </div>
+                  {onChainRegState === "done" ? (
+                    <p className="text-white/40 text-[13px]">Your role is recorded on the 0G Newton testnet.</p>
+                  ) : (
+                    <>
+                      <p className="text-white/40 text-[13px] mb-4">
+                        Record your role permanently on-chain. You need a small amount of OG for gas.
+                      </p>
+                      <button
+                        onClick={handleRegisterOnChain}
+                        disabled={faucetState !== "done" || isPending || isConfirming || onChainRegState === "switching"}
+                        className="w-full px-4 py-2.5 rounded-full bg-[#0d1525]/90 border border-white/20 text-white text-[13px] font-medium hover:border-white/40 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                      >
+                        {onChainRegState === "switching" ? "Switching network…" :
+                         isPending ? "Confirm in wallet…" :
+                         isConfirming ? "Recording on-chain…" :
+                         "Register on-chain"}
+                      </button>
+                      {regError && (
+                        <p className="text-red-400 text-[12px] mt-3">
+                          {regError instanceof Error ? regError.message : String(regError)}
+                        </p>
                       )}
                     </>
                   )}

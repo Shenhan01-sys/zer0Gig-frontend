@@ -3,7 +3,6 @@
 import { useEffect, useState, useRef, Suspense } from "react";
 import AppNavbar from "@/components/AppNavbar";
 import Footer from "@/components/Footer";
-import RoleSelectModal from "@/components/RoleSelectModal";
 import NetworkGuard from "@/components/NetworkGuard";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -72,16 +71,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const isAgentDetail = /^\/dashboard\/agents\/[^/]+$/.test(pathname ?? "");
 
   const [resolvedRole, setResolvedRole] = useState<UserRole | null>(null);
-  const [showRoleModal, setShowRoleModal] = useState(false);
 
-  const { role: onChainRole, isLoading: isRoleLoading, refetch: refetchRole } = useUserRole(address);
+  const { role: onChainRole, isLoading: isRoleLoading } = useUserRole(address);
 
   // Track the address that resolved the current role — reset state when wallet switches
   const resolvedForAddress = useRef<string | undefined>(undefined);
   useEffect(() => {
     if (address !== resolvedForAddress.current) {
       setResolvedRole(null);
-      setShowRoleModal(false);
       resolvedForAddress.current = address;
     }
   }, [address]);
@@ -94,36 +91,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [ready, authenticated, router]);
 
   // Detect on-chain role and route user to their workspace.
-  // Guard: skip if resolvedRole is already set — prevents stale wagmi cache
-  // from re-opening the modal after the user just registered this session.
+  // Unregistered users are sent back to onboarding to complete on-chain activation.
   useEffect(() => {
     if (!authenticated || !address || isRoleLoading || onChainRole === null) return;
     if (resolvedRole !== null) return; // already resolved this session — don't override
 
     if (onChainRole === UserRole.Unregistered) {
-      setShowRoleModal(true);
+      router.replace("/onboarding");
     } else {
       setResolvedRole(onChainRole);
-      setShowRoleModal(false);
       // Auto-redirect to the correct workspace tab
       if (onChainRole === UserRole.FreelancerOwner && window.location.pathname === "/dashboard" && !window.location.search) {
         router.replace("/dashboard?tab=agents");
       }
     }
   }, [authenticated, address, isRoleLoading, onChainRole, resolvedRole, router]);
-
-  const handleRoleConfirmed = (role: UserRole) => {
-    setResolvedRole(role);
-    setShowRoleModal(false);
-    // Refetch so wagmi cache reflects the new on-chain state
-    refetchRole();
-    // Redirect to workspace
-    if (role === UserRole.FreelancerOwner) {
-      router.push("/dashboard?tab=agents");
-    } else {
-      router.push("/dashboard");
-    }
-  };
 
   const handleLogout = async () => {
     // Clear all cached query data so the next login starts fresh
@@ -172,8 +154,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <NetworkGuard>
-      <RoleSelectModal isOpen={showRoleModal} onConfirmed={handleRoleConfirmed} />
-
       <main className="min-h-screen flex flex-col bg-[#050810]">
         <AppNavbar />
         <div className={`flex-1 pt-28 pb-16 px-6 mx-auto w-full ${isAgentDetail ? "max-w-[1900px]" : "max-w-7xl"}`}>

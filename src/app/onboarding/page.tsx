@@ -5,8 +5,12 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePrivy } from "@privy-io/react-auth";
-import { Check, ChevronRight, ChevronLeft, Wallet, Globe2, Cpu, Sparkles, ArrowRight } from "lucide-react";
+import { Check, ChevronRight, ChevronLeft, Wallet, Globe2, Cpu, Sparkles, ArrowRight, Zap } from "lucide-react";
 import Footer from "@/components/Footer";
+import { useRegisterUser, UserRole, USER_ROLES } from "@/hooks/useUserRegistry";
+import { ogNewton } from "@/lib/wagmi";
+import { CONTRACT_CONFIG } from "@/lib/contracts";
+import { createPublicClient, http } from "viem";
 import { OG_MODELS, DEFAULT_MODEL_ID, type OGModel } from "@/lib/og-models";
 import { COUNTRIES, type Country } from "@/lib/countries";
 import { ID_CITIES } from "@/lib/idCities";
@@ -18,6 +22,7 @@ const STEPS = [
   { id: 1, label: "Profile",  icon: Globe2  },
   { id: 2, label: "AI Model", icon: Cpu     },
   { id: 3, label: "Confirm",  icon: Sparkles },
+  { id: 4, label: "Activate", icon: Zap     },
 ] as const;
 
 // Clients don't need to pick an AI model — that's an agent-owner concern.
@@ -58,9 +63,26 @@ export default function OnboardingPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  // Auto-advance once wallet connects on step 0. If the wallet already has a
-  // Supabase signup row, bypass the entire flow and drop the user straight
-  // onto the landing page — they've already onboarded.
+  // Step 4: on-chain activation + faucet
+  const [onChainRegState, setOnChainRegState] = useState<"idle" | "switching" | "pending" | "done" | "error">("idle");
+  const [faucetState, setFaucetState] = useState<"idle" | "claiming" | "done" | "error">("idle");
+  const [faucetTxHash, setFaucetTxHash] = useState<string | null>(null);
+  const [faucetError, setFaucetError] = useState<string | null>(null);
+
+  const { register, isPending, isConfirming, isConfirmed, error: regError } = useRegisterUser();
+
+  // Watch on-chain registration hook state
+  useEffect(() => {
+    if (isConfirmed) setOnChainRegState("done");
+  }, [isConfirmed]);
+
+  useEffect(() => {
+    if (regError) setOnChainRegState("error");
+  }, [regError]);
+
+  // Auto-advance once wallet connects on step 0.
+  // If the wallet already has a Supabase signup row AND is registered
+  // on-chain, bypass to landing. If only Supabase exists, skip to activation.
   useEffect(() => {
     if (step !== 0 || !ready || !authenticated || !walletAddress) return;
     (async () => {
@@ -68,14 +90,42 @@ export default function OnboardingPage() {
         const res = await fetch(`/api/onboarding/signup?wallet=${walletAddress}`);
         const json = await res.json();
         if (json.ok && json.exists) {
-          // Mark this session as past the gate so OnboardingGate on the
-          // landing doesn't bounce the returning user back to /partnership.
-          try { sessionStorage.setItem("zerogig:onboarding:completed", "1"); } catch {}
-          router.replace("/");
-          return;
+          // Check on-chain role
+          try {
+            const publicClient = createPublicClient({
+              chain: ogNewton,
+              transport: http(),
+            });
+            const rawRole = await publicClient.readContract({
+              address: CONTRACT_CONFIG.UserRegistry.address as `0x${string}`,
+              abi: CONTRACT_CONFIG.UserRegistry.abi,
+              functionName: "getUserRole",
+              args: [walletAddress as `0x${string}`],
+            });
+            const ROLE_MAP: Record<number, string> = {
+              0: "Unregistered", 1: "Client", 2: "FreelancerOwner",
+            };
+            const roleStr = ROLE_MAP[Number(rawRole)] ?? "Unregistered";
+            const isActivating =
+              typeof window !== "undefined" &&
+              sessionStorage.getItem("zerogig:onboarding:activate") === "1";
+
+            if (roleStr !== "Unregistered" && !isActivating) {
+              try { sessionStorage.setItem("zerogig:onboarding:completed", "1"); } catch {}
+              router.replace("/");
+              return;
+            }
+            // Has Supabase but not on-chain, or is in activation — skip to step 4
+            setStep(4);
+            return;
+          } catch {
+            // On-chain read failed — let them continue to activation
+            setStep(4);
+            return;
+          }
         }
       } catch {
-        // Network failure — fall through to step 1 so the user can still onboard.
+        // Network failure — fall through to step 1
       }
       setStep(1);
     })();
@@ -135,15 +185,72 @@ export default function OnboardingPage() {
       });
       const json = await res.json();
       if (!json.ok) throw new Error(json.error ?? "Submission failed");
-      // Mark the gate as cleared, then drop straight onto the landing.
-      // Replaces the old ?welcome=1 URL flag with a sessionStorage flag so
-      // the URL stays clean for share/screenshot.
-      try { sessionStorage.setItem("zerogig:onboarding:completed", "1"); } catch {}
-      router.push("/");
+      setSubmitting(false);
+      // Mark activation in progress so a refresh lands back here
+      try { sessionStorage.setItem("zerogig:onboarding:activate", "1"); } catch {}
+      setStep(4);
     } catch (e) {
       setSubmitError(e instanceof Error ? e.message : "Submission failed");
       setSubmitting(false);
     }
+  }
+
+  async function handleRegisterOnChain() {
+    if (!role) return;
+    setOnChainRegState("switching");
+
+    const eth = typeof window !== "undefined" ? (window as any).ethereum : null;
+    if (eth) {
+      try {
+        await eth.request({
+          method: "wallet_addEthereumChain",
+          params: [{
+            chainId: "0x" + ogNewton.id.toString(16),
+            chainName: ogNewton.name,
+            nativeCurrency: ogNewton.nativeCurrency,
+            rpcUrls: [ogNewton.rpcUrls.default.http[0]],
+            blockExplorerUrls: [ogNewton.blockExplorers?.default.url ?? ""],
+          }],
+        });
+      } catch (e: any) {
+        if (e?.code === 4001) {
+          setOnChainRegState("error");
+          return;
+        }
+      }
+    }
+
+    setOnChainRegState("pending");
+    const roleNum = role === "agent_owner" ? 2 : 1;
+    register(roleNum);
+  }
+
+  async function handleClaimFaucet() {
+    if (!walletAddress) return;
+    setFaucetState("claiming");
+    setFaucetError(null);
+    try {
+      const res = await fetch("/api/faucet/claim", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ walletAddress }),
+      });
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.error ?? "Claim failed");
+      setFaucetTxHash(json.txHash);
+      setFaucetState("done");
+    } catch (e) {
+      setFaucetError(e instanceof Error ? e.message : "Claim failed");
+      setFaucetState("error");
+    }
+  }
+
+  function finishOnboarding() {
+    try {
+      sessionStorage.removeItem("zerogig:onboarding:activate");
+      sessionStorage.setItem("zerogig:onboarding:completed", "1");
+    } catch {}
+    router.push("/dashboard");
   }
 
   return (
@@ -396,10 +503,114 @@ export default function OnboardingPage() {
                   >
                     {submitting ? "Saving…" : (
                       <>
-                        Submit & Enter
+                        Submit & Continue
                         <ArrowRight className="w-4 h-4" />
                       </>
                     )}
+                  </button>
+                </div>
+              </StepCard>
+            )}
+
+            {step === 4 && (
+              <StepCard key="4">
+                <h1 className="text-3xl sm:text-4xl font-medium mb-2">Activate your account.</h1>
+                <p className="text-white/55 text-[15px] mb-8">
+                  Register your role on-chain and claim 0.5 OG starter credits to begin.
+                </p>
+
+                {/* On-chain registration */}
+                <div className="rounded-xl border border-white/10 bg-[#050810]/60 p-5 mb-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-white font-medium text-[15px]">On-chain registration</p>
+                    {onChainRegState === "done" && (
+                      <span className="text-emerald-400 text-[12px] font-medium flex items-center gap-1">
+                        <Check className="w-3.5 h-3.5" /> Done
+                      </span>
+                    )}
+                  </div>
+                  {onChainRegState === "done" ? (
+                    <p className="text-white/40 text-[13px]">Your role is recorded on the 0G Newton testnet.</p>
+                  ) : (
+                    <>
+                      <p className="text-white/40 text-[13px] mb-4">
+                        Record your role permanently on-chain so the dashboard knows your workspace.
+                      </p>
+                      <button
+                        onClick={handleRegisterOnChain}
+                        disabled={isPending || isConfirming || onChainRegState === "switching"}
+                        className="w-full px-4 py-2.5 rounded-full bg-white text-black text-[13px] font-medium hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                      >
+                        {onChainRegState === "switching" ? "Switching network…" :
+                         isPending ? "Confirm in wallet…" :
+                         isConfirming ? "Recording on-chain…" :
+                         "Register on-chain"}
+                      </button>
+                      {regError && (
+                        <p className="text-red-400 text-[12px] mt-3">
+                          {regError instanceof Error ? regError.message : String(regError)}
+                        </p>
+                      )}
+                    </>
+                  )}
+                </div>
+
+                {/* Faucet claim */}
+                <div className={`rounded-xl border p-5 mb-4 transition-all ${
+                  onChainRegState === "done"
+                    ? "border-white/10 bg-[#050810]/60"
+                    : "border-white/[0.04] bg-[#050810]/30 opacity-50"
+                }`}>
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-white font-medium text-[15px]">Starter credits</p>
+                    {faucetState === "done" && (
+                      <span className="text-emerald-400 text-[12px] font-medium flex items-center gap-1">
+                        <Check className="w-3.5 h-3.5" /> Claimed
+                      </span>
+                    )}
+                  </div>
+                  {faucetState === "done" ? (
+                    <>
+                      <p className="text-white/40 text-[13px] mb-2">0.5 OG sent to your wallet.</p>
+                      {faucetTxHash && (
+                        <a
+                          href={`https://scan-testnet.0g.ai/tx/${faucetTxHash}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[#38bdf8] text-[12px] hover:underline"
+                        >
+                          View on explorer →
+                        </a>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-white/40 text-[13px] mb-4">
+                        Claim 0.5 OG from the community faucet to cover your first transactions.
+                      </p>
+                      <button
+                        onClick={handleClaimFaucet}
+                        disabled={onChainRegState !== "done" || faucetState === "claiming"}
+                        className="w-full px-4 py-2.5 rounded-full bg-[#0d1525]/90 border border-white/20 text-white text-[13px] font-medium hover:border-white/40 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                      >
+                        {faucetState === "claiming" ? "Claiming…" : "Claim 0.5 OG"}
+                      </button>
+                      {faucetError && (
+                        <p className="text-red-400 text-[12px] mt-3">{faucetError}</p>
+                      )}
+                    </>
+                  )}
+                </div>
+
+                {/* Final CTA */}
+                <div className="flex justify-end">
+                  <button
+                    onClick={finishOnboarding}
+                    disabled={onChainRegState !== "done" || faucetState !== "done"}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white text-black font-medium hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-[13px]"
+                  >
+                    Enter Dashboard
+                    <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>
               </StepCard>

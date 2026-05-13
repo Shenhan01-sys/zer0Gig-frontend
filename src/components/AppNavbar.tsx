@@ -4,7 +4,8 @@ import { useEffect, useRef, useState, useCallback, Suspense } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { useAccount, useDisconnect } from "wagmi";
+import { useAccount, useDisconnect, useBalance } from "wagmi";
+import { formatUnits } from "viem";
 import { usePrivy } from "@privy-io/react-auth";
 import { useQueryClient } from "@tanstack/react-query";
 import { animate } from "animejs";
@@ -87,6 +88,11 @@ export default function AppNavbar() {
 
   const shortAddress = address
     ? `${address.slice(0, 6)}...${address.slice(-4)}`
+    : null;
+
+  const { data: balanceData } = useBalance({ address: address ?? undefined });
+  const ogBalance = balanceData?.value && balanceData?.decimals
+    ? `${Number(formatUnits(balanceData.value, balanceData.decimals)).toFixed(3)} OG`
     : null;
 
   // Pick the LONGEST matching href so nested routes (e.g. /marketplace/agents-for-sale)
@@ -290,6 +296,14 @@ export default function AppNavbar() {
           <Suspense fallback={null}>
             <GuideNavButton pathname={pathname} />
           </Suspense>
+
+          {/* OG Balance */}
+          {authenticated && ogBalance && (
+            <span className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.03] border border-white/[0.06] text-[12px] text-white/60 font-mono">
+              <Coins className="w-3.5 h-3.5 text-white/40" />
+              {ogBalance}
+            </span>
+          )}
 
           {/* Wallet */}
           {authenticated ? (

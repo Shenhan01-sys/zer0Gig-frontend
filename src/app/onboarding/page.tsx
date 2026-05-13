@@ -80,6 +80,49 @@ export default function OnboardingPage() {
     if (regError) setOnChainRegState("error");
   }, [regError]);
 
+  // Step 4 auto-check: detect prior faucet claim + on-chain registration
+  // (handles page refresh after partial completion)
+  useEffect(() => {
+    if (step !== 4 || !walletAddress) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        // 1. Check if already claimed
+        const faucetRes = await fetch(`/api/faucet/claim?wallet=${walletAddress}`);
+        const faucetJson = await faucetRes.json();
+        if (!cancelled && faucetJson.ok && faucetJson.claimed) {
+          setFaucetState("done");
+          setFaucetTxHash(faucetJson.txHash ?? null);
+        }
+      } catch {
+        // Network failure — leave it to manual claim
+      }
+      try {
+        // 2. Check if already registered on-chain
+        const publicClient = createPublicClient({
+          chain: ogNewton,
+          transport: http(),
+        });
+        const rawRole = await publicClient.readContract({
+          address: CONTRACT_CONFIG.UserRegistry.address as `0x${string}`,
+          abi: CONTRACT_CONFIG.UserRegistry.abi,
+          functionName: "getUserRole",
+          args: [walletAddress as `0x${string}`],
+        });
+        const ROLE_MAP: Record<number, string> = {
+          0: "Unregistered", 1: "Client", 2: "FreelancerOwner",
+        };
+        const roleStr = ROLE_MAP[Number(rawRole)] ?? "Unregistered";
+        if (!cancelled && roleStr !== "Unregistered") {
+          setOnChainRegState("done");
+        }
+      } catch {
+        // On-chain read failed — leave it to manual registration
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [step, walletAddress]);
+
   // Auto-advance once wallet connects on step 0.
   // If the wallet already has a Supabase signup row AND is registered
   // on-chain, bypass to landing. If only Supabase exists, skip to activation.
@@ -236,7 +279,15 @@ export default function OnboardingPage() {
         body: JSON.stringify({ walletAddress }),
       });
       const json = await res.json();
-      if (!json.ok) throw new Error(json.error ?? "Claim failed");
+      if (!json.ok) {
+        const msg = json.error ?? "Claim failed";
+        // Already claimed = treat as success
+        if (msg.toLowerCase().includes("already claimed")) {
+          setFaucetState("done");
+          return;
+        }
+        throw new Error(msg);
+      }
       setFaucetTxHash(json.txHash);
       setFaucetState("done");
     } catch (e) {

@@ -41,6 +41,50 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+/**
+ * GET /api/faucet/claim?wallet=0x...
+ *
+ * Returns whether the wallet has already claimed starter credits.
+ */
+export async function GET(req: Request) {
+  try {
+    const url = new URL(req.url);
+    const walletAddress = url.searchParams.get("wallet");
+
+    if (!walletAddress || !isAddress(walletAddress)) {
+      return NextResponse.json(
+        { ok: false, error: "Invalid wallet address" },
+        { status: 400 }
+      );
+    }
+
+    const normalizedWallet = walletAddress.toLowerCase();
+
+    const { data: existing } = await supabase
+      .from("faucet_claims")
+      .select("tx_hash, amount, claimed_at")
+      .eq("wallet_address", normalizedWallet)
+      .maybeSingle();
+
+    if (existing) {
+      return NextResponse.json({
+        ok: true,
+        claimed: true,
+        txHash: existing.tx_hash,
+        amount: existing.amount,
+        claimedAt: existing.claimed_at,
+      });
+    }
+
+    return NextResponse.json({ ok: true, claimed: false });
+  } catch (err) {
+    return NextResponse.json(
+      { ok: false, error: err instanceof Error ? err.message : "Check failed" },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();

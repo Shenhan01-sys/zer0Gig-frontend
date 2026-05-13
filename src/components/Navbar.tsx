@@ -22,10 +22,11 @@ const NAV_LINKS: NavLink[] = [
   { label: "How It Works",  href: "/#how-it-works"                     },
   { label: "Why Indonesia", href: "/#indonesia"                        },
   { label: "FAQ",           href: "/#faq"                              },
+  { label: "Feedback",      href: "/feedback"                          },
   { label: "Docs",          href: "https://stylenecy.gitbook.io/zer0gig", external: true },
 ];
 
-const CONSOLE_LINK: NavLink = { label: "Console", href: "/dashboard" };
+const CONSOLE_LINK: NavLink = { label: "Launch App", href: "/dashboard" };
 
 // ── LandingNavbar ─────────────────────────────────────────────────────────────
 
@@ -256,7 +257,7 @@ export default function Navbar() {
             transition={{ duration: 0.18, ease: [0.25, 0.4, 0.25, 1] }}
             className="pointer-events-auto absolute top-[calc(100%+10px)] left-4 right-4 rounded-2xl border border-white/[0.08] bg-[#032A3D]/95 backdrop-blur-2xl shadow-[0_16px_48px_rgba(0,0,0,0.5)] p-3 flex flex-col gap-1"
           >
-            {NAV_LINKS.map((link) => {
+            {navLinks.map((link) => {
               const cls = "px-4 py-3 rounded-xl text-[15px] font-medium text-white/60 hover:text-white hover:bg-white/[0.06] transition-all";
               if (link.external) {
                 return (

@@ -8,7 +8,7 @@ import { useAccount, useDisconnect } from "wagmi";
 import { usePrivy } from "@privy-io/react-auth";
 import { useQueryClient } from "@tanstack/react-query";
 import { animate } from "animejs";
-import { Store, Zap, Book, Trophy, Tag, Coins, HelpCircle } from "lucide-react";
+import { Store, Zap, Book, Trophy, Tag, Coins, HelpCircle, MessageSquare } from "lucide-react";
 import { useAccount as useAccountForRole } from "wagmi";
 import { useUserRole, UserRole } from "@/hooks/useUserRegistry";
 import RouteAwareTour from "./RouteAwareTour";
@@ -23,6 +23,7 @@ const APP_LINKS = [
   { label: "Buy Agents",  href: "/marketplace/agents-for-sale",   icon: <Tag size={16} /> },
   { label: "Leaderboard", href: "/leaderboard",                   icon: <Trophy size={16} /> },
   { label: "Dashboard",   href: "/dashboard",                     icon: <Zap size={16} /> },
+  { label: "Feedback",    href: "/feedback",                      icon: <MessageSquare size={16} /> },
   { label: "Docs",        href: "https://stylenecy.gitbook.io/zer0gig", icon: <Book size={16} /> },
 ];
 
@@ -51,6 +52,7 @@ function getSectionLabel(pathname: string): string {
   if (pathname === "/marketplace")                          return "Marketplace";
   if (pathname === "/docs")                                 return "Docs";
   if (pathname === "/dashboard")                            return "Dashboard";
+  if (pathname === "/feedback")                             return "Feedback";
   if (pathname.startsWith("/dashboard/register-agent"))    return "Register Agent";
   if (pathname.startsWith("/dashboard/create-job"))        return "Post a Job";
   if (pathname.startsWith("/dashboard/create-subscription")) return "New Subscription";

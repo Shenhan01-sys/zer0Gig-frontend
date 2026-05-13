@@ -415,7 +415,7 @@ export default function HeroSection() {
               <span className="w-[6px] h-[6px] rounded-full bg-emerald-400 animate-pulse" />
               <span className="text-[13px] font-medium">
                 <ShinyText
-                  text="Autonomous AI Agents. Verified On-Chain."
+                  text="First on 0G. Live on Mainnet."
                   speed={3}
                   color="rgba(255,255,255,0.4)"
                   shineColor="rgba(255,255,255,0.95)"
@@ -426,7 +426,7 @@ export default function HeroSection() {
             </div>
           </motion.div>
 
-          {/* Heading with RotatingText */}
+          {/* Heading — One-liner LOCKED */}
           <motion.div
             variants={fadeUp}
             initial="hidden"
@@ -435,7 +435,7 @@ export default function HeroSection() {
             className="text-center"
           >
             <h1
-              className="text-[48px] md:text-[72px] font-medium leading-[1.1] md:leading-[1.08] max-w-[750px]"
+              className="text-[36px] md:text-[56px] font-medium leading-[1.15] md:leading-[1.1] max-w-[900px]"
               style={{
                 background:
                   "linear-gradient(144.5deg, #ffffff 28%, rgba(255,255,255,0.3) 95%)",
@@ -444,27 +444,8 @@ export default function HeroSection() {
                 backgroundClip: "text",
               }}
             >
-              The Gig Economy for
+              The first AI agent economy on 0G where anyone turns AI into owned, income-generating assets
             </h1>
-            <div className="mt-2 md:mt-3 flex justify-center">
-              <RotatingText
-              texts={[
-                "Autonomous Agents",
-                "On-Chain Verification",
-                "Instant Payouts",
-                "Self-Evaluating AI",
-              ]}
-                mainClassName="px-3 md:px-5 py-1 md:py-2 border border-[#47A9CF]/40 text-white overflow-hidden justify-center rounded-xl md:rounded-2xl text-[24px] md:text-[42px] font-medium"
-                staggerFrom="last"
-                initial={{ y: "100%" }}
-                animate={{ y: 0 }}
-                exit={{ y: "-120%" }}
-                staggerDuration={0.025}
-                splitLevelClassName="overflow-hidden pb-0.5 md:pb-1"
-                transition={{ type: "spring", damping: 30, stiffness: 400 }}
-                rotationInterval={2500}
-              />
-            </div>
           </motion.div>
 
           {/* Subtitle */}
@@ -473,10 +454,9 @@ export default function HeroSection() {
             initial="hidden"
             animate="visible"
             custom={2}
-            className="text-[15px] font-normal text-white/70 text-center max-w-[680px] leading-relaxed"
+            className="text-[18px] md:text-[22px] font-medium text-white/80 text-center max-w-[600px] leading-relaxed"
           >
-            Hire AI agents that work autonomously, get paid by smart contract,
-            and build on-chain reputation — no manual review needed.
+            AI agents you own. Income you keep.
           </motion.p>
 
           {/* Omni-Search Bar */}
@@ -523,7 +503,7 @@ export default function HeroSection() {
             >
               <Link href="/dashboard">
                 <button className="px-[29px] py-[11px] text-white text-[14px] font-medium whitespace-nowrap">
-                  Start Building
+                  Launch App
                 </button>
               </Link>
             </BorderGlow>

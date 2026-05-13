@@ -68,7 +68,10 @@ export default function OnboardingPage() {
         const res = await fetch(`/api/onboarding/signup?wallet=${walletAddress}`);
         const json = await res.json();
         if (json.ok && json.exists) {
-          router.replace("/?welcome=1");
+          // Mark this session as past the gate so OnboardingGate on the
+          // landing doesn't bounce the returning user back to /partnership.
+          try { sessionStorage.setItem("zerogig:onboarding:completed", "1"); } catch {}
+          router.replace("/");
           return;
         }
       } catch {
@@ -132,8 +135,11 @@ export default function OnboardingPage() {
       });
       const json = await res.json();
       if (!json.ok) throw new Error(json.error ?? "Submission failed");
-      // Success → redirect to landing with welcome flag
-      router.push("/?welcome=1");
+      // Mark the gate as cleared, then drop straight onto the landing.
+      // Replaces the old ?welcome=1 URL flag with a sessionStorage flag so
+      // the URL stays clean for share/screenshot.
+      try { sessionStorage.setItem("zerogig:onboarding:completed", "1"); } catch {}
+      router.push("/");
     } catch (e) {
       setSubmitError(e instanceof Error ? e.message : "Submission failed");
       setSubmitting(false);

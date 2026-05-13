@@ -8,10 +8,13 @@ import { usePrivy } from "@privy-io/react-auth";
  * OnboardingGate — strict gate for the landing page.
  *
  * Behaviour:
- *  - If `?welcome=1` is in the URL (just submitted onboarding) → never redirect.
- *  - If `?skip=true` is in the URL → never redirect for this visit (sessionStorage flag).
- *  - If the visitor hasn't seen onboarding yet (no wallet OR wallet not in
- *    Supabase signups) → push them to /onboarding.
+ *  - If sessionStorage 'zerogig:onboarding:completed' === '1' (set by
+ *    /onboarding right before redirecting back to /) → never redirect.
+ *    Replaces the old ?welcome=1 URL flag so the landing URL stays clean.
+ *  - If `?skip=true` is in the URL → never redirect for this visit
+ *    (sessionStorage flag).
+ *  - If the visitor hasn't passed the /partnership gate yet → push there.
+ *  - If they passed partnership but haven't completed /onboarding → push there.
  *  - Once a wallet is found in Supabase, the gate stays open for that session.
  *
  * Renders nothing visually. Drop into the root page.
@@ -28,8 +31,15 @@ export default function OnboardingGate() {
     if (fired.current) return;
     if (!ready) return;
 
-    // Honor explicit bypass flags
-    if (params.get("welcome") === "1") return;
+    // Honor explicit bypass flags.
+    // - 'zerogig:onboarding:completed' — set by /onboarding right before
+    //   redirecting back to /, replaces the old ?welcome=1 URL flag (no
+    //   query-string clutter in the landing URL).
+    // - ?skip=true / 'zerogig:onboarding-skipped' — opt-out for power users
+    //   who don't want to be funneled.
+    try {
+      if (sessionStorage.getItem("zerogig:onboarding:completed") === "1") return;
+    } catch {}
     if (params.get("skip") === "true") {
       try { sessionStorage.setItem("zerogig:onboarding-skipped", "1"); } catch {}
       return;

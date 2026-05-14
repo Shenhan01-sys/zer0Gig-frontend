@@ -15,8 +15,6 @@ import { useUserRole, UserRole } from "@/hooks/useUserRegistry";
 import RouteAwareTour from "./RouteAwareTour";
 import { openTour } from "./GuidedTour";
 import { tourKeyForLocation } from "@/lib/tours";
-import { useSearchParams } from "next/navigation";
-
 // ── App nav links ──────────────────────────────────────────────────────────────
 
 const APP_LINKS = [
@@ -261,59 +259,24 @@ export default function AppNavbar() {
         {/* ── Right: Back button + wallet ────────────────────────────────── */}
         <div className="hidden md:flex items-center gap-2 shrink-0">
 
-          {/* Back button (sub-pages only) */}
-          <AnimatePresence>
-            {backConfig && (
-              <motion.div
-                initial={{ opacity: 0, x: 8 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 8 }}
-                transition={{ duration: 0.2 }}
-              >
-                <Link
-                  href={backConfig.href}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] text-white/45 hover:text-white/80 hover:bg-white/[0.06] transition-all border border-transparent hover:border-white/[0.08]"
-                >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                    <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  {backConfig.label}
-                </Link>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Harvest Yield — agent owners only. Sits between the back-button
-              area and the wallet pill so it reads as a quick action without
-              fighting the primary nav links. */}
+          {/* Harvest Yield — agent owners only */}
           <HarvestNavButton pathname={pathname} />
 
-          {/* Guide — re-opens the current page's tour. Hidden on routes that
-              don't have a tour configured. Suspense-wrapped because the
-              inner button reads useSearchParams() for tab awareness, which
-              would otherwise bail static prerender on /marketplace and
-              /leaderboard during next build. */}
-          <Suspense fallback={null}>
-            <GuideNavButton pathname={pathname} />
-          </Suspense>
-
-          {/* OG Balance */}
-          {authenticated && ogBalance && (
-            <span className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.03] border border-white/[0.06] text-[12px] text-white/60 font-mono">
-              <Coins className="w-3.5 h-3.5 text-white/40" />
-              {ogBalance}
-            </span>
-          )}
-
-          {/* Wallet */}
+          {/* Wallet + OG Balance (merged into one compact pill) */}
           {authenticated ? (
             <button
               data-tour-id="nav-wallet"
               onClick={() => { queryClient.clear(); disconnect(); logout(); }}
-              className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white/[0.05] border border-white/[0.07] text-[12px] text-white hover:bg-white/10 transition-all whitespace-nowrap"
+              className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-xl bg-white/[0.05] border border-white/[0.07] text-[12px] text-white hover:bg-white/10 transition-all whitespace-nowrap"
+              title={ogBalance ? `${ogBalance} · ${address}` : address ?? ""}
             >
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_5px_rgba(52,211,153,0.8)]" />
-              {shortAddress ?? "Connected"}
+              {ogBalance && (
+                <span className="hidden lg:inline text-white/60 font-mono">
+                  {ogBalance}
+                </span>
+              )}
+              <span className="text-white/80">{shortAddress ?? "Connected"}</span>
             </button>
           ) : (
             <button
@@ -387,7 +350,7 @@ export default function AppNavbar() {
                 className="flex items-center gap-2 px-4 py-3 rounded-xl text-[14px] text-white/60 hover:text-white hover:bg-white/[0.06] transition-all"
               >
                 <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                {shortAddress} — Disconnect
+                {ogBalance ? `${ogBalance} · ${shortAddress}` : shortAddress} — Disconnect
               </button>
             ) : (
               <button
@@ -410,28 +373,6 @@ export default function AppNavbar() {
         <RouteAwareTour />
       </Suspense>
     </nav>
-  );
-}
-
-// ── Guide nav button ─────────────────────────────────────────────────────────
-// Tiny help-circle pill that re-opens the current page's tour. Hidden on
-// routes that have no tour configured (avoids dead clicks).
-function GuideNavButton({ pathname }: { pathname: string }) {
-  const searchParams = useSearchParams();
-  const tab          = searchParams?.get("tab") ?? null;
-  const tourKey      = tourKeyForLocation(pathname, tab);
-  if (!tourKey) return null;
-  return (
-    <button
-      type="button"
-      data-tour-id="nav-guide"
-      onClick={() => openTour(tourKey)}
-      aria-label="Open guided tour for this page"
-      className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/20 text-white/65 hover:text-white text-[12px] font-medium whitespace-nowrap transition-all"
-    >
-      <HelpCircle className="w-3.5 h-3.5" />
-      Guide
-    </button>
   );
 }
 

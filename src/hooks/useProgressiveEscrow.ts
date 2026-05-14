@@ -1,6 +1,6 @@
 "use client";
 
-import { useReadContract, useReadContracts, useWriteContract, useWaitForTransactionReceipt, useAccount } from "wagmi";
+import { useReadContract, useReadContracts, useWriteContract, useAccount } from "wagmi";
 import { useState, useMemo } from "react";
 import { CONTRACT_CONFIG } from "@/lib/contracts";
 import { Address } from "viem";
@@ -113,10 +113,6 @@ export function useSubmitProposal() {
   const [isConfirming, setIsConfirming] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-
-  const { data: txHash, isLoading: isWaiting, isSuccess } = useWaitForTransactionReceipt({
-    hash: undefined as any,
-  });
 
   const submitProposal = async (params: {
     jobId: bigint;

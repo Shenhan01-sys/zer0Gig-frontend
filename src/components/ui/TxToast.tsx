@@ -84,11 +84,31 @@ function XIcon({ color }: { color: string }) {
 }
 
 // ── Per-tx watcher — waits for receipt, then calls confirm ───────────────
+// 0G testnet RPC can be slow — use generous timeout (5 min) and polling (3s)
 function TxWatcher({ hash, onConfirmed, onFailed }: { hash: `0x${string}`; onConfirmed: () => void; onFailed: (err: string) => void }) {
-  const { isSuccess, isError, error } = useWaitForTransactionReceipt({ hash });
+  const { isSuccess, isError, error } = useWaitForTransactionReceipt({
+    hash,
+    query: {
+      enabled: !!hash && hash.startsWith("0x"),
+      retry: 10,
+      retryDelay: 3000,
+    },
+  });
+
   useEffect(() => {
     if (isSuccess) onConfirmed();
-    else if (isError) onFailed(error?.message || "Transaction failed on-chain");
+    else if (isError) {
+      const msg = error?.message || "";
+      // Viem throws "receipt could not be found" when tx is dropped or RPC lags.
+      // For 0G testnet this is common — show a friendlier message.
+      if (msg.includes("could not be found")) {
+        onFailed(
+          "Transaction was broadcast but confirmation timed out. Check the explorer link above. If it succeeded, refresh the page. If it failed, try again."
+        );
+      } else {
+        onFailed(msg.split("\n")[0].slice(0, 140) || "Transaction failed on-chain");
+      }
+    }
   }, [isSuccess, isError, error, onConfirmed, onFailed]);
   return null;
 }

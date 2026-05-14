@@ -1073,8 +1073,8 @@ function JobDetailInner({ jobId }: { jobId: number }) {
       <SystemMessageLog jobId={jobId} maxEntries={50} />
       </div>
 
-      {/* Right column — live chat (only visible to client, or once job is in progress) */}
-      {(isClient || job.status >= JOB_STATUS.IN_PROGRESS) && (
+      {/* Right column — live chat (only visible to client, or non-agent-owner participants once job is in progress) */}
+      {(isClient || (job.status >= JOB_STATUS.IN_PROGRESS && !isAgentOwner)) && (
         <div data-tour-id="job-chat" className="w-[360px] flex-shrink-0 sticky top-28 h-[calc(100vh-9rem)]">
           <JobChat jobId={jobId} className="h-full" disabled={job.status < JOB_STATUS.IN_PROGRESS} />
         </div>

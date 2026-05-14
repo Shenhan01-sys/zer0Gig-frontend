@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePrivy } from "@privy-io/react-auth";
+import { useAccount, useChainId, useSwitchChain } from "wagmi";
 import { Check, ChevronRight, ChevronLeft, Wallet, Globe2, Cpu, Sparkles, ArrowRight, Zap } from "lucide-react";
 import Footer from "@/components/Footer";
 import { useRegisterUser, UserRole, USER_ROLES } from "@/hooks/useUserRegistry";
@@ -45,7 +46,15 @@ function prevStepFrom(current: number, role: Role | null): number {
 export default function OnboardingPage() {
   const router = useRouter();
   const { ready, authenticated, user, login } = usePrivy();
-  const walletAddress = (user?.wallet?.address ?? "").toLowerCase();
+  const { address: wagmiAddress, isConnected } = useAccount();
+  const chainId = useChainId();
+  const { switchChain, isPending: isSwitchingChain } = useSwitchChain();
+
+  // Canonical wallet address: use wagmi's active account (the wallet that will sign tx)
+  const walletAddress = (wagmiAddress ?? "").toLowerCase();
+  // Privy embedded wallet address (for mismatch detection)
+  const privyAddress = (user?.wallet?.address ?? "").toLowerCase();
+  const walletMismatch = !!privyAddress && !!walletAddress && privyAddress !== walletAddress;
 
   const [step, setStep] = useState(0);
 
@@ -269,31 +278,42 @@ export default function OnboardingPage() {
       setOnChainRegState("error");
       return;
     }
-    setOnChainRegState("switching");
 
-    const eth = typeof window !== "undefined" ? (window as any).ethereum : null;
-    if (eth) {
+    // ── Wallet validation ───────────────────────────────────────────────
+    if (!isConnected || !walletAddress) {
+      setOnChainRegState("error");
+      console.error("[Onboarding] No wallet connected via wagmi");
+      return;
+    }
+
+    // ── Network validation ──────────────────────────────────────────────
+    if (chainId !== ogNewton.id) {
+      setOnChainRegState("switching");
       try {
-        await eth.request({
-          method: "wallet_addEthereumChain",
-          params: [{
-            chainId: "0x" + ogNewton.id.toString(16),
-            chainName: ogNewton.name,
-            nativeCurrency: ogNewton.nativeCurrency,
-            rpcUrls: [ogNewton.rpcUrls.default.http[0]],
-            blockExplorerUrls: [ogNewton.blockExplorers?.default.url ?? ""],
-          }],
-        });
+        await switchChain({ chainId: ogNewton.id });
+        // After switching, the component will re-render with new chainId
+        // We set state back to idle so user can click again
+        setOnChainRegState("idle");
+        return;
       } catch (e: any) {
-        if (e?.code === 4001) {
-          setOnChainRegState("error");
-          return;
-        }
+        console.error("[Onboarding] Network switch failed:", e);
+        setOnChainRegState("error");
+        return;
       }
+    }
+
+    // ── Wallet mismatch guard ───────────────────────────────────────────
+    if (walletMismatch) {
+      console.error("[Onboarding] Wallet mismatch detected:", {
+        privy: privyAddress,
+        wagmi: walletAddress,
+      });
+      // Still attempt the tx — the user will see the mismatch warning in UI
     }
 
     setOnChainRegState("pending");
     const roleNum = role === "agent_owner" ? 2 : 1;
+    console.log("[Onboarding] Registering with wallet:", walletAddress, "role:", roleNum, "chain:", chainId);
     register(roleNum);
   }
 
@@ -401,7 +421,18 @@ export default function OnboardingPage() {
 
                 {!ready && <p className="text-white/30 text-xs mt-3">Initializing Privy…</p>}
                 {ready && authenticated && (
-                  <p className="text-emerald-400 text-xs mt-3">Connected as {walletAddress.slice(0, 6)}…{walletAddress.slice(-4)}</p>
+                  <div className="mt-3 space-y-2">
+                    <p className="text-emerald-400 text-xs">Connected as {walletAddress.slice(0, 6)}…{walletAddress.slice(-4)}</p>
+                    {walletMismatch && (
+                      <div className="rounded-lg border border-amber-500/25 bg-amber-500/[0.06] px-3 py-2">
+                        <p className="text-amber-400 text-[11px] font-medium">⚠️ Wallet mismatch</p>
+                        <p className="text-amber-400/70 text-[10px] mt-0.5">
+                          Privy wallet ({privyAddress.slice(0,6)}...{privyAddress.slice(-4)}) differs from active wallet. 
+                          Make sure you use the same wallet for faucet and registration.
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 )}
               </StepCard>
             )}
@@ -696,10 +727,22 @@ export default function OnboardingPage() {
                          onChainRegState === "pending" ? "Confirm in wallet…" :
                          "Register on-chain"}
                       </button>
+                      {walletMismatch && (
+                        <div className="rounded-lg border border-amber-500/25 bg-amber-500/[0.06] px-3 py-2 mb-3">
+                          <p className="text-amber-400 text-[12px] font-medium">⚠️ Wallet Mismatch Detected</p>
+                          <p className="text-amber-400/70 text-[11px] mt-0.5">
+                            Privy wallet ({privyAddress.slice(0,6)}...{privyAddress.slice(-4)}) differs from active wallet ({walletAddress.slice(0,6)}...{walletAddress.slice(-4)}). 
+                            The faucet may have sent OG to a different address. Please ensure you are using the correct wallet.
+                          </p>
+                        </div>
+                      )}
                       {regError && (
-                        <p className="text-red-400 text-[12px] mt-3">
-                          {regError instanceof Error ? regError.message : String(regError)}
-                        </p>
+                        <div className="rounded-lg border border-red-500/25 bg-red-500/[0.06] px-3 py-2 mb-3">
+                          <p className="text-red-400 text-[12px] font-medium">Registration Failed</p>
+                          <p className="text-red-400/70 text-[11px] mt-0.5">
+                            {regError instanceof Error ? regError.message : String(regError)}
+                          </p>
+                        </div>
                       )}
                     </>
                   )}

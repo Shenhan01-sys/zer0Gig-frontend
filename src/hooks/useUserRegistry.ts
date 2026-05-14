@@ -64,7 +64,15 @@ export function useRegisterUser() {
       await publicClient?.waitForTransactionReceipt({ hash });
       setIsConfirmed(true);
       setIsSuccess(true);
-    } catch (err) {
+    } catch (err: any) {
+      console.error("[useRegisterUser] Registration failed:", {
+        message: err?.message,
+        code: err?.code,
+        cause: err?.cause,
+        details: err?.details,
+        shortMessage: err?.shortMessage,
+        wallet: (typeof window !== "undefined" && (window as any).ethereum) ? "connected" : "not connected",
+      });
       setError(err);
     } finally {
       setIsPending(false);

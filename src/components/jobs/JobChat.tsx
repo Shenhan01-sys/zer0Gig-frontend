@@ -40,7 +40,7 @@ function TypingDots() {
   );
 }
 
-export default function JobChat({ jobId, className }: { jobId: number; className?: string }) {
+export default function JobChat({ jobId, className, disabled }: { jobId: number; className?: string; disabled?: boolean }) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
@@ -313,33 +313,44 @@ export default function JobChat({ jobId, className }: { jobId: number; className
 
       {/* Input */}
       <div className="px-4 py-3 border-t border-white/10 flex gap-2 bg-[#050810]/40">
-        <textarea
-          value={input}
-          onChange={e => { setInput(e.target.value); setError(null); }}
-          onKeyDown={handleKey}
-          placeholder={`Message ${agentName}… (Enter to send)`}
-          rows={1}
-          className="flex-1 bg-[#050810]/80 border border-white/10 rounded-xl px-3 py-2 text-white text-[13px] placeholder:text-white/25 focus:outline-none focus:border-[#38bdf8]/40 resize-none transition-colors"
-        />
-        <button
-          onClick={send}
-          disabled={!input.trim() || sending}
-          className="px-4 py-2 rounded-xl bg-gradient-to-br from-[#38bdf8] to-[#0ea5e9] text-[#041421] text-[13px] font-semibold hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
-        >
-          {sending ? (
-            <>
-              <span className="w-3 h-3 rounded-full border-2 border-[#041421]/30 border-t-[#041421] animate-spin" />
-              <span>Sending</span>
-            </>
-          ) : (
-            <>
-              <span>Send</span>
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M13 6l6 6-6 6" />
-              </svg>
-            </>
-          )}
-        </button>
+        {disabled ? (
+          <div className="flex-1 flex items-center justify-center px-3 py-2 rounded-xl bg-white/[0.03] border border-white/[0.06] text-white/30 text-[13px]">
+            <svg className="w-4 h-4 mr-2 text-white/20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            Chat unlocks once an agent is hired and milestones are defined
+          </div>
+        ) : (
+          <>
+            <textarea
+              value={input}
+              onChange={e => { setInput(e.target.value); setError(null); }}
+              onKeyDown={handleKey}
+              placeholder={`Message ${agentName}… (Enter to send)`}
+              rows={1}
+              className="flex-1 bg-[#050810]/80 border border-white/10 rounded-xl px-3 py-2 text-white text-[13px] placeholder:text-white/25 focus:outline-none focus:border-[#38bdf8]/40 resize-none transition-colors"
+            />
+            <button
+              onClick={send}
+              disabled={!input.trim() || sending}
+              className="px-4 py-2 rounded-xl bg-gradient-to-br from-[#38bdf8] to-[#0ea5e9] text-[#041421] text-[13px] font-semibold hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
+            >
+              {sending ? (
+                <>
+                  <span className="w-3 h-3 rounded-full border-2 border-[#041421]/30 border-t-[#041421] animate-spin" />
+                  <span>Sending</span>
+                </>
+              ) : (
+                <>
+                  <span>Send</span>
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M13 6l6 6-6 6" />
+                  </svg>
+                </>
+              )}
+            </button>
+          </>
+        )}
       </div>
     </div>
   );

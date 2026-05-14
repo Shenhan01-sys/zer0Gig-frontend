@@ -35,6 +35,7 @@ import AgentActivityByWallet from "@/components/jobs/AgentActivityByWallet";
 import JobChat from "@/components/jobs/JobChat";
 import MilestoneSubmitPanel from "@/components/jobs/MilestoneSubmitPanel";
 import StaleJobReclaimPanel from "@/components/jobs/StaleJobReclaimPanel";
+import DeliverablePanel from "@/components/jobs/DeliverablePanel";
 
 // ─── Status helpers ───────────────────────────────────────────────────────────
 // Job status enum: 0=OPEN, 1=PENDING_MILESTONES, 2=IN_PROGRESS, 3=COMPLETED, 4=CANCELLED, 5=PARTIALLY_DONE
@@ -556,6 +557,7 @@ function MilestoneTimeline({
   agentWallet,
   currentAddress,
   onSubmitMilestone,
+  onViewDeliverable,
 }: {
   jobId: number;
   milestoneCount: number;
@@ -563,6 +565,7 @@ function MilestoneTimeline({
   agentWallet?: Address;
   currentAddress?: Address;
   onSubmitMilestone?: (milestoneIndex: number) => void;
+  onViewDeliverable?: (milestoneIndex: number) => void;
 }) {
   const isAgent = currentAddress?.toLowerCase() === agentWallet?.toLowerCase();
 
@@ -676,6 +679,17 @@ function MilestoneTimeline({
                   Submit Work
                 </button>
               )}
+              {status === 2 && onViewDeliverable && (
+                <button
+                  onClick={() => onViewDeliverable(index)}
+                  className="mt-3 px-3 py-1.5 bg-[#38bdf8]/10 border border-[#38bdf8]/30 text-[#38bdf8] text-[12px] font-medium rounded-full hover:bg-[#38bdf8]/20 transition-colors flex items-center gap-1.5"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  View Deliverable
+                </button>
+              )}
             </div>
           </div>
         );
@@ -693,6 +707,7 @@ function JobDetailInner({ jobId }: { jobId: number }) {
   const { role } = useUserRole(address as Address | undefined);
 
   const [submittingMilestoneIndex, setSubmittingMilestoneIndex] = useState<number | null>(null);
+  const [viewingDeliverableIndex, setViewingDeliverableIndex] = useState<number | null>(null);
 
   const { data: jobRaw, isLoading, isError, refetch } = useJobDetails(jobId);
   const job = jobRaw as unknown as JobData | undefined;
@@ -966,6 +981,7 @@ function JobDetailInner({ jobId }: { jobId: number }) {
               agentWallet={job.agentWallet as Address | undefined}
               currentAddress={address as Address | undefined}
               onSubmitMilestone={(index) => setSubmittingMilestoneIndex(index)}
+              onViewDeliverable={(index) => setViewingDeliverableIndex(index)}
             />
           ) : (
             <p className="text-white/30 text-[13px] text-center py-6">No milestones defined yet.</p>
@@ -982,6 +998,17 @@ function JobDetailInner({ jobId }: { jobId: number }) {
                 setSubmittingMilestoneIndex(null);
                 refetch();
               }}
+            />
+          )}
+
+          {/* Deliverable Viewer (approved milestones) */}
+          {viewingDeliverableIndex !== null && job && (
+            <DeliverablePanel
+              jobId={jobId}
+              milestoneIndex={viewingDeliverableIndex}
+              job={job}
+              agentName={jobAgentProfile?.display_name || `Agent #${jobAgentId}`}
+              onClose={() => setViewingDeliverableIndex(null)}
             />
           )}
         </div>
@@ -1022,9 +1049,9 @@ function JobDetailInner({ jobId }: { jobId: number }) {
       <SystemMessageLog jobId={jobId} maxEntries={50} />
       </div>
 
-      {/* Right column — live chat */}
+      {/* Right column — live chat (disabled until agent hired + milestones defined) */}
       <div data-tour-id="job-chat" className="w-[360px] flex-shrink-0 sticky top-28 h-[calc(100vh-9rem)]">
-        <JobChat jobId={jobId} className="h-full" />
+        <JobChat jobId={jobId} className="h-full" disabled={job.status < JOB_STATUS.IN_PROGRESS} />
       </div>
     </div>
   );

@@ -189,7 +189,7 @@ export default function AppNavbar() {
       {/* ── Wide floating bar ─────────────────────────────────────────────── */}
       <div
         ref={barRef}
-        className="pointer-events-auto w-full max-w-6xl flex items-center gap-3 px-4 py-2.5 rounded-2xl border border-white/[0.08] bg-[#0a0f1e]/92 backdrop-blur-2xl shadow-[0_8px_40px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.05)]"
+        className="pointer-events-auto w-full max-w-[1400px] flex items-center gap-3 px-5 py-2.5 rounded-2xl border border-white/[0.08] bg-[#0a0f1e]/92 backdrop-blur-2xl shadow-[0_8px_40px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.05)]"
         style={{ opacity: 0 }}
       >
 

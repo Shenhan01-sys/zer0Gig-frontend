@@ -4,6 +4,7 @@ import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { parseContractError } from "@/lib/utils";
 import { useAccount } from "wagmi";
+import { usePrivy } from "@privy-io/react-auth";
 import {
   useJobDetails,
   useJobProposals,
@@ -146,12 +147,14 @@ function ProposalCard({
   index,
   jobId,
   isClient,
+  walletMismatch,
   onAccepted,
 }: {
   proposal: ProposalData;
   index: number;
   jobId: number;
   isClient: boolean;
+  walletMismatch: boolean;
   onAccepted: () => void;
 }) {
   const { acceptProposal, isPending, isConfirming, isConfirmed, error } = useAcceptProposal();
@@ -244,12 +247,15 @@ function ProposalCard({
           {error && (
             <p className="text-red-400 text-[12px] mb-2">{parseContractError(error)}</p>
           )}
+          {walletMismatch && (
+            <p className="text-amber-400 text-[12px] mb-2">Switch to the wallet that created this job to accept.</p>
+          )}
           <button
             onClick={() => acceptProposal({ jobId: BigInt(jobId), proposalIndex: BigInt(index), value: proposal.proposedRateWei })}
-            disabled={isPending || isConfirming}
+            disabled={isPending || isConfirming || walletMismatch}
             className="w-full px-4 py-2 bg-white text-black text-[13px] font-medium rounded-full disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            {isPending ? "Confirm in wallet..." : isConfirming ? "Accepting..." : `Accept \u2014 ${formatOG(proposal.proposedRateWei)}`}
+            {isPending ? "Confirm in wallet..." : isConfirming ? "Accepting..." : walletMismatch ? "Wrong wallet" : `Accept \u2014 ${formatOG(proposal.proposedRateWei)}`}
           </button>
         </>
       )}
@@ -707,6 +713,7 @@ function JobDetailInner({ jobId }: { jobId: number }) {
   const isNew = searchParams?.get("new") === "1";
   const router = useRouter();
   const { address } = useAccount();
+  const { user } = usePrivy();
   const { role } = useUserRole(address as Address | undefined);
 
   const [submittingMilestoneIndex, setSubmittingMilestoneIndex] = useState<number | null>(null);
@@ -776,6 +783,13 @@ function JobDetailInner({ jobId }: { jobId: number }) {
   const isClient = address?.toLowerCase() === job.client?.toLowerCase();
   const isAgentOwner = role === UserRole.FreelancerOwner;
 
+  // Detect wallet mismatch: Privy embedded wallet may differ from the MetaMask address
+  // that was used to create the job. Show a warning so the user knows why actions fail.
+  const linkedWallets = (user?.linkedAccounts ?? [])
+    .filter((a: any) => a.type === "wallet" && a.address)
+    .map((a: any) => a.address.toLowerCase());
+  const walletMismatch = !!address && !!job.client && !isClient && !linkedWallets.includes(job.client.toLowerCase());
+
   return (
     <div className="flex gap-6 items-start">
       <div className="flex-1 min-w-0 space-y-6">
@@ -795,6 +809,23 @@ function JobDetailInner({ jobId }: { jobId: number }) {
           <span className="text-emerald-400 text-[13px]">
             Job #{jobId} posted! Agents can now browse and submit proposals.
           </span>
+        </div>
+      )}
+
+      {/* Wallet mismatch warning */}
+      {walletMismatch && (
+        <div className="rounded-xl bg-amber-500/10 border border-amber-500/20 px-4 py-3 flex items-start gap-3">
+          <div className="w-5 h-5 rounded-full bg-amber-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <svg className="h-3 w-3 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div>
+            <p className="text-amber-400 text-[13px] font-medium">Connected wallet does not match job client</p>
+            <p className="text-amber-400/60 text-[12px] mt-0.5">
+              This job was created with <span className="font-mono">{job.client.slice(0,6)}...{job.client.slice(-4)}</span> but your current wallet is <span className="font-mono">{address?.slice(0,6)}...{address?.slice(-4)}</span>. Switch to the correct wallet in your wallet provider to accept proposals or cancel this job.
+            </p>
+          </div>
         </div>
       )}
 
@@ -908,6 +939,7 @@ function JobDetailInner({ jobId }: { jobId: number }) {
                       index={i}
                       jobId={jobId}
                       isClient={isClient}
+                      walletMismatch={walletMismatch}
                       onAccepted={() => {
                         refetch();
                         refetchProposals();

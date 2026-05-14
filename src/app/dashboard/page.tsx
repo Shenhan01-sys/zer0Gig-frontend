@@ -16,7 +16,7 @@ import { useAllAgents } from "@/hooks/useAllAgents";
 import { useAgentProfiles } from "@/hooks/useAgentProfile";
 import JobCard from "@/components/jobs/JobCard";
 import SubscriptionCard from "@/components/subscriptions/SubscriptionCard";
-import { MOCK_JOBS, MOCK_SUBSCRIPTIONS } from "@/lib/mockData";
+
 import { Hand, Lightbulb, Zap } from "lucide-react";
 import CornerBrackets from "@/components/ui/CornerBrackets";
 import NetworkActivityFeed from "@/components/dashboard/NetworkActivityFeed";
@@ -780,14 +780,13 @@ function DashboardContent() {
     }
   }, [activeTab, role, router]);
 
-  // DEMO MODE: Use mock data when real on-chain data is empty
   const rawJobs  = (jobIds as bigint[]) || [];
   const rawSubs  = (subIds as bigint[]) || [];
   const rawAgents = (ownerAgentIds as bigint[]) || [];
 
-  const jobs = rawJobs.length > 0 ? rawJobs : MOCK_JOBS.map(j => BigInt(j.jobId));
-  const subs = rawSubs.length > 0 ? rawSubs : MOCK_SUBSCRIPTIONS.map(s => BigInt(s.subscriptionId));
-  const agents = rawAgents.length > 0 ? rawAgents : []; // Agents are mocked in useAllAgents, not here
+  const jobs = rawJobs;
+  const subs = rawSubs;
+  const agents = rawAgents;
 
   const isAgentOwner = role === UserRole.FreelancerOwner;
 

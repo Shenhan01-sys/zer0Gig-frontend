@@ -6,7 +6,6 @@ import { useAgentProfile } from "@/hooks/useAgentProfile";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { formatOG } from "@/lib/utils";
-import { MOCK_JOBS } from "@/lib/mockData";
 import CornerBrackets from "../ui/CornerBrackets";
 
 interface JobCardProps {
@@ -31,22 +30,9 @@ export default function JobCard({ jobId, index }: JobCardProps) {
       .catch(() => {});
   }, [jobRaw]);
 
-  // DEMO MODE: Fall back to mock data when real job doesn't exist on-chain
-  const mockJob = MOCK_JOBS.find(j => j.jobId === jobId);
-  const job = (jobRaw as unknown as JobData) || (mockJob ? {
-    jobId: BigInt(mockJob.jobId),
-    client: mockJob.client,
-    agentId: BigInt(mockJob.agentId),
-    agentWallet: "0x0000000000000000000000000000000000000000",
-    jobDataCID: mockJob.jobDataCID,
-    skillId: mockJob.skillId,
-    totalBudgetWei: mockJob.totalBudgetWei,
-    releasedWei: mockJob.releasedWei,
-    milestoneCount: BigInt(mockJob.milestoneCount),
-    status: mockJob.status,
-  } as unknown as JobData : undefined);
+  const job = jobRaw as unknown as JobData | undefined;
 
-  const displayTitle = briefTitle || mockJob?.title || `Job #${jobId}`;
+  const displayTitle = briefTitle || `Job #${jobId}`;
 
   if (isLoading) {
     return (

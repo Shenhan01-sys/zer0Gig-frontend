@@ -6,7 +6,6 @@ import { motion } from "framer-motion";
 import { useSubscription } from "@/hooks/useSubscriptionEscrow";
 import { useAgentProfile } from "@/hooks/useAgentProfile";
 import { formatOG } from "@/lib/utils";
-import { MOCK_SUBSCRIPTIONS } from "@/lib/mockData";
 import CornerBrackets from "../ui/CornerBrackets";
 
 interface SubscriptionCardProps {
@@ -68,36 +67,7 @@ export default function SubscriptionCard({ subscriptionId, index }: Subscription
     return () => { cancelled = true; };
   }, [subscriptionId]);
 
-  // DEMO MODE: Fall back to mock data when real subscription doesn't exist on-chain.
-  // Check for `agentId` which exists in the new struct (subscriptionId was removed).
-  const hasRealSub = sub && (sub as any)?.agentId !== undefined;
-  const mockSub = MOCK_SUBSCRIPTIONS.find(s => s.subscriptionId === subscriptionId);
-  
-  // Real contract returns an object with named fields; mock is an array
-  const isMockFormat = mockSub && !("taskDescription" in (mockSub as any));
-  const displayData = (!hasRealSub && mockSub) ? (isMockFormat ? [
-    BigInt(mockSub.subscriptionId),   // 0: subscriptionId
-    BigInt(0),                        // 1: (unused)
-    BigInt(mockSub.agentId),           // 2: agentId
-    mockSub.client,                   // 3: agentWallet
-    mockSub.taskDescription,          // 4: taskDescription
-    mockSub.intervalSeconds,          // 5: intervalSeconds
-    mockSub.intervalMode,             // 6: intervalMode
-    mockSub.checkInRate,              // 7: checkInRate
-    mockSub.alertRate,                 // 8: alertRate
-    mockSub.balance,                   // 9: balance
-    mockSub.totalDrained,             // 10: totalDrained
-    mockSub.status,                   // 11: status
-    mockSub.lastCheckIn,             // 12: lastCheckIn
-    BigInt(0),                        // 13: (unused)
-    mockSub.gracePeriodEnds,          // 14: gracePeriodEnds
-    mockSub.gracePeriodSeconds,       // 15: gracePeriodSeconds
-    mockSub.proposedInterval,         // 16: proposedInterval
-    mockSub.sessionVoucherEnabled,    // 17: sessionVoucherEnabled (OKX APP session voucher)
-    mockSub.voucherMode,              // 18: voucherMode (0 = Delegated, 1 = Explicit Confirm)
-    BigInt(0),                        // 19: (unused)
-    mockSub.webhookUrl,               // 20: webhookUrl
-  ] : mockSub) : (hasRealSub ? sub : undefined) as unknown;
+  const displayData = sub as unknown;
 
   if (isLoading) {
     return (
@@ -116,29 +86,12 @@ export default function SubscriptionCard({ subscriptionId, index }: Subscription
     return null;
   }
 
-  const isMockArrayData = displayData && Array.isArray(displayData);
-  
-  let taskDescription: string;
-  let intervalMode: number;
-  let balance: bigint;
-  let status: number;
-  let agentId: bigint;
-
-  if (isMockArrayData) {
-    const subData = displayData as unknown[];
-    taskDescription = (subData[4] as string) || "Unknown Task";
-    intervalMode = Number(subData[6] || 0);
-    balance = (subData[9] as bigint) || BigInt(0);
-    status = Number(subData[11] || 0);
-    agentId = (subData[2] as bigint) || BigInt(0);
-  } else {
-    const subObj = displayData as any;
-    taskDescription = `Subscription #${subscriptionId}`; void subObj;
-    intervalMode = Number(subObj?.intervalMode ?? 0);
-    balance = subObj?.balance || BigInt(0);
-    status = Number(subObj?.status ?? 0);
-    agentId = subObj?.agentId || BigInt(0);
-  }
+  const subObj = displayData as any;
+  const taskDescription: string = subObj?.taskDescription || `Subscription #${subscriptionId}`;
+  const intervalMode: number = Number(subObj?.intervalMode ?? 0);
+  const balance: bigint = subObj?.balance || BigInt(0);
+  const status: number = Number(subObj?.status ?? 0);
+  const agentId: bigint = subObj?.agentId || BigInt(0);
 
   const agentDisplayName = agentProfile?.display_name || (agentIdNum > 0 ? `Agent #${agentIdNum}` : "Unassigned");
 

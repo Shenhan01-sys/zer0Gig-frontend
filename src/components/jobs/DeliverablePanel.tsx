@@ -157,7 +157,12 @@ export default function DeliverablePanel({
 function formatOG(wei: bigint) {
   try {
     const og = Number(wei) / 1e18;
-    return `${og.toFixed(4)} OG`;
+    // Use up to 8 decimals for small amounts, strip trailing zeros
+    const formatted = og.toLocaleString("en-US", {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 8,
+    });
+    return `${formatted} OG`;
   } catch {
     return "—";
   }

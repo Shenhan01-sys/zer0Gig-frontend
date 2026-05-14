@@ -348,23 +348,31 @@ function formatOG(wei: bigint) {
 function generateDeliverablePDF(data: DeliverableData): void {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 40;
   const contentWidth = pageWidth - margin * 2;
+  const footerHeight = 30;
   let y = margin;
+
+  const checkPageBreak = (neededSpace: number = 60) => {
+    if (y + neededSpace > pageHeight - footerHeight) {
+      doc.addPage();
+      y = margin;
+    }
+  };
 
   const addText = (text: string, x: number, fontSize = 10, color: [number, number, number] = [30, 30, 30], lineHeight = 14) => {
     doc.setFontSize(fontSize);
     doc.setTextColor(...color);
     const lines = doc.splitTextToSize(text, contentWidth - (x - margin));
+    const blockHeight = lines.length * lineHeight;
+    checkPageBreak(blockHeight + 10);
     doc.text(lines, x, y);
-    y += lines.length * lineHeight;
+    y += blockHeight;
   };
 
   const addSectionTitle = (title: string) => {
-    if (y > doc.internal.pageSize.getHeight() - 80) {
-      doc.addPage();
-      y = margin;
-    }
+    checkPageBreak(50);
     doc.setFont("helvetica", "bold");
     addText(title, margin, 12, [16, 24, 40], 16);
     doc.setDrawColor(220, 220, 220);
@@ -374,6 +382,7 @@ function generateDeliverablePDF(data: DeliverableData): void {
   };
 
   const addKeyValue = (label: string, value: string) => {
+    checkPageBreak(40);
     doc.setFont("helvetica", "bold");
     addText(`${label}:`, margin, 10, [80, 80, 80]);
     doc.setFont("helvetica", "normal");

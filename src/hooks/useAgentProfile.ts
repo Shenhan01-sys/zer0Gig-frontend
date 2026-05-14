@@ -75,6 +75,9 @@ export function useUpsertAgentProfile() {
     skillConfigs?:        Record<string, Record<string, string>>,
     customTools?:         Array<Record<string, unknown>>,
     telegramChatId?:      string | null,
+    runtimeType?:         "self_hosted" | "platform_managed" | null,
+    platformConfig?:      Record<string, unknown> | null,
+    agentWallet?:         string | null,
   ) => {
     setIsPending(true);
     setError(null);
@@ -99,6 +102,9 @@ export function useUpsertAgentProfile() {
           skill_configs:   encryptedConfigs,
           custom_tools:    customTools,
           telegram_chat_id: telegramChatId,
+          runtime_type:    runtimeType,
+          platform_config: platformConfig,
+          agent_wallet:    agentWallet,
         }),
       });
       const data = await res.json();

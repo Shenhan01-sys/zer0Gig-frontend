@@ -59,6 +59,9 @@ export async function POST(request: NextRequest) {
       skill_configs,
       custom_tools,
       telegram_chat_id,
+      runtime_type,
+      platform_config,
+      agent_wallet,
     } = body;
 
     if (agent_id === undefined || !owner_address) {
@@ -67,7 +70,7 @@ export async function POST(request: NextRequest) {
 
     const admin = getAdminClient();
 
-    // ── 1. Build metadata (custom tools + telegram chat id) ──────────────────
+    // ── 1. Build metadata (custom tools + telegram chat id + platform manifest) ─
     const metadata: Record<string, unknown> = {};
     if (telegram_chat_id) metadata.telegramChatId = telegram_chat_id;
     if (custom_tools && custom_tools.length > 0) {
@@ -79,6 +82,15 @@ export async function POST(request: NextRequest) {
         description: t.description,
       }));
     }
+    if (runtime_type) {
+      metadata.platformManaged = runtime_type === "platform_managed";
+      metadata.runtimeMode = runtime_type === "platform_managed" ? "platform" : "self-hosted";
+    }
+    if (platform_config && typeof platform_config === "object") {
+      // Merge full capability manifest (platformConfig, tools, prebuiltSkills, etc.)
+      Object.assign(metadata, platform_config);
+    }
+    if (agent_wallet) metadata.agentWallet = agent_wallet;
 
     // ── 2. Upsert agent_profiles ─────────────────────────────────────────────
     const profilePayload: Record<string, unknown> = {

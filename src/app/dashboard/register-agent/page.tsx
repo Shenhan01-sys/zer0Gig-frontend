@@ -81,18 +81,18 @@ const DEFAULT_PLATFORM_CONFIG: PlatformConfig = {
 // ── Capability manifest builder ───────────────────────────────────────────────
 // Schema must match Qwen's capabilitySchema.js (SCHEMA_VERSION = "v2.0.0")
 
-function buildCapabilityManifest(
+function buildCapabilityManifestObject(
   runtimeType: RuntimeType,
   skills: string[],
   platformConfig: PlatformConfig,
   agentId?: number
-): string {
+): Record<string, unknown> {
   // Map frontend types → Qwen's schema constants (extendedComputeService LLM_PROVIDERS)
   const runtimeMode = runtimeType === "platform_managed" ? "platform" : "self-hosted";
   // Normalize provider value: "0g_compute" → "0g-compute" (underscore → hyphen)
   const llmProvider = platformConfig.llm.provider.replace("_", "-");
 
-  const manifest = {
+  return {
     version: "v2.0.0",           // must match SCHEMA_VERSION in capabilitySchema.js
     agentId: agentId || 0,
     runtimeMode,                  // "platform" | "self-hosted"
@@ -125,7 +125,15 @@ function buildCapabilityManifest(
     }),
     updatedAt: Math.floor(Date.now() / 1000),
   };
+}
 
+function buildCapabilityManifest(
+  runtimeType: RuntimeType,
+  skills: string[],
+  platformConfig: PlatformConfig,
+  agentId?: number
+): string {
+  const manifest = buildCapabilityManifestObject(runtimeType, skills, platformConfig, agentId);
   // Encode as base64 — platform dispatcher decodes this prefix format
   // "pm:<base64>" = platform managed, "sh:<base64>" = self-hosted
   // Use encodeURIComponent to safely handle any Unicode characters (btoa only supports Latin1)
@@ -275,6 +283,8 @@ export default function RegisterAgentPage() {
       walletAddr,
       profileData,
       runtimeType,
+      platformConfig,       // full platform config for manifest rebuild post-mint
+      selectedSkills,       // on-chain skills for manifest rebuild
       prebuiltSkills:       platformConfig.prebuiltSkills,
       prebuiltSkillConfigs: platformConfig.prebuiltSkillConfigs,
       customTools:          platformConfig.tools,
@@ -312,8 +322,19 @@ export default function RegisterAgentPage() {
           }
         } catch { /* non-fatal — chatId from skill config is used as fallback */ }
 
+        // Build the capability manifest object for Supabase metadata
+        // (platform dispatcher auto-discovery + _loadAgentConfig expects this shape)
+        const manifestObj = pending?.runtimeType === "platform_managed" && pending?.platformConfig
+          ? buildCapabilityManifestObject(
+              pending.runtimeType,
+              pending.selectedSkills || [],
+              pending.platformConfig,
+              agentId
+            )
+          : null;
+
         // Single API call — uses service role to bypass RLS.
-        // Handles: profile upsert + agent_skills + custom tools in metadata.
+        // Handles: profile upsert + agent_skills + custom tools + full manifest in metadata.
         await upsertProfile(
           agentId,
           owner,
@@ -322,6 +343,9 @@ export default function RegisterAgentPage() {
           skillConfigs,
           pending?.customTools || [],
           telegramChatId,
+          pending?.runtimeType || null,
+          manifestObj,
+          pending?.walletAddr || null,
         );
 
         // Sync agent stats (populates agent_proposal_stats from capability manifest)

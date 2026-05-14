@@ -38,9 +38,18 @@ function CreateJobForm() {
   });
 
   useEffect(() => {
-    if (isConfirmed && totalJobs !== undefined) {
-      const newJobId = Number(totalJobs);
-      router.push(`/dashboard/jobs/${newJobId}?new=1`);
+    if (isConfirmed) {
+      // Delay slightly to let totalJobs settle, then redirect
+      const t = setTimeout(() => {
+        if (totalJobs !== undefined) {
+          const newJobId = Number(totalJobs);
+          router.push(`/dashboard/jobs/${newJobId}?new=1`);
+        } else {
+          // Fallback: redirect to dashboard if totalJobs unreadable
+          router.push("/dashboard?posted=1");
+        }
+      }, 800);
+      return () => clearTimeout(t);
     }
   }, [isConfirmed, totalJobs, router]);
 

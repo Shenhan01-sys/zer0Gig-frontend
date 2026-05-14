@@ -163,9 +163,11 @@ function ProposalCard({
 
   const [showStats, setShowStats] = useState(false);
 
-  if (isConfirmed) {
-    onAccepted();
-  }
+  useEffect(() => {
+    if (isConfirmed) {
+      onAccepted();
+    }
+  }, [isConfirmed, onAccepted]);
 
   return (
     <>
@@ -679,7 +681,8 @@ function MilestoneTimeline({
                   Submit Work
                 </button>
               )}
-              {status === 2 && onViewDeliverable && (
+              {/* View Deliverable: only on the LAST milestone when job is completed or milestone approved */}
+              {status === 2 && onViewDeliverable && index === milestoneCount - 1 && (
                 <button
                   onClick={() => onViewDeliverable(index)}
                   className="mt-3 px-3 py-1.5 bg-[#38bdf8]/10 border border-[#38bdf8]/30 text-[#38bdf8] text-[12px] font-medium rounded-full hover:bg-[#38bdf8]/20 transition-colors flex items-center gap-1.5"
@@ -709,8 +712,19 @@ function JobDetailInner({ jobId }: { jobId: number }) {
   const [submittingMilestoneIndex, setSubmittingMilestoneIndex] = useState<number | null>(null);
   const [viewingDeliverableIndex, setViewingDeliverableIndex] = useState<number | null>(null);
 
+  // Fetch job description from Supabase (for agent owners to see what the job is about)
+  const [jobBrief, setJobBrief] = useState<{ title: string | null; description: string | null } | null>(null);
+
   const { data: jobRaw, isLoading, isError, refetch } = useJobDetails(jobId);
   const job = jobRaw as unknown as JobData | undefined;
+
+  useEffect(() => {
+    let cancelled = false;
+    supabase.from("jobs").select("title,description").eq("job_id", jobId).maybeSingle().then(({ data }) => {
+      if (!cancelled) setJobBrief(data as { title: string | null; description: string | null } | null);
+    });
+    return () => { cancelled = true; };
+  }, [jobId]);
 
   const { proposals, isLoading: proposalsLoading, refetch: refetchProposals } = useJobProposals(jobId);
 
@@ -789,7 +803,7 @@ function JobDetailInner({ jobId }: { jobId: number }) {
         <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
           <div>
             <div className="flex items-center gap-3 mb-1">
-              <h1 className="text-2xl font-medium text-white">Job #{job.jobId.toString()}</h1>
+              <h1 className="text-2xl font-medium text-white">{jobBrief?.title || `Job #${job.jobId.toString()}`}</h1>
               <span className={`px-2.5 py-1 rounded-full text-[12px] ${status.bg} ${status.text}`}>
                 {status.label}
               </span>
@@ -797,6 +811,11 @@ function JobDetailInner({ jobId }: { jobId: number }) {
             <p className="text-white/40 text-[13px] font-mono">
               Client: {job.client?.slice(0, 6)}...{job.client?.slice(-4)}
             </p>
+            {jobBrief?.description && (
+              <p className="text-white/50 text-[13px] mt-2 leading-relaxed max-w-2xl">
+                {jobBrief.description}
+              </p>
+            )}
           </div>
           {isClient && (job.status === JOB_STATUS.OPEN || job.status === JOB_STATUS.PENDING_MILESTONES) && (
             <button
@@ -889,7 +908,12 @@ function JobDetailInner({ jobId }: { jobId: number }) {
                       index={i}
                       jobId={jobId}
                       isClient={isClient}
-                      onAccepted={() => { refetch(); refetchProposals(); }}
+                      onAccepted={() => {
+                        refetch();
+                        refetchProposals();
+                        // Auto-refresh page after a short delay so client sees milestone builder
+                        setTimeout(() => window.location.reload(), 1500);
+                      }}
                     />
                   ))}
                 </div>
@@ -1049,10 +1073,12 @@ function JobDetailInner({ jobId }: { jobId: number }) {
       <SystemMessageLog jobId={jobId} maxEntries={50} />
       </div>
 
-      {/* Right column — live chat (disabled until agent hired + milestones defined) */}
-      <div data-tour-id="job-chat" className="w-[360px] flex-shrink-0 sticky top-28 h-[calc(100vh-9rem)]">
-        <JobChat jobId={jobId} className="h-full" disabled={job.status < JOB_STATUS.IN_PROGRESS} />
-      </div>
+      {/* Right column — live chat (only visible to client, or once job is in progress) */}
+      {(isClient || job.status >= JOB_STATUS.IN_PROGRESS) && (
+        <div data-tour-id="job-chat" className="w-[360px] flex-shrink-0 sticky top-28 h-[calc(100vh-9rem)]">
+          <JobChat jobId={jobId} className="h-full" disabled={job.status < JOB_STATUS.IN_PROGRESS} />
+        </div>
+      )}
     </div>
   );
 }

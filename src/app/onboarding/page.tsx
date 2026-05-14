@@ -80,8 +80,8 @@ export default function OnboardingPage() {
     if (regError) setOnChainRegState("error");
   }, [regError]);
 
-  // Step 4 auto-check: detect prior faucet claim + on-chain registration
-  // (handles page refresh after partial completion)
+  // Step 4 auto-check: detect prior faucet claim + on-chain registration + balance
+  // (handles page refresh after partial completion, and API-insert-failure recovery)
   useEffect(() => {
     if (step !== 4 || !walletAddress) return;
     let cancelled = false;
@@ -98,7 +98,21 @@ export default function OnboardingPage() {
         // Network failure — leave it to manual claim
       }
       try {
-        // 2. Check if already registered on-chain
+        // 2. Check on-chain balance — if > 0 OG, unlock register button
+        // (handles the case where tx succeeded but Supabase insert failed)
+        const publicClient = createPublicClient({
+          chain: ogNewton,
+          transport: http(),
+        });
+        const balance = await publicClient.getBalance({ address: walletAddress as `0x${string}` });
+        if (!cancelled && balance > 0n && faucetState !== "done") {
+          setFaucetState("done");
+        }
+      } catch {
+        // Balance read failed
+      }
+      try {
+        // 3. Check if already registered on-chain
         const publicClient = createPublicClient({
           chain: ogNewton,
           transport: http(),
@@ -609,6 +623,30 @@ export default function OnboardingPage() {
                       {faucetError && (
                         <p className="text-red-400 text-[12px] mt-3">{faucetError}</p>
                       )}
+                      {faucetState === "error" && (
+                        <button
+                          onClick={async () => {
+                            // Recovery: check on-chain balance directly
+                            try {
+                              const publicClient = createPublicClient({
+                                chain: ogNewton,
+                                transport: http(),
+                              });
+                              const balance = await publicClient.getBalance({ address: walletAddress as `0x${string}` });
+                              if (balance > 0n) {
+                                setFaucetState("done");
+                              } else {
+                                setFaucetError("No OG detected. Please try claiming again.");
+                              }
+                            } catch {
+                              setFaucetError("Could not verify balance. Please refresh the page.");
+                            }
+                          }}
+                          className="w-full mt-3 px-4 py-2 rounded-full border border-white/10 text-white/70 text-[12px] hover:text-white hover:border-white/30 transition-colors"
+                        >
+                          Already received? Verify balance
+                        </button>
+                      )}
                     </>
                   )}
                 </div>
@@ -636,12 +674,11 @@ export default function OnboardingPage() {
                       </p>
                       <button
                         onClick={handleRegisterOnChain}
-                        disabled={faucetState !== "done" || isPending || isConfirming || onChainRegState === "switching"}
+                        disabled={faucetState !== "done" || onChainRegState === "switching" || onChainRegState === "pending"}
                         className="w-full px-4 py-2.5 rounded-full bg-[#0d1525]/90 border border-white/20 text-white text-[13px] font-medium hover:border-white/40 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
                       >
                         {onChainRegState === "switching" ? "Switching network…" :
-                         isPending ? "Confirm in wallet…" :
-                         isConfirming ? "Recording on-chain…" :
+                         onChainRegState === "pending" ? "Confirm in wallet…" :
                          "Register on-chain"}
                       </button>
                       {regError && (

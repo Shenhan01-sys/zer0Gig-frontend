@@ -158,12 +158,17 @@ export async function POST(req: Request) {
       value: amountWei,
     });
 
-    // ── 5. Record claim ─────────────────────────────────────────────────────
-    await supabase.from("faucet_claims").insert({
-      wallet_address: normalizedWallet,
-      amount: FAUCET_AMOUNT,
-      tx_hash: txHash,
-    });
+    // ── 5. Record claim (best-effort; tx already broadcast) ─────────────────
+    try {
+      await supabase.from("faucet_claims").insert({
+        wallet_address: normalizedWallet,
+        amount: FAUCET_AMOUNT,
+        tx_hash: txHash,
+      });
+    } catch {
+      // Supabase insert failed but tx is already on-chain. Still return success
+      // so the frontend unlocks the register button.
+    }
 
     return NextResponse.json({
       ok: true,

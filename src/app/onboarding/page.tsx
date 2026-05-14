@@ -63,6 +63,15 @@ export default function OnboardingPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+  // Restore persisted role from sessionStorage (handles page refresh on step 4)
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem("zerogig:onboarding:role");
+      if (saved && !role) setRole(saved as Role);
+    } catch {}
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Step 4: on-chain activation + faucet
   const [onChainRegState, setOnChainRegState] = useState<"idle" | "switching" | "pending" | "done" | "error">("idle");
   const [faucetState, setFaucetState] = useState<"idle" | "claiming" | "done" | "error">("idle");
@@ -243,8 +252,11 @@ export default function OnboardingPage() {
       const json = await res.json();
       if (!json.ok) throw new Error(json.error ?? "Submission failed");
       setSubmitting(false);
-      // Mark activation in progress so a refresh lands back here
-      try { sessionStorage.setItem("zerogig:onboarding:activate", "1"); } catch {}
+      // Persist role so a refresh on step 4 doesn't lose it
+      try {
+        if (role) sessionStorage.setItem("zerogig:onboarding:role", role);
+        sessionStorage.setItem("zerogig:onboarding:activate", "1");
+      } catch {}
       setStep(4);
     } catch (e) {
       setSubmitError(e instanceof Error ? e.message : "Submission failed");
@@ -253,7 +265,10 @@ export default function OnboardingPage() {
   }
 
   async function handleRegisterOnChain() {
-    if (!role) return;
+    if (!role) {
+      setOnChainRegState("error");
+      return;
+    }
     setOnChainRegState("switching");
 
     const eth = typeof window !== "undefined" ? (window as any).ethereum : null;

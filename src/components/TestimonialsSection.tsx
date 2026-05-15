@@ -162,14 +162,14 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 function RatingStars({ rating }: { rating: number | null }) {
-  if (!rating) return null;
+  const stars = rating ?? 0;
   return (
     <div className="flex items-center gap-0.5">
       {Array.from({ length: 5 }).map((_, i) => (
         <Star
           key={i}
           className={`w-3 h-3 ${
-            i < rating ? "text-amber-400 fill-amber-400" : "text-white/10"
+            i < stars ? "text-amber-400 fill-amber-400" : "text-white/10"
           }`}
         />
       ))}
@@ -250,17 +250,22 @@ export default function TestimonialsSection() {
       .then((data) => {
         if (data.ok && data.feedbacks?.length > 0) {
           setFeedbacks(data.feedbacks);
-        } else {
-          // No real data yet, use dummy
-          setFeedbacks(DUMMY_FEEDBACKS);
         }
       })
-      .catch(() => setFeedbacks(DUMMY_FEEDBACKS))
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
-  // Combine real + dummy if needed
-  const allItems = feedbacks.length > 0 ? feedbacks : DUMMY_FEEDBACKS;
+  // Interleave real feedbacks with dummy data for a seamless wall
+  // Always include dummy so the wall looks full even with few real entries
+  const allItems: Feedback[] = [];
+  const real = feedbacks;
+  const dummy = DUMMY_FEEDBACKS;
+  const maxLen = Math.max(real.length, dummy.length);
+  for (let i = 0; i < maxLen; i++) {
+    if (i < real.length) allItems.push(real[i]);
+    if (i < dummy.length) allItems.push(dummy[i]);
+  }
 
   // Split into 4 rows (distribute evenly)
   const rowSize = Math.ceil(allItems.length / 4);
@@ -271,15 +276,15 @@ export default function TestimonialsSection() {
     allItems.slice(rowSize * 3),
   ];
 
-  // If any row is empty, fill with dummy
+  // Ensure every row has at least some items
   rows.forEach((row, i) => {
     if (row.length === 0) {
-      rows[i] = DUMMY_FEEDBACKS.slice(i * 4, i * 4 + 4);
+      rows[i] = DUMMY_FEEDBACKS.slice(i * 3, i * 3 + 3);
     }
   });
 
   const directions: ("left" | "right")[] = ["right", "left", "right", "left"];
-  const durations = [45, 50, 40, 55];
+  const durations = [70, 80, 65, 75];
 
   return (
     <section className="relative bg-[#050810] py-20 overflow-hidden">

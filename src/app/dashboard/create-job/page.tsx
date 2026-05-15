@@ -39,19 +39,12 @@ function CreateJobForm() {
 
   useEffect(() => {
     if (isConfirmed) {
-      // Delay slightly to let totalJobs settle, then redirect
       const t = setTimeout(() => {
-        if (totalJobs !== undefined) {
-          const newJobId = Number(totalJobs);
-          router.push(`/dashboard/jobs/${newJobId}?new=1`);
-        } else {
-          // Fallback: redirect to dashboard if totalJobs unreadable
-          router.push("/dashboard?posted=1");
-        }
+        router.push("/dashboard?tab=jobs");
       }, 800);
       return () => clearTimeout(t);
     }
-  }, [isConfirmed, totalJobs, router]);
+  }, [isConfirmed, router]);
 
   const handleSubmit = () => {
     if (!description) return;

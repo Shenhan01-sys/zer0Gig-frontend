@@ -9,6 +9,7 @@ import { useOwnerAgents } from "@/hooks/useAgentRegistry";
 import { useOpenJobs, useJobDetails, useJobProposals, type ProposalData } from "@/hooks/useProgressiveEscrow";
 import { useAgentProfiles } from "@/hooks/useAgentProfile";
 import { formatOG, formatRelativeTime } from "@/lib/utils";
+import { supabase } from "@/lib/supabase";
 
 // ── Proposals list (scans open jobs for our proposals) ────────────────────────
 
@@ -51,6 +52,15 @@ function JobProposalsRow({
   const { data: jobRaw } = useJobDetails(Number(jobId));
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const job = jobRaw as any;
+  const [jobTitle, setJobTitle] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    supabase.from("jobs").select("title").eq("job_id", Number(jobId)).maybeSingle().then(({ data }) => {
+      if (!cancelled) setJobTitle(data?.title ?? null);
+    });
+    return () => { cancelled = true; };
+  }, [jobId]);
 
   useEffect(() => {
     if (!rowRef.current) return;
@@ -86,7 +96,7 @@ function JobProposalsRow({
             href={`/dashboard/jobs/${jobId.toString()}`}
             className="text-white text-[15px] font-medium hover:text-[#38bdf8] transition-colors"
           >
-            Job #{jobId.toString()}
+            {jobTitle || `Job #${jobId.toString()}`}
           </Link>
           <p className="text-white/30 text-[12px] font-mono mt-0.5">
             Client: {clientShort}

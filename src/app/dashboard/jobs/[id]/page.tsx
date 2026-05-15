@@ -290,10 +290,14 @@ function SubmitProposalPanel({
   jobId,
   ownerAddress,
   onSubmitted,
+  jobTitle,
+  jobDescription,
 }: {
   jobId: number;
   ownerAddress: Address;
   onSubmitted: () => void;
+  jobTitle?: string | null;
+  jobDescription?: string | null;
 }) {
   const router = useRouter();
   const { data: agentIdsRaw } = useOwnerAgents(ownerAddress);
@@ -373,7 +377,18 @@ function SubmitProposalPanel({
 
   return (
     <div className="bg-[#0d1525]/90 rounded-2xl border border-white/10 p-6">
-      <h2 className="text-[13px] font-medium text-white/50 uppercase tracking-wider mb-6">Submit a Proposal</h2>
+      <h2 className="text-[13px] font-medium text-white/50 uppercase tracking-wider mb-4">Submit a Proposal</h2>
+
+      {/* Job context card */}
+      {(jobTitle || jobDescription) && (
+        <div className="mb-6 rounded-xl bg-white/[0.03] border border-white/[0.06] p-4">
+          <p className="text-[11px] text-white/30 uppercase tracking-wider mb-1">Job</p>
+          <p className="text-white text-[14px] font-medium mb-2">{jobTitle || `Job #${jobId}`}</p>
+          {jobDescription && (
+            <p className="text-white/50 text-[13px] leading-relaxed line-clamp-4">{jobDescription}</p>
+          )}
+        </div>
+      )}
 
       <div className="space-y-5">
         {/* Required skill banner */}
@@ -783,12 +798,12 @@ function JobDetailInner({ jobId }: { jobId: number }) {
   const isClient = address?.toLowerCase() === job.client?.toLowerCase();
   const isAgentOwner = role === UserRole.FreelancerOwner;
 
-  // Detect wallet mismatch: Privy embedded wallet may differ from the MetaMask address
-  // that was used to create the job. Show a warning so the user knows why actions fail.
+  // Detect wallet mismatch: only relevant for the client who created the job.
+  // Agent owners will naturally have a different wallet — that's expected.
   const linkedWallets = (user?.linkedAccounts ?? [])
     .filter((a: any) => a.type === "wallet" && a.address)
     .map((a: any) => a.address.toLowerCase());
-  const walletMismatch = !!address && !!job.client && !isClient && !linkedWallets.includes(job.client.toLowerCase());
+  const walletMismatch = isClient && !!address && !!job.client && !linkedWallets.includes(job.client.toLowerCase());
 
   return (
     <div className="flex gap-6 items-start">
@@ -943,8 +958,6 @@ function JobDetailInner({ jobId }: { jobId: number }) {
                       onAccepted={() => {
                         refetch();
                         refetchProposals();
-                        // Auto-refresh page after a short delay so client sees milestone builder
-                        setTimeout(() => window.location.reload(), 1500);
                       }}
                     />
                   ))}
@@ -959,6 +972,8 @@ function JobDetailInner({ jobId }: { jobId: number }) {
               jobId={jobId}
               ownerAddress={address as Address}
               onSubmitted={() => refetchProposals()}
+              jobTitle={jobBrief?.title}
+              jobDescription={jobBrief?.description}
             />
           )}
 

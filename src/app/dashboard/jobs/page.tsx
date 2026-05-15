@@ -205,7 +205,7 @@ function OpenJobsInner() {
       </div>
 
       {/* Job count */}
-      {isLoading ? (
+      {isLoading || openJobIds === undefined ? (
         <div className="space-y-4">
           {[1, 2, 3, 4, 5].map((i) => (
             <div key={i} className="h-32 bg-white/5 rounded-2xl animate-pulse" />

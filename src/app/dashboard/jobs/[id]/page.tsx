@@ -733,20 +733,22 @@ function JobDetailInner({ jobId }: { jobId: number }) {
 
   const [submittingMilestoneIndex, setSubmittingMilestoneIndex] = useState<number | null>(null);
   const [viewingDeliverableIndex, setViewingDeliverableIndex] = useState<number | null>(null);
-
-  // Fetch job description from Supabase (for agent owners to see what the job is about)
   const [jobBrief, setJobBrief] = useState<{ title: string | null; description: string | null } | null>(null);
 
   const { data: jobRaw, isLoading, isError, refetch } = useJobDetails(jobId);
   const job = jobRaw as unknown as JobData | undefined;
 
+  // Fetch job description from Supabase using on-chain jobDataHash (job_id is NULL in Supabase)
   useEffect(() => {
     let cancelled = false;
-    supabase.from("jobs").select("title,description").eq("job_id", jobId).maybeSingle().then(({ data }) => {
-      if (!cancelled) setJobBrief(data as { title: string | null; description: string | null } | null);
-    });
+    const hash = job?.jobDataCID;
+    if (hash && hash !== "0x" + "0".repeat(64)) {
+      supabase.from("jobs").select("title,description").eq("job_data_hash", hash.toLowerCase()).maybeSingle().then(({ data }) => {
+        if (!cancelled) setJobBrief(data as { title: string | null; description: string | null } | null);
+      });
+    }
     return () => { cancelled = true; };
-  }, [jobId]);
+  }, [job?.jobDataCID]);
 
   const { proposals, isLoading: proposalsLoading, refetch: refetchProposals } = useJobProposals(jobId);
 

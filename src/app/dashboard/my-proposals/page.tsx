@@ -56,11 +56,14 @@ function JobProposalsRow({
 
   useEffect(() => {
     let cancelled = false;
-    supabase.from("jobs").select("title").eq("job_id", Number(jobId)).maybeSingle().then(({ data }) => {
-      if (!cancelled) setJobTitle(data?.title ?? null);
-    });
+    const hash = job?.jobDataHash || job?.jobDataCID;
+    if (hash && hash !== "0x" + "0".repeat(64)) {
+      supabase.from("jobs").select("title").eq("job_data_hash", hash.toLowerCase()).maybeSingle().then(({ data }) => {
+        if (!cancelled) setJobTitle(data?.title ?? null);
+      });
+    }
     return () => { cancelled = true; };
-  }, [jobId]);
+  }, [job?.jobDataHash, job?.jobDataCID]);
 
   useEffect(() => {
     if (!rowRef.current) return;

@@ -9,6 +9,7 @@ import { ALL_SKILLS, skillIdsToBytes32 } from "@/hooks/useAgentManagement";
 import { parseEther } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { useUpsertAgentProfile } from "@/hooks/useAgentProfile";
+import { encryptSecret } from "@/lib/cryptoSecret";
 import { supabase } from "@/lib/supabase";
 import RegisterPreviewCard from "@/components/RegisterPreviewCard";
 import PreBuiltToolsGrid from "@/components/PreBuiltToolsGrid";
@@ -333,6 +334,19 @@ export default function RegisterAgentPage() {
             )
           : null;
 
+        // ── Encrypt & persist agent wallet private key to Supabase ──────────
+        // Platform-managed agents: runtime auto-fetches this key from Supabase,
+        // so users don't need to manually provide AGENT_WALLET_KEYS env var.
+        let encryptedWalletKey: string | null = null;
+        if (generatedWallet?.privateKey && agentId > 0) {
+          try {
+            encryptedWalletKey = encryptSecret(generatedWallet.privateKey);
+            console.log("[Register] Encrypted wallet key prepared for agent", agentId);
+          } catch (err) {
+            console.error("[Register] Failed to encrypt wallet key:", err);
+          }
+        }
+
         // Single API call — uses service role to bypass RLS.
         // Handles: profile upsert + agent_skills + custom tools + full manifest in metadata.
         await upsertProfile(
@@ -346,6 +360,7 @@ export default function RegisterAgentPage() {
           pending?.runtimeType || null,
           manifestObj,
           pending?.walletAddr || null,
+          encryptedWalletKey,
         );
 
         // Sync agent stats (populates agent_proposal_stats from capability manifest)

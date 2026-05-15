@@ -78,6 +78,7 @@ export function useUpsertAgentProfile() {
     runtimeType?:         "self_hosted" | "platform_managed" | null,
     platformConfig?:      Record<string, unknown> | null,
     agentWallet?:         string | null,
+    encryptedWalletKey?:  string | null,
   ) => {
     setIsPending(true);
     setError(null);
@@ -105,6 +106,7 @@ export function useUpsertAgentProfile() {
           runtime_type:    runtimeType,
           platform_config: platformConfig,
           agent_wallet:    agentWallet,
+          encrypted_wallet_key: encryptedWalletKey,
         }),
       });
       const data = await res.json();

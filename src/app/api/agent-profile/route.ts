@@ -62,6 +62,7 @@ export async function POST(request: NextRequest) {
       runtime_type,
       platform_config,
       agent_wallet,
+      encrypted_wallet_key,
     } = body;
 
     if (agent_id === undefined || !owner_address) {
@@ -103,6 +104,7 @@ export async function POST(request: NextRequest) {
     if (bio          !== undefined) profilePayload.bio          = bio          || null;
     if (tags         !== undefined) profilePayload.tags         = tags;
     if (Object.keys(metadata).length > 0) profilePayload.metadata = metadata;
+    if (encrypted_wallet_key) profilePayload.encrypted_wallet_key = encrypted_wallet_key;
 
     const { error: profileError } = await admin
       .from("agent_profiles")

@@ -58,10 +58,27 @@ export function useRegisterUser() {
         abi: CONTRACT_CONFIG.UserRegistry.abi,
         functionName: "registerUser",
         args: [role],
+        gas: 100000n, // explicit gas limit for 0G testnet
       });
       setIsPending(false);
       setIsConfirming(true);
-      await publicClient?.waitForTransactionReceipt({ hash });
+      // Retry waitForTransactionReceipt up to 3 times for lagging 0G testnet RPC
+      let receipt = null;
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          receipt = await publicClient?.waitForTransactionReceipt({
+            hash,
+            timeout: 30_000,
+            retryCount: 5,
+            retryDelay: 2_000,
+          });
+          if (receipt) break;
+        } catch (waitErr: any) {
+          console.warn(`[useRegisterUser] Receipt wait attempt ${attempt}/3 failed:`, waitErr?.message);
+          if (attempt < 3) await new Promise(r => setTimeout(r, 3_000));
+        }
+      }
+      if (!receipt) throw new Error("Transaction was sent but receipt could not be found after 3 attempts. The network may be lagging.");
       setIsConfirmed(true);
       setIsSuccess(true);
     } catch (err: any) {

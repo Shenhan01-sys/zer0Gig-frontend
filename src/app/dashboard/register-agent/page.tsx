@@ -55,20 +55,27 @@ interface PlatformConfig {
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const LLM_PROVIDERS: { value: LLMProvider; label: string; color: string; defaultModel: string; needsKey: boolean; image?: string }[] = [
-  { value: "0g_compute",  label: "0G Compute",  color: "#38bdf8", defaultModel: "qwen-2.5-7b",               needsKey: false, image: "/providers/0G-removebg-preview.png"          },
-  { value: "groq",        label: "Groq",        color: "#f59e0b", defaultModel: "llama-3.3-70b-versatile",   needsKey: true,  image: "/providers/groq-removebg-preview.png"        },
-  { value: "openai",      label: "OpenAI",      color: "#10b981", defaultModel: "gpt-4o-mini",               needsKey: true,  image: "/providers/openAI-removebg-preview.png"      },
-  { value: "anthropic",   label: "Anthropic",   color: "#a855f7", defaultModel: "claude-sonnet-4-6",         needsKey: true,  image: "/providers/claudeImage-removebg-preview.png" },
-  { value: "openrouter",  label: "OpenRouter",  color: "#6366f1", defaultModel: "openai/gpt-4o",             needsKey: true,  image: "/providers/openrouter-removebg-preview.png"  },
-  { value: "alibaba",     label: "Alibaba",     color: "#f97316", defaultModel: "qwen-max",                  needsKey: true,  image: "/providers/alibaba-removebg-preview.png"     },
-  { value: "google",      label: "Google",      color: "#22c55e", defaultModel: "gemini-1.5-pro-latest",     needsKey: true,  image: "/providers/google-removebg-preview.png"      },
+const LLM_PROVIDERS: { value: LLMProvider; label: string; color: string; defaultModel: string; needsKey: boolean; image?: string; models?: string[] }[] = [
+  { value: "0g_compute",  label: "0G Compute",  color: "#38bdf8", defaultModel: "qwen/qwen-2.5-7b-instruct",   needsKey: false, image: "/providers/0G-removebg-preview.png",
+    models: ["qwen/qwen-2.5-7b-instruct", "gpt-oss-20b", "gemma-3-27b"] },
+  { value: "groq",        label: "Groq",        color: "#f59e0b", defaultModel: "llama-3.3-70b-versatile",   needsKey: true,  image: "/providers/groq-removebg-preview.png",
+    models: ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "mixtral-8x7b-32768", "gemma2-9b-it"] },
+  { value: "openai",      label: "OpenAI",      color: "#10b981", defaultModel: "gpt-4o-mini",               needsKey: true,  image: "/providers/openAI-removebg-preview.png",
+    models: ["gpt-4o-mini", "gpt-4o", "gpt-4-turbo", "gpt-3.5-turbo"] },
+  { value: "anthropic",   label: "Anthropic",   color: "#a855f7", defaultModel: "claude-sonnet-4-6",         needsKey: true,  image: "/providers/claudeImage-removebg-preview.png",
+    models: ["claude-sonnet-4-6", "claude-3-5-sonnet-20241022", "claude-3-haiku-20240307", "claude-3-opus-20240229"] },
+  { value: "openrouter",  label: "OpenRouter",  color: "#6366f1", defaultModel: "openai/gpt-4o",             needsKey: true,  image: "/providers/openrouter-removebg-preview.png",
+    models: ["openai/gpt-4o", "anthropic/claude-3.5-sonnet", "google/gemini-pro", "meta-llama/llama-3.3-70b-instruct"] },
+  { value: "alibaba",     label: "Alibaba",     color: "#f97316", defaultModel: "qwen-max",                  needsKey: true,  image: "/providers/alibaba-removebg-preview.png",
+    models: ["qwen-max", "qwen-plus", "qwen-turbo", "qwen-long"] },
+  { value: "google",      label: "Google",      color: "#22c55e", defaultModel: "gemini-1.5-pro-latest",     needsKey: true,  image: "/providers/google-removebg-preview.png",
+    models: ["gemini-1.5-pro-latest", "gemini-1.5-flash-latest", "gemini-2.0-flash", "gemini-2.0-pro"] },
 ];
 
 const DEFAULT_PLATFORM_CONFIG: PlatformConfig = {
   llm: {
     provider: "0g_compute",
-    model: "qwen-2.5-7b",
+    model: "qwen/qwen-2.5-7b-instruct",
     apiKey: "",
     systemPrompt: "You are a professional AI freelance agent on the zer0Gig platform. Deliver high-quality, complete work. Your output will be verified by 0G Alignment Nodes.",
     maxTokens: 4096,
@@ -203,7 +210,7 @@ export default function RegisterAgentPage() {
     const p = LLM_PROVIDERS.find(x => x.value === provider)!;
     setPlatformConfig(c => ({
       ...c,
-      llm: { ...c.llm, provider, model: p.defaultModel },
+      llm: { ...c.llm, provider, model: p.models?.[0] || p.defaultModel },
     }));
   };
 
@@ -608,12 +615,20 @@ export default function RegisterAgentPage() {
                   {/* Model */}
                   <div>
                     <label className="block text-[13px] text-white/50 mb-1.5">Model</label>
-                    <input
-                      type="text"
+                    <select
                       value={platformConfig.llm.model}
                       onChange={e => setPlatformConfig(c => ({ ...c, llm: { ...c.llm, model: e.target.value } }))}
-                      className="w-full bg-[#050810]/80 border border-white/10 rounded-xl px-4 py-2.5 text-white text-[13px] placeholder:text-white/25 focus:outline-none focus:border-white/25 font-mono"
-                    />
+                      className="w-full bg-[#050810]/80 border border-white/10 rounded-xl px-4 py-2.5 text-white text-[13px] focus:outline-none focus:border-white/25 font-mono appearance-none cursor-pointer"
+                    >
+                      {selectedProvider.models?.map(m => (
+                        <option key={m} value={m} className="bg-[#0d1525]">{m}</option>
+                      ))}
+                    </select>
+                    <p className="text-[11px] text-white/25 mt-1">
+                      {platformConfig.llm.provider === "0g_compute"
+                        ? "Models available on 0G Compute testnet"
+                        : `Models available on ${selectedProvider.label}`}
+                    </p>
                   </div>
 
                   {/* API Key (hidden for 0G Compute) */}

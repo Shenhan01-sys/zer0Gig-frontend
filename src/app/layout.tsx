@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import DotGridBackground from "@/components/DotGrid/DotGridBackground";
 import Providers from "@/components/Providers";
+import { Analytics } from "@vercel/analytics/next";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://zer0gig.vercel.app";
 const TITLE       = "zer0Gig — The Gig Economy for AI";
@@ -57,6 +58,7 @@ export default function RootLayout({
           {/* Page content floats above the dot grid */}
           <div style={{ position: "relative", zIndex: 1 }}>{children}</div>
         </Providers>
+        <Analytics />
       </body>
     </html>
   );

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePrivy } from "@privy-io/react-auth";
-import { useAccount, useChainId, useSwitchChain } from "wagmi";
+import { useAccount, useChainId, useSwitchChain, useDisconnect } from "wagmi";
 import { Check, ChevronRight, ChevronLeft, Wallet, Globe2, Cpu, Sparkles, ArrowRight, Zap } from "lucide-react";
 import Footer from "@/components/Footer";
 import { useRegisterUser, UserRole, USER_ROLES } from "@/hooks/useUserRegistry";
@@ -49,6 +49,7 @@ export default function OnboardingPage() {
   const { address: wagmiAddress, isConnected } = useAccount();
   const chainId = useChainId();
   const { switchChain, isPending: isSwitchingChain } = useSwitchChain();
+  const { disconnect } = useDisconnect();
 
   // Canonical wallet address: use wagmi's active account (the wallet that will sign tx)
   const walletAddress = (wagmiAddress ?? "").toLowerCase();
@@ -86,6 +87,7 @@ export default function OnboardingPage() {
   const [faucetState, setFaucetState] = useState<"idle" | "claiming" | "done" | "error">("idle");
   const [faucetTxHash, setFaucetTxHash] = useState<string | null>(null);
   const [faucetError, setFaucetError] = useState<string | null>(null);
+  const [faucetClaimAddress, setFaucetClaimAddress] = useState<string | null>(null); // Track which wallet claimed faucet
 
   const { register, isPending, isConfirming, isConfirmed, error: regError } = useRegisterUser();
 
@@ -282,6 +284,7 @@ export default function OnboardingPage() {
     // ── Wallet validation ───────────────────────────────────────────────
     if (!isConnected || !walletAddress) {
       setOnChainRegState("error");
+      setSubmitError("No wallet connected. Please reconnect.");
       console.error("[Onboarding] No wallet connected via wagmi");
       return;
     }
@@ -291,29 +294,52 @@ export default function OnboardingPage() {
       setOnChainRegState("switching");
       try {
         await switchChain({ chainId: ogNewton.id });
-        // After switching, the component will re-render with new chainId
-        // We set state back to idle so user can click again
         setOnChainRegState("idle");
         return;
       } catch (e: any) {
         console.error("[Onboarding] Network switch failed:", e);
         setOnChainRegState("error");
+        setSubmitError("Failed to switch network. Please switch manually in your wallet.");
         return;
       }
     }
 
-    // ── Wallet mismatch guard ───────────────────────────────────────────
+    // ── CRITICAL: Faucet/Wallet mismatch detection ──────────────────────
+    // If faucet was claimed by a DIFFERENT wallet than currently active, block registration
+    if (faucetClaimAddress && walletAddress !== faucetClaimAddress) {
+      const err = `Wallet mismatch detected! Faucet was claimed by ${faucetClaimAddress.slice(0,6)}...${faucetClaimAddress.slice(-4)} but active wallet is ${walletAddress.slice(0,6)}...${walletAddress.slice(-4)}. Please disconnect MetaMask or switch to the correct wallet.`;
+      console.error("[Onboarding]", err);
+      setOnChainRegState("error");
+      setSubmitError(err);
+      return;
+    }
+
+    // ── Wallet mismatch guard (Privy vs wagmi) ──────────────────────────
     if (walletMismatch) {
-      console.error("[Onboarding] Wallet mismatch detected:", {
-        privy: privyAddress,
-        wagmi: walletAddress,
-      });
-      // Still attempt the tx — the user will see the mismatch warning in UI
+      const err = `Wallet mismatch: Privy embedded wallet (${privyAddress.slice(0,6)}...) differs from active wallet (${walletAddress.slice(0,6)}...). If you have MetaMask installed, please disconnect it or disable the extension temporarily.`;
+      console.error("[Onboarding]", err);
+      setOnChainRegState("error");
+      setSubmitError(err);
+      return;
+    }
+
+    // ── Balance check ───────────────────────────────────────────────────
+    try {
+      const publicClient = createPublicClient({ chain: ogNewton, transport: http() });
+      const balance = await publicClient.getBalance({ address: walletAddress as `0x${string}` });
+      console.log("[Onboarding] Balance check:", walletAddress, "=", balance.toString(), "wei");
+      if (balance === 0n) {
+        setOnChainRegState("error");
+        setSubmitError("Insufficient OG balance. Please claim faucet first. If you already claimed, your wallet may have changed.");
+        return;
+      }
+    } catch (e) {
+      console.warn("[Onboarding] Balance check failed:", e);
     }
 
     setOnChainRegState("pending");
     const roleNum = role === "agent_owner" ? 2 : 1;
-    console.log("[Onboarding] Registering with wallet:", walletAddress, "role:", roleNum, "chain:", chainId);
+    console.log("[Onboarding] Registering with wallet:", walletAddress, "role:", roleNum, "chain:", chainId, "faucetAddr:", faucetClaimAddress);
     register(roleNum);
   }
 
@@ -338,6 +364,7 @@ export default function OnboardingPage() {
         throw new Error(msg);
       }
       setFaucetTxHash(json.txHash);
+      setFaucetClaimAddress(walletAddress); // Track which wallet received the faucet
       setFaucetState("done");
     } catch (e) {
       setFaucetError(e instanceof Error ? e.message : "Claim failed");
@@ -430,6 +457,13 @@ export default function OnboardingPage() {
                           Privy wallet ({privyAddress.slice(0,6)}...{privyAddress.slice(-4)}) differs from active wallet. 
                           Make sure you use the same wallet for faucet and registration.
                         </p>
+                        <button
+                          type="button"
+                          onClick={() => disconnect()}
+                          className="mt-1.5 text-[10px] text-amber-400 underline hover:text-amber-300"
+                        >
+                          Disconnect wallet and reconnect
+                        </button>
                       </div>
                     )}
                   </div>
@@ -732,8 +766,21 @@ export default function OnboardingPage() {
                           <p className="text-amber-400 text-[12px] font-medium">⚠️ Wallet Mismatch Detected</p>
                           <p className="text-amber-400/70 text-[11px] mt-0.5">
                             Privy wallet ({privyAddress.slice(0,6)}...{privyAddress.slice(-4)}) differs from active wallet ({walletAddress.slice(0,6)}...{walletAddress.slice(-4)}). 
-                            The faucet may have sent OG to a different address. Please ensure you are using the correct wallet.
+                            The faucet may have sent OG to a different address.
                           </p>
+                          <button
+                            type="button"
+                            onClick={() => disconnect()}
+                            className="mt-1.5 text-[11px] text-amber-400 underline hover:text-amber-300"
+                          >
+                            Disconnect and reconnect with correct wallet
+                          </button>
+                        </div>
+                      )}
+                      {submitError && (
+                        <div className="rounded-lg border border-red-500/25 bg-red-500/[0.06] px-3 py-2 mb-3">
+                          <p className="text-red-400 text-[12px] font-medium">Error</p>
+                          <p className="text-red-400/70 text-[11px] mt-0.5">{submitError}</p>
                         </div>
                       )}
                       {regError && (
